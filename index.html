@@ -275,8 +275,8 @@
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🔴🔴 මාරම වැදගත්: මෙතන ඔයාගේ Cloudflare Worker ලින්ක් එක දාන්න 🔴🔴
-        const CLOUD_API_URL = "https://YOUR_CLOUDFLARE_URL_HERE.workers.dev/"; 
+        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක 🌟
+        const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db;
         let masterData = []; 
@@ -401,7 +401,6 @@
                 </tr>`;
             }
 
-            // 🌟 අලුත් Today Completed Calls ලොජික් එක 🌟
             window.renderManagerDashboard = () => {
                 let t = 0, y = 0, r = 0;
                 let totalArrears = 0, collectedAmount = 0; 
@@ -421,7 +420,6 @@
                         y++;
                     }
 
-                    // අද දවසට විතරක් කෝල්ස් ගණන් කරනවා
                     if (d.lastCallDate === sysToday && (att > 0 || d.notes !== "")) {
                         todayCalls++;
                         if (d.notes === "Customer Paid" || d.notes === "Promised to Pay") successCalls++;
@@ -617,7 +615,6 @@
 
                 let d = masterData.find(x => x.id === docId);
                 
-                // 🌟 ෆෝන් නම්බර් එක වෙනස් කළොත් සේව් වෙන තැන 🌟
                 let phoneKey = d.nic !== "" ? d.nic : docId; 
                 if(phoneVal !== d.phone && phoneVal !== "") {
                     await setDoc(doc(db, "phoneDirectory", phoneKey), { phone: phoneVal, name: d.customerName });
