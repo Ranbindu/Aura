@@ -66,7 +66,7 @@
     </script>
 
     <div id="welcomePage" class="page-container active-page glass-panel" style="text-align: center; margin-top: 15vh;">
-        <h1 style="font-size: 4.5em; font-weight: 900; line-height: 1.1;">AURA<br>SYSTEMS</h1>
+        <h1 style="font-size: 4.5em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
         <p style="font-size: 1.6em; color: #a5d6a7;" id="loadStatusMsg">Connecting to Aura Secure Vault...</p>
     </div>
 
@@ -328,7 +328,6 @@
                     return;
                 }
 
-                // Keys ලැබුණාම Firebase පටන් ගන්නවා
                 app = initializeApp(fbConfig); 
                 auth = getAuth(app); 
                 db = getFirestore(app);
@@ -533,7 +532,7 @@
 
                 masterData.forEach(d => {
                     if(d.listType === "Red") {
-                        let amt = parseFloat(d.arrearsAmount) || 0;
+                        let amt = Number(d.arrearsAmount) || 0; // 🌟 දැන් මේක ලස්සනට ඉලක්කමක් විදියට ගන්නවා 🌟
                         let agent = d.fieldAgent || "Unknown";
                         let isPaid = (d.notes === "Customer Paid");
 
@@ -580,7 +579,7 @@
                     if(aOpenToday !== bOpenToday) return bOpenToday - aOpenToday; 
                     let aRed = a.listType === "Red" ? 1 : 0; let bRed = b.listType === "Red" ? 1 : 0;
                     if(aRed !== bRed) return bRed - aRed; 
-                    return (b.arrearsAmount||0) - (a.arrearsAmount||0);
+                    return (Number(b.arrearsAmount)||0) - (Number(a.arrearsAmount)||0);
                 });
 
                 sortedData.forEach(d => {
@@ -682,17 +681,20 @@
                                 body: JSON.stringify({ listType: type, data: chunk }) 
                             });
                             let resData = await res.json();
+                            
+                            // 🌟 Cloudflare එකෙන් එන Error එක පෙන්නනවා 🌟
                             if(!resData.success) throw new Error(resData.error);
                             
                             totalProcessed += chunk.length;
                             document.getElementById('loadMsg').innerText = `⏳ Processing: ${totalProcessed} / ${data.length} ...`;
                         }
 
-                        alert("✅ Aura Secure Upload Complete!"); 
+                        alert("✅ Aura Secure Upload Complete! Data is safely stored."); 
                         document.getElementById('loadMsg').style.display = 'none'; ev.target.value = '';
 
                     } catch(err) { 
-                        alert("❌ Error: " + err.message); document.getElementById('loadMsg').style.display = 'none'; ev.target.value = '';
+                        alert("❌ Upload Error: " + err.message); 
+                        document.getElementById('loadMsg').style.display = 'none'; ev.target.value = '';
                     }
                 };
                 reader.readAsArrayBuffer(file);
