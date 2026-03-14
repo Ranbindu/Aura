@@ -90,20 +90,25 @@
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50;">
-                    <h3 style="margin-bottom: 5px; font-size: 14px;">Call Center Success Rate</h3>
-                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 10px;">(Paid & Promised / Total Called)</div>
+                    <h3 style="margin-bottom: 5px; font-size: 14px;">Today's Success Rate</h3>
+                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 10px;">(Paid & Promised / Today's Calls)</div>
                     <h1 style="color: #4caf50; font-size: 3em; margin: 0;" id="dashSuccessRate">0%</h1>
-                    <div style="margin-top: 10px; font-weight: bold; font-size: 14px;">Total Calls Taken: <span id="dashTotalCalls" style="color:#ffeb3b;">0</span></div>
+                    <div style="margin-top: 10px; font-weight: bold; font-size: 14px;">Today Completed Calls: <span id="dashTodayCalls" style="color:#ffeb3b;">0</span></div>
                 </div>
             </div>
             <div>
                 <div class="stat-box"><span>Total Active Accounts</span><div class="stat-value" id="dashTotal">0</div></div>
+                
                 <div class="stat-box" style="border-color: #ffc107;">
                     <span style="color: #ffeb3b;">Risk Accounts (Yellow)</span>
                     <button onclick="window.filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
-                <div class="stat-box" style="border-color: #f44336;"><span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span><div class="stat-value" id="dashRed">0</div></div>
+
+                <div class="stat-box" style="border-color: #f44336;">
+                    <span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span>
+                    <div class="stat-value" id="dashRed">0</div>
+                </div>
 
                 <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
@@ -119,6 +124,7 @@
                         <div class="stat-value" id="dashCollected" style="background: #4caf50; color: white;">Rs. 0</div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -229,7 +235,7 @@
                     <span>📅 Target Day:</span>
                     <select id="staffDayFilter" onchange="window.renderStaffUI()" style="width: 130px; margin:0; font-weight: bold; color: #4caf50;"></select>
                 </div>
-                <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No..." style="width: 250px; margin:0;">
+                <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No Only..." style="width: 250px; margin:0;">
                 <button onclick="window.logout()" class="btn-danger" style="margin:0;">Logout</button>
             </div>
         </div>
@@ -269,8 +275,8 @@
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක 🌟
-        const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
+        // 🔴🔴 මාරම වැදගත්: මෙතන ඔයාගේ Cloudflare Worker ලින්ක් එක දාන්න 🔴🔴
+        const CLOUD_API_URL = "https://YOUR_CLOUDFLARE_URL_HERE.workers.dev/"; 
 
         let app, auth, db;
         let masterData = []; 
@@ -283,7 +289,7 @@
             let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("staffDayFilter")];
             dayFilters.forEach(sel => {
                 if(!sel) return;
-                sel.innerHTML = ""; // Clear existing
+                sel.innerHTML = ""; 
                 for(let i=1; i<=31; i++) {
                     let opt = document.createElement("option"); opt.value=i; 
                     if(i === td) { opt.text = i + " වෙනිදා (Today)"; opt.selected=true; }
@@ -395,17 +401,17 @@
                 </tr>`;
             }
 
+            // 🌟 අලුත් Today Completed Calls ලොජික් එක 🌟
             window.renderManagerDashboard = () => {
                 let t = 0, y = 0, r = 0;
                 let totalArrears = 0, collectedAmount = 0; 
-                let totalCalls = 0, successCalls = 0; // 🌟 අලුත් Success Rate එකට 🌟
+                let todayCalls = 0, successCalls = 0; 
 
                 masterData.forEach(d => {
                     t++; 
                     let att = parseInt(d.callAttempts) || 0;
                     let isRisk = (att >= 3 || d.notes === "Bad Feedback");
                     
-                    // සල්ලි ගණන් කිරිල්ල
                     if (d.listType === "Red") {
                         r++;
                         let amt = Number(d.arrearsAmount) || 0;
@@ -415,9 +421,9 @@
                         y++;
                     }
 
-                    // Success Rate එක ගණන් කිරිල්ල
-                    if (att > 0 || d.notes !== "") {
-                        totalCalls++;
+                    // අද දවසට විතරක් කෝල්ස් ගණන් කරනවා
+                    if (d.lastCallDate === sysToday && (att > 0 || d.notes !== "")) {
+                        todayCalls++;
                         if (d.notes === "Customer Paid" || d.notes === "Promised to Pay") successCalls++;
                     }
                 });
@@ -432,9 +438,8 @@
                 document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
                 document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
 
-                // අලුත් Success Rate එක දානවා
-                document.getElementById('dashTotalCalls').innerText = totalCalls;
-                document.getElementById('dashSuccessRate').innerText = totalCalls > 0 ? Math.round((successCalls/totalCalls)*100) + "%" : "0%";
+                document.getElementById('dashTotalCalls').innerText = todayCalls;
+                document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
             };
 
             window.syncManagerView = () => {
@@ -532,11 +537,9 @@
                 });
             };
 
-            // 🌟 අලුත් Date Filter ලොජික් එක (Staff ට) 🌟
             window.renderStaffUI = () => {
                 let filterDay = parseInt(document.getElementById('staffDayFilter').value) || td;
                 
-                // Warning එක පෙන්වන එක
                 if(filterDay !== td) document.getElementById('dateWarning').style.display = 'block';
                 else document.getElementById('dateWarning').style.display = 'none';
 
@@ -560,23 +563,21 @@
                     let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : "");
 
                     let isTargetForDay = false; 
-                    let isForwarded = false; // මේකෙන් කියන්නේ Miss වුණු ඒවා
+                    let isForwarded = false; 
                     
                     let agreeDay = extractDay(d.agreeDate); 
                     let promiseDay = parseInt(d.promiseDate);
 
                     if (d.listType === "Red") {
-                        // Red ලිස්ට් එකේ උන් හැමදාම ලිස්ට් එකේ ඉන්නවා (Paid වෙනකම්)
                         if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > filterDay) isTargetForDay = false; 
                         else isTargetForDay = true;
                     } else {
-                        // Open List ලොජික් එක 
                         if (!isNaN(promiseDay) && promiseDay > 0) {
                             if (promiseDay === filterDay) { isTargetForDay = true; }
-                            else if (promiseDay < filterDay && filterDay === td) { isTargetForDay = true; isForwarded = true; } // ඊයේ Promise කරලා අදටත් ඇවිත්
+                            else if (promiseDay < filterDay && filterDay === td) { isTargetForDay = true; isForwarded = true; } 
                         } else if (agreeDay > 0) {
                             if (agreeDay === filterDay) { isTargetForDay = true; }
-                            else if (agreeDay < filterDay && att === 0 && filterDay === td) { isTargetForDay = true; isForwarded = true; } // ඊයේ කතා කරේ නැති ඒවා
+                            else if (agreeDay < filterDay && att === 0 && filterDay === td) { isTargetForDay = true; isForwarded = true; } 
                         } 
                         
                         if (d.notes === "Call Not Answer" && filterDay === td) { isTargetForDay = true; isForwarded = true; }
@@ -616,9 +617,10 @@
 
                 let d = masterData.find(x => x.id === docId);
                 
-                // 🌟 Phonebook එකට සේව් කරනවා 🌟
-                if(phoneVal !== d.phone && phoneVal !== "" && d.nic !== "") {
-                    await setDoc(doc(db, "phoneDirectory", d.nic), { phone: phoneVal, name: d.customerName });
+                // 🌟 ෆෝන් නම්බර් එක වෙනස් කළොත් සේව් වෙන තැන 🌟
+                let phoneKey = d.nic !== "" ? d.nic : docId; 
+                if(phoneVal !== d.phone && phoneVal !== "") {
+                    await setDoc(doc(db, "phoneDirectory", phoneKey), { phone: phoneVal, name: d.customerName });
                 }
                 
                 await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
@@ -626,16 +628,14 @@
                 let btn = document.querySelector(`#row_${docId} button`); btn.innerText = "SAVED"; btn.style.background = "#4caf50";
                 setTimeout(() => { let row = document.getElementById(`row_${docId}`); if(row) row.style.display = 'none'; }, 800);
                 
-                // Save කළාම අදාළ දවසේ ලිස්ට් එකම ආයෙත් අප්ඩේට් වෙනවා
                 if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); 
             };
 
-            // 🌟 Phonebook Download Function 🌟
             window.downloadPhoneDirectory = () => {
-                let csvContent = "data:text/csv;charset=utf-8,NIC,Customer Name,Phone Number\n";
-                for (const [nic, data] of Object.entries(phoneDirectory)) { 
+                let csvContent = "data:text/csv;charset=utf-8,NIC / Account ID,Customer Name,Phone Number\n";
+                for (const [key, data] of Object.entries(phoneDirectory)) { 
                     let cleanName = (data.name || 'N/A').replace(/,/g, ''); 
-                    csvContent += `${nic},"${cleanName}",${data.phone}\n`; 
+                    csvContent += `${key},"${cleanName}",${data.phone}\n`; 
                 }
                 var encodedUri = encodeURI(csvContent); var link = document.createElement("a");
                 link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Customer_Phonebook.csv");
