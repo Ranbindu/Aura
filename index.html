@@ -85,8 +85,8 @@
         <div class="dashboard-grid">
             <div class="sidebar-menu">
                 <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
+                <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
-                <button onclick="window.navigate('fieldDetailsPage')" style="width: 100%; margin-bottom: 10px;">🏃 Field Agent Collection</button>
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50;">
@@ -129,6 +129,52 @@
         </div>
     </div>
 
+    <div id="progressPage" class="page-container glass-panel">
+        <div class="flex-between mb-20">
+            <button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button>
+            <button onclick="window.forceRefreshData()" class="btn-refresh">🔄 Refresh Live Data</button>
+        </div>
+        <h2>Real-Time Performance Overview</h2>
+        
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+            <span style="font-size: 16px; font-weight: bold;">📅 ප්‍රගතිය බැලීමට දිනය තෝරන්න: </span>
+            <select id="progressDaySelect" onchange="window.updateProgressSummary()" style="width: 200px; padding: 8px; margin-left: 15px; display: inline-block;">
+                <option value="today">අද දිනය (Today)</option>
+            </select>
+        </div>
+
+        <div class="progress-grid">
+            <div class="progress-section">
+                <h3 style="margin-top:0;">Call Center Progress</h3>
+                <div style="display: flex; justify-content: space-around; margin: 20px 0; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px;">
+                    <div style="text-align: center;">
+                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">SELECTED DAY RATE</h4>
+                        <h1 id="pRateDay" style="font-size: 3.5em; color: #4caf50; margin: 5px 0;">0%</h1>
+                    </div>
+                    <div style="width: 2px; background: rgba(255,255,255,0.1);"></div>
+                    <div style="text-align: center;">
+                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">TOTAL MONTH RATE</h4>
+                        <h1 id="pRateMonth" style="font-size: 3.5em; color: #2196f3; margin: 5px 0;">0%</h1>
+                    </div>
+                </div>
+                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
+                    <span>Selected Day Call Target:</span><span id="pTarget" style="font-weight: bold; font-size: 1.3em;">0</span>
+                </div>
+                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
+                    <span>Calls Completed (Selected Day):</span><span id="pDone" style="font-weight: bold; font-size: 1.3em;">0</span>
+                </div>
+                <button onclick="window.navigateManagerCC()" style="margin-top: 15px; width: 100%;">View Detailed Logs</button>
+            </div>
+            
+            <div class="progress-section" style="text-align: center;">
+                <h3 style="margin-top:0;">Field Collection Status</h3>
+                <h1 id="pFieldCount" style="font-size: 5em; color: #f44336; margin: 30px 0;">0</h1>
+                <p>Total Red Accounts (Field Visit Required)</p>
+                <button onclick="window.navigate('fieldDetailsPage')" style="margin-top: 15px; width: 100%;">View Field Agent Allocation</button>
+            </div>
+        </div>
+    </div>
+
     <div id="callCenterDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
         <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back to Dashboard</button>
         <h2>Call Center Detailed Logs</h2>
@@ -153,7 +199,7 @@
     </div>
 
     <div id="fieldDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
-        <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back to Dashboard</button>
+        <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back to Performance</button>
         <h2>Field Agent Performance (Issu Accounts)</h2>
         <table style="margin-bottom: 40px; background: rgba(0,0,0,0.6);">
             <thead><tr><th>Group Sale (G)</th><th>Heenpahana (H)</th><th>Rohan (R)</th><th>Amila (D)</th></tr></thead>
@@ -273,9 +319,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක හරියටම දාලා තියෙන්නේ මෙතන 🌟
+        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db;
@@ -646,6 +692,8 @@
             };
             window.closeModal = () => { document.getElementById('infoModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
             
+            // 🌟 3. Excel එක කෑලි කරලා Auth Token එකත් එක්ක Cloudflare එකට යවනවා 🌟
+            // 🌟 Cleanup (පරණ දත්ත මැකීමේ) ලොජික් එක මෙතන තියෙනවා 🌟
             window.uploadExcel = async (ev, type) => {
                 const file = ev.target.files[0]; const reader = new FileReader();
                 if(!file) return;
@@ -660,6 +708,31 @@
                         const workbook = XLSX.read(e.target.result, {type:'array'});
                         const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
                         
+                        document.getElementById('loadMsg').innerText = "⏳ Cleaning up old records...";
+
+                        // Excel එකේ තියෙන Account Numbers ටික වෙන් කරගන්නවා
+                        let excelIds = data.map(rawRow => {
+                            let cleanRow = {};
+                            for (let k in rawRow) { cleanRow[String(k).toUpperCase().replace(/[^A-Z0-9]/g, '')] = rawRow[k]; }
+                            let rawAcc = (type === 'New') ? (cleanRow["ORIGINALACCTNO"] || cleanRow["ACCTNO"] || cleanRow["ACCNO"] || cleanRow["ACCOUNTNO"] || "") : (cleanRow["ACCNO"] || cleanRow["ACCOUNTNO"] || cleanRow["ACCTNO"] || cleanRow["RESULTKEY"] || "");
+                            return String(rawAcc).toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        }).filter(id => id.length >= 4);
+
+                        if(excelIds.length < 10 && data.length > 10) {
+                            throw new Error("Could not detect Account Numbers in the Excel file. Please check the columns.");
+                        }
+
+                        // 🌟 Cleanup (පරණ දත්ත මැකීම) 🌟
+                        if (type === 'New') {
+                            // අලුත් Excel එකේ නැති පරණ එකවුන්ට් ඔක්කොම මකනවා
+                            let deleteIds = masterData.filter(d => !excelIds.includes(d.id)).map(d => d.id);
+                            for (let id of deleteIds) { await deleteDoc(doc(db, "customers", id)); }
+                        } else {
+                            // Red Excel එකේ නැති පරණ Red එකවුන්ට් ආයේ Open (New) විදියට හදනවා
+                            let resetRedIds = masterData.filter(d => d.listType === "Red" && !excelIds.includes(d.id)).map(d => d.id);
+                            for (let id of resetRedIds) { await updateDoc(doc(db, "customers", id), { listType: "New", highlightColor: "", arrearsAmount: 0, fieldAgent: "Unknown" }); }
+                        }
+
                         document.getElementById('loadMsg').innerText = "⏳ Connecting to Aura Secure Brain...";
 
                         let totalProcessed = 0;
