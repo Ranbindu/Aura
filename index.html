@@ -275,8 +275,8 @@
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක 🌟
-        const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
+        // 🔴🔴 මාරම වැදගත්: මෙතන ඔයාගේ Cloudflare Worker ලින්ක් එක දාන්න 🔴🔴
+        const CLOUD_API_URL = "https://YOUR_CLOUDFLARE_URL_HERE.workers.dev/"; 
 
         let app, auth, db;
         let masterData = []; 
@@ -420,6 +420,7 @@
                         y++;
                     }
 
+                    // 🌟 අද දවසට අදාළ කෝල්ස් විතරක් ගණන් කරනවා (Bug Fix) 🌟
                     if (d.lastCallDate === sysToday && (att > 0 || d.notes !== "")) {
                         todayCalls++;
                         if (d.notes === "Customer Paid" || d.notes === "Promised to Pay") successCalls++;
@@ -436,7 +437,8 @@
                 document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
                 document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
 
-                document.getElementById('dashTotalCalls').innerText = todayCalls;
+                // 🌟 ID එක නිවැරදි කරලා තියෙන්නේ (dashTodayCalls) 🌟
+                document.getElementById('dashTodayCalls').innerText = todayCalls;
                 document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
             };
 
