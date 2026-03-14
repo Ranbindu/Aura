@@ -532,7 +532,7 @@
 
                 masterData.forEach(d => {
                     if(d.listType === "Red") {
-                        let amt = Number(d.arrearsAmount) || 0; // 🌟 දැන් මේක ලස්සනට ඉලක්කමක් විදියට ගන්නවා 🌟
+                        let amt = Number(d.arrearsAmount) || 0;
                         let agent = d.fieldAgent || "Unknown";
                         let isPaid = (d.notes === "Customer Paid");
 
@@ -660,7 +660,7 @@
             };
             window.closeModal = () => { document.getElementById('infoModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
             
-            // 🌟 3. Excel එක කෑලි කරලා Cloudflare එකට යවන සුපිරි ක්‍රමය 🌟
+            // 🌟 3. Excel එක කෑලි කරලා Auth Token එකත් එක්ක Cloudflare එකට යවනවා 🌟
             window.uploadExcel = async (ev, type) => {
                 const file = ev.target.files[0]; const reader = new FileReader();
                 if(!file) return;
@@ -668,6 +668,11 @@
                 
                 reader.onload = async (e) => {
                     try {
+                        // 🌟 යූසර්ගේ Gate Pass (Auth Token) එක ලබාගැනීම 🌟
+                        const user = auth.currentUser;
+                        if (!user) throw new Error("You must be logged in to upload files!");
+                        const token = await user.getIdToken();
+
                         const workbook = XLSX.read(e.target.result, {type:'array'});
                         const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
                         
@@ -678,11 +683,14 @@
                             const chunk = data.slice(i, i + 200);
                             let res = await fetch(CLOUD_API_URL, { 
                                 method: 'POST', 
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}` // 🌟 Cloudflare එකට Gate Pass එක යවනවා 🌟
+                                },
                                 body: JSON.stringify({ listType: type, data: chunk }) 
                             });
                             let resData = await res.json();
                             
-                            // 🌟 Cloudflare එකෙන් එන Error එක පෙන්නනවා 🌟
                             if(!resData.success) throw new Error(resData.error);
                             
                             totalProcessed += chunk.length;
