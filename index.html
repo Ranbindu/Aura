@@ -99,12 +99,33 @@
             </div>
             <div>
                 <div class="stat-box"><span>Total Active Accounts</span><div class="stat-value" id="dashTotal">0</div></div>
+                
                 <div class="stat-box" style="border-color: #ffc107;">
                     <span style="color: #ffeb3b;">Risk Accounts (Yellow)</span>
                     <button onclick="window.filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
-                <div class="stat-box" style="border-color: #f44336;"><span style="color: #ff8a80;">Red Arrears (Issu)</span><div class="stat-value" id="dashRed">0</div></div>
+
+                <div class="stat-box" style="border-color: #f44336;">
+                    <span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span>
+                    <div class="stat-value" id="dashRed">0</div>
+                </div>
+
+                <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
+                        <span style="color: #90caf9; font-size: 0.95em; text-transform: uppercase; font-weight: bold;">💰 Open Month Arrears (Total)</span>
+                        <b id="dashTotalArrears" style="font-size: 1.3em; color: #fff;">Rs. 0</b>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
+                        <span style="color: #ffeb3b; font-size: 0.95em; text-transform: uppercase; font-weight: bold;">⏳ To Collect (Remaining)</span>
+                        <b id="dashToCollect" style="font-size: 1.4em; color: #ffeb3b;">Rs. 0</b>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <span style="color: #4caf50; font-weight: bold; text-transform: uppercase;">✅ Collected Amount</span>
+                        <div class="stat-value" id="dashCollected" style="background: #4caf50; color: white;">Rs. 0</div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -293,7 +314,6 @@
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db;
@@ -316,7 +336,6 @@
         };
         setupFilters();
 
-        // 1. Cloudflare එකෙන් API Keys ඉල්ලනවා
         async function bootSecureSystem() {
             try {
                 const response = await fetch(CLOUD_API_URL);
@@ -342,7 +361,6 @@
             }
         }
 
-        // 2. ප්‍රධාන ෆන්ක්ෂන් ටික
         function attachSystemFunctions() {
             window.logout = () => { signOut(auth).then(() => { sessionStorage.removeItem("singerCache"); window.navigate('loginPage'); document.getElementById('loginStatus').innerText = ""; }); };
 
@@ -357,7 +375,6 @@
                         snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
                     });
                     
-                    // 🌟 ඔයාගේ ඊමේල් දෙකට හරියටම වැඩ කරන ලොජික් එක 🌟
                     let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
                     initLiveSync(isManager);
                     
@@ -421,14 +438,44 @@
                 </tr>`;
             }
 
+            // 🌟 ඩෑෂ්බෝඩ් එකේ ගණන් හදන ලොජික් එක 🌟
             window.renderManagerDashboard = () => {
-                let t=0, y=0, r=0;
+                let t = 0, y = 0, r = 0;
+                let totalArrears = 0, collectedAmount = 0; // සල්ලි ගණන් කරන්න Variables
+
                 masterData.forEach(d => {
-                    t++; let att = parseInt(d.callAttempts) || 0;
+                    t++; 
+                    let att = parseInt(d.callAttempts) || 0;
                     let isRisk = (att >= 3 || d.notes === "Bad Feedback");
-                    if(d.listType === "Red") r++; else if (isRisk) y++;
+                    
+                    if (d.listType === "Red") {
+                        r++;
+                        // සල්ලි ගාණ එකතු කිරීම
+                        let amt = Number(d.arrearsAmount) || 0;
+                        totalArrears += amt;
+                        
+                        // කෝල් සෙන්ටර් එකෙන් 'Customer Paid' දැම්මම එකතු වෙන ගාණ
+                        if (d.notes === "Customer Paid") {
+                            collectedAmount += amt;
+                        }
+                    } else if (isRisk) {
+                        y++;
+                    }
                 });
-                document.getElementById('dashTotal').innerText = t; document.getElementById('dashYellow').innerText = y; document.getElementById('dashRed').innerText = r; document.getElementById('pFieldCount').innerText = r;
+
+                let toCollect = totalArrears - collectedAmount; // ඉතුරු ගාණ හැදෙන හැටි
+
+                // පරණ බොක්ස් ටික
+                document.getElementById('dashTotal').innerText = t; 
+                document.getElementById('dashYellow').innerText = y; 
+                document.getElementById('dashRed').innerText = r; 
+                document.getElementById('pFieldCount').innerText = r;
+
+                // 🌟 අලුත් Financial Box එකේ ගණන් අප්ඩේට් වෙන තැන 🌟
+                document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
+                document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
+                document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
+
                 window.updateProgressSummary();
             };
 
@@ -660,7 +707,6 @@
             };
             window.closeModal = () => { document.getElementById('infoModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
             
-            // 🌟 3. Excel එක කෑලි කරලා Auth Token එකත් එක්ක Cloudflare එකට යවනවා 🌟
             window.uploadExcel = async (ev, type) => {
                 const file = ev.target.files[0]; const reader = new FileReader();
                 if(!file) return;
@@ -668,7 +714,6 @@
                 
                 reader.onload = async (e) => {
                     try {
-                        // 🌟 යූසර්ගේ Gate Pass (Auth Token) එක ලබාගැනීම 🌟
                         const user = auth.currentUser;
                         if (!user) throw new Error("You must be logged in to upload files!");
                         const token = await user.getIdToken();
@@ -685,7 +730,7 @@
                                 method: 'POST', 
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}` // 🌟 Cloudflare එකට Gate Pass එක යවනවා 🌟
+                                    'Authorization': `Bearer ${token}` 
                                 },
                                 body: JSON.stringify({ listType: type, data: chunk }) 
                             });
