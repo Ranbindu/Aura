@@ -98,12 +98,17 @@
             </div>
             <div>
                 <div class="stat-box"><span>Total Active Accounts</span><div class="stat-value" id="dashTotal">0</div></div>
+                
                 <div class="stat-box" style="border-color: #ffc107;">
                     <span style="color: #ffeb3b;">Risk Accounts (Yellow)</span>
                     <button onclick="window.filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
-                <div class="stat-box" style="border-color: #f44336;"><span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span><div class="stat-value" id="dashRed">0</div></div>
+
+                <div class="stat-box" style="border-color: #f44336;">
+                    <span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span>
+                    <div class="stat-value" id="dashRed">0</div>
+                </div>
 
                 <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
@@ -119,7 +124,6 @@
                         <div class="stat-value" id="dashCollected" style="background: #4caf50; color: white;">Rs. 0</div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -269,7 +273,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක විතරයි මෙතන තියෙන්නේ 🌟
+        // 🌟 ඔයාගේ ලින්ක් එක විතරයි මෙතන තියෙන්නේ. API Keys හැංගිලා! 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db;
@@ -294,45 +298,49 @@
         };
         setupFilters();
 
-        // 🌟 Login Page එක හිරවෙන්නේ නැති වෙන්න හැදුවා 🌟
+        // 🌟 ලොගින් පේජ් එක හිරවෙන්නේ නැති වෙන්න හැදුවා 🌟
         async function bootSecureSystem() {
             try {
-                // Cloudflare එකෙන් API Keys ඉල්ලනවා
+                // Cloudflare එකෙන් API Keys ගන්නවා
                 const response = await fetch(CLOUD_API_URL);
                 if (!response.ok) throw new Error("Failed to reach Cloudflare.");
                 
                 const fbConfig = await response.json();
                 if(fbConfig.error) {
-                    alert("System Blocked: " + fbConfig.error);
+                    document.getElementById('loadStatusMsg').innerText = "SECURITY BREACH: Access Denied!";
+                    document.getElementById('loadStatusMsg').style.color = "red";
                     return;
                 }
 
-                // Cloudflare එකෙන් ආපු Keys වලින් Firebase පටන් ගන්නවා
+                // Cloudflare එකෙන් ආපු Keys වලින් Firebase අරඹනවා
                 app = initializeApp(fbConfig); 
                 auth = getAuth(app); 
                 db = getFirestore(app);
 
+                document.getElementById('loadStatusMsg').innerText = "System Ready. Redirecting...";
+                
+                setTimeout(() => {
+                    document.getElementById('welcomePage').classList.remove('active-page');
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            let e = user.email.toLowerCase();
+                            let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
+                            
+                            onSnapshot(collection(db, "phoneDirectory"), (snap) => {
+                                snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
+                            });
+                            
+                            initLiveSync(isManager);
+                        } else {
+                            window.navigate('loginPage');
+                        }
+                    });
+                }, 1500);
+
                 attachSystemFunctions(); 
-
-                // 🌟 වැදගත්ම තැන: ලොග් වෙලාද නැද්ද බලලා කෙලින්ම Login පේජ් එක දෙනවා 🌟
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        let e = user.email.toLowerCase();
-                        let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
-                        
-                        onSnapshot(collection(db, "phoneDirectory"), (snap) => {
-                            snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
-                        });
-                        
-                        initLiveSync(isManager);
-                    } else {
-                        // කවුරුත් ලොග් වෙලා නැත්නම් කෙලින්ම ලොගින් UI එක පෙන්වන්න!
-                        window.navigate('loginPage');
-                    }
-                });
-
             } catch (err) {
-                // Cloudflare එකට යන්න බැරි වුණත්, ලොගින් UI එක පෙන්නනවා (හිරවෙන්න තියෙන ඉඩ නැති කරනවා)
+                // Cloudflare අවුල් ගියොත් හිරවෙන්නේ නැතුව Login පේජ් එක පෙන්නනවා
+                document.getElementById('welcomePage').classList.remove('active-page');
                 window.navigate('loginPage');
                 document.getElementById('loginStatus').innerText = "❌ Security Lock Active: Cannot reach Backend.";
             }
