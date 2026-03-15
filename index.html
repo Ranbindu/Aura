@@ -319,7 +319,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ Cloudflare ලින්ක් එක (API Keys මේක ඇතුළෙන් එනවා) 🌟
+        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db;
@@ -342,22 +342,23 @@
                 }
             });
         };
-        setupFilters();
-
-        // 🌟 සිස්ටම් එක ලෝඩ් වෙද්දී Keys ගන්නවා (සහ Login Box එක පෙන්නනවා) 🌟
+        
+        // 🌟 ලොගින් පේජ් එක හිරවෙන්නේ නැති වෙන්න (Synchronous-like fetching) 🌟
         async function bootSecureSystem() {
+            setupFilters();
             try {
+                // Cloudflare එකෙන් API Keys ගන්නවා
                 const response = await fetch(CLOUD_API_URL);
                 if (!response.ok) throw new Error("Failed to reach Cloudflare.");
                 
                 const fbConfig = await response.json();
                 if(fbConfig.error) {
-                    document.getElementById('loginStatus').innerText = "❌ SECURITY BREACH: " + fbConfig.error;
+                    document.getElementById('loginStatus').innerText = "❌ " + fbConfig.error;
                     document.getElementById('loginStatus').style.color = "red";
                     return;
                 }
 
-                // Initialize Firebase with secure keys
+                // Keys ලැබුණට පස්සේ Firebase පටන් ගන්නවා
                 app = initializeApp(fbConfig); 
                 auth = getAuth(app); 
                 db = getFirestore(app);
@@ -381,10 +382,13 @@
                 });
 
             } catch (err) {
-                document.getElementById('loginStatus').innerText = "❌ Error: Could not connect to Aura Vault.";
+                document.getElementById('loginStatus').innerText = "❌ Security Lock Active: Cannot reach Backend.";
                 document.getElementById('loginStatus').style.color = "red";
             }
         }
+
+        // සිස්ටම් එක ලෝඩ් වෙද්දී මේක run වෙනවා
+        document.addEventListener("DOMContentLoaded", bootSecureSystem);
 
         function attachSystemFunctions() {
             window.logout = () => { signOut(auth).then(() => { sessionStorage.removeItem("singerCache"); window.navigate('loginPage'); document.getElementById('loginStatus').innerText = ""; document.getElementById('username').value = ""; document.getElementById('password').value = ""; }); };
@@ -392,13 +396,25 @@
             window.login = async () => {
                 const e = document.getElementById('username').value.trim().toLowerCase(); 
                 const p = document.getElementById('password').value;
-                const status = document.getElementById('loginStatus'); status.innerText = "⏳ Authenticating...";
+                const status = document.getElementById('loginStatus'); 
+                
+                if (!auth) {
+                    status.innerText = "❌ System is still connecting. Please wait...";
+                    status.style.color = "red";
+                    return;
+                }
+                
+                status.innerText = "⏳ Authenticating...";
                 status.style.color = "#ffeb3b";
+                
                 try {
                     await signInWithEmailAndPassword(auth, e, p);
                     status.innerText = "✅ Loading Data...";
                     status.style.color = "#4caf50";
-                } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; status.style.color = "red"; }
+                } catch (err) { 
+                    status.innerText = "❌ Access Denied! Check credentials."; 
+                    status.style.color = "red"; 
+                }
             };
 
             function initLiveSync(isManager) {
@@ -813,8 +829,6 @@
             };
         }
 
-        // Initialize System
-        bootSecureSystem();
     </script>
 </body>
 </html>
