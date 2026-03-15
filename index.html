@@ -43,6 +43,9 @@
         .type-badge-open { background: #4caf50; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 8px; color: white; }
         .type-badge-issu { background: #f44336; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 8px; color: white; }
 
+        .reduce-box { background: rgba(76,175,80,0.3); border: 1px solid #4caf50; padding: 6px; border-radius: 5px; margin-bottom: 6px; font-size: 14px; }
+        .reduce-box-acc { background: rgba(33,150,243,0.3); border: 1px solid #2196f3; padding: 6px; border-radius: 5px; font-size: 14px; }
+
         #infoModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 420px; padding: 30px; }
         #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
@@ -60,14 +63,14 @@
 
     <div id="loginPage" class="page-container active-page">
         <div class="glass-panel" style="max-width: 400px; margin: 15vh auto; padding: 50px; text-align: center;">
-            <h1 style="font-size: 3.5em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
+            <h1 style="font-size: 4.5em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
             <h2 class="mb-20" style="color: #a5d6a7;">SECURE LOGIN</h2>
             
             <input type="text" id="username" placeholder="Email Address" onkeypress="if(event.key==='Enter') document.getElementById('password').focus()">
             <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()">
             
             <button onclick="window.login()" id="loginBtn" style="width: 100%; margin-top: 20px; padding: 15px;">LOGIN TO SYSTEM</button>
-            <div id="loginStatus" style="color: #ffeb3b; margin-top: 15px; font-weight: bold;">⏳ Connecting to Secure Vault...</div>
+            <div id="loginStatus" style="color: #ff8a80; margin-top: 15px; font-weight: bold;"></div>
         </div>
     </div>
 
@@ -117,6 +120,67 @@
                 </div>
             </div>
         </div>
+
+        <h2 style="margin-top:40px; border-bottom: 1px solid #4caf50; padding-bottom:10px;">Field Agent Performance (Issu Accounts)</h2>
+        <table style="margin-bottom: 20px; background: rgba(0,0,0,0.6);">
+            <thead><tr><th>Group Sale (G)</th><th>Heenpahana (H)</th><th>Rohan (R)</th><th>Amila (D)</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td style="padding:15px;">
+                        Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_G">Rs. 0</b><br>
+                        <span style="color:#aaa; font-size:12px;">Accounts: <b id="fAcc_G" style="color:#fff;">0</b></span>
+                    </td>
+                    <td style="padding:15px;">
+                        Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_H">Rs. 0</b><br>
+                        <span style="color:#aaa; font-size:12px;">Accounts: <b id="fAcc_H" style="color:#fff;">0</b></span>
+                    </td>
+                    <td style="padding:15px;">
+                        Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_R">Rs. 0</b><br>
+                        <span style="color:#aaa; font-size:12px;">Accounts: <b id="fAcc_R" style="color:#fff;">0</b></span>
+                    </td>
+                    <td style="padding:15px;">
+                        Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_D">Rs. 0</b><br>
+                        <span style="color:#aaa; font-size:12px;">Accounts: <b id="fAcc_D" style="color:#fff;">0</b></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:15px;">
+                        To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_G">Rs. 0</b><br>
+                        <span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_G" style="color:#fff;">0</b></span>
+                    </td>
+                    <td style="padding:15px;">
+                        To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_H">Rs. 0</b><br>
+                        <span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_H" style="color:#fff;">0</b></span>
+                    </td>
+                    <td style="padding:15px;">
+                        To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_R">Rs. 0</b><br>
+                        <span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_R" style="color:#fff;">0</b></span>
+                    </td>
+                    <td style="padding:15px;">
+                        To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_D">Rs. 0</b><br>
+                        <span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_D" style="color:#fff;">0</b></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 20px 10px;">
+                        <div class="reduce-box">Amount: <b id="rRateAmt_G">0%</b> Reduce</div>
+                        <div class="reduce-box-acc">Accounts: <b id="rRateAcc_G">0%</b> Reduce</div>
+                    </td>
+                    <td style="padding: 20px 10px;">
+                        <div class="reduce-box">Amount: <b id="rRateAmt_H">0%</b> Reduce</div>
+                        <div class="reduce-box-acc">Accounts: <b id="rRateAcc_H">0%</b> Reduce</div>
+                    </td>
+                    <td style="padding: 20px 10px;">
+                        <div class="reduce-box">Amount: <b id="rRateAmt_R">0%</b> Reduce</div>
+                        <div class="reduce-box-acc">Accounts: <b id="rRateAcc_R">0%</b> Reduce</div>
+                    </td>
+                    <td style="padding: 20px 10px;">
+                        <div class="reduce-box">Amount: <b id="rRateAmt_D">0%</b> Reduce</div>
+                        <div class="reduce-box-acc">Accounts: <b id="rRateAcc_D">0%</b> Reduce</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
     <div id="callCenterDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
@@ -212,11 +276,12 @@
                 }
             });
         };
+        
         setupFilters();
 
-        // 🌟 ලොගින් එක හිරවෙන්නේ නැති වෙන්න හැදුවා 🌟
         async function bootSecureSystem() {
             try {
+                // Cloudflare එකෙන් API Keys ගන්නවා
                 const response = await fetch(CLOUD_API_URL);
                 if (!response.ok) throw new Error("Failed to reach Cloudflare.");
                 
@@ -227,12 +292,12 @@
                     return;
                 }
 
-                // Initialize Firebase with secure keys
+                // Keys ලැබුණට පස්සේ Firebase පටන් ගන්නවා
                 app = initializeApp(fbConfig); 
                 auth = getAuth(app); 
                 db = getFirestore(app);
 
-                document.getElementById('loginStatus').innerText = "✅ Ready. Please Login.";
+                document.getElementById('loginStatus').innerText = "✅ Please Login.";
                 document.getElementById('loginStatus').style.color = "#4caf50";
 
                 attachSystemFunctions(); 
@@ -251,7 +316,7 @@
                 });
 
             } catch (err) {
-                document.getElementById('loginStatus').innerText = "❌ Server Offline: Refresh Page.";
+                document.getElementById('loginStatus').innerText = "❌ Security Lock Active: Cannot reach Backend.";
                 document.getElementById('loginStatus').style.color = "red";
             }
         }
@@ -260,7 +325,7 @@
         document.addEventListener("DOMContentLoaded", bootSecureSystem);
 
         function attachSystemFunctions() {
-            window.logout = () => { signOut(auth).then(() => { sessionStorage.removeItem("singerCache"); window.navigate('loginPage'); document.getElementById('loginStatus').innerText = ""; document.getElementById('username').value = ""; document.getElementById('password').value = ""; }); };
+            window.logout = () => { signOut(auth).then(() => { sessionStorage.removeItem("singerCache"); window.navigate('loginPage'); document.getElementById('loginStatus').innerText = "✅ Logged out successfully."; document.getElementById('username').value = ""; document.getElementById('password').value = ""; }); };
 
             window.login = async () => {
                 const e = document.getElementById('username').value.trim().toLowerCase(); 
@@ -346,6 +411,9 @@
                 let totalArrears = 0, collectedAmount = 0; 
                 let todayCalls = 0, successCalls = 0; 
 
+                // Field Agent Stats Variables
+                let stats = { "Group Sale": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Heenpahana": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Rohan": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Amila": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 } };
+
                 masterData.forEach(d => {
                     t++; 
                     let att = parseInt(d.callAttempts) || 0;
@@ -355,7 +423,20 @@
                         r++;
                         let amt = Number(d.arrearsAmount) || 0;
                         totalArrears += amt;
-                        if (d.notes === "Customer Paid") collectedAmount += amt;
+                        let isPaid = (d.notes === "Customer Paid");
+                        if (isPaid) collectedAmount += amt;
+
+                        // Field Agent එකතු කිරීම
+                        let agent = d.fieldAgent || "Unknown";
+                        if(stats[agent]) {
+                            stats[agent].tAmt += amt;
+                            stats[agent].tAcc += 1;
+                            if(!isPaid) {
+                                stats[agent].cAmt += amt;
+                                stats[agent].cAcc += 1;
+                            }
+                        }
+
                     } else if (isRisk) {
                         y++;
                     }
@@ -368,6 +449,7 @@
 
                 let toCollect = totalArrears - collectedAmount; 
 
+                // Update Top Stats
                 if(document.getElementById('dashTotal')) document.getElementById('dashTotal').innerText = t; 
                 if(document.getElementById('dashYellow')) document.getElementById('dashYellow').innerText = y; 
                 if(document.getElementById('dashRed')) document.getElementById('dashRed').innerText = r; 
@@ -378,6 +460,22 @@
 
                 if(document.getElementById('dashTodayCalls')) document.getElementById('dashTodayCalls').innerText = todayCalls;
                 if(document.getElementById('dashSuccessRate')) document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
+
+                // Update Field Agent Table in Dashboard
+                ["Group Sale", "Heenpahana", "Rohan", "Amila"].forEach((ag, idx) => {
+                    let code = ["G", "H", "R", "D"][idx];
+                    let tAmt = stats[ag].tAmt; let cAmt = stats[ag].cAmt;
+                    let amtRate = tAmt > 0 ? Math.round(((tAmt - cAmt) / tAmt) * 100) : 0; 
+                    let tAcc = stats[ag].tAcc; let cAcc = stats[ag].cAcc;
+                    let accRate = tAcc > 0 ? Math.round(((tAcc - cAcc) / tAcc) * 100) : 0; 
+
+                    if(document.getElementById(`fAmt_${code}`)) document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`;
+                    if(document.getElementById(`fAcc_${code}`)) document.getElementById(`fAcc_${code}`).innerText = tAcc;
+                    if(document.getElementById(`cAmt_${code}`)) document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`;
+                    if(document.getElementById(`cAcc_${code}`)) document.getElementById(`cAcc_${code}`).innerText = cAcc;
+                    if(document.getElementById(`rRateAmt_${code}`)) document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`;
+                    if(document.getElementById(`rRateAcc_${code}`)) document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
+                });
             };
 
             window.syncManagerView = () => {
