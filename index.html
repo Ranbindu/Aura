@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Singer Arrears Management System - Master Premium</title>
+    <title>Aura Recovery Management System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; background: url('https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920&auto=format&fit=crop') no-repeat center fixed; background-size: cover; color: #fff; display: flex; justify-content: center; min-height: 100vh; }
@@ -30,9 +30,6 @@
         .stat-box { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; margin-bottom: 15px; border-left: 6px solid #4caf50; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
         .stat-value { background: #fff; color: #000; padding: 6px 18px; border-radius: 10px; font-weight: 900; font-size: 1.4em; }
         
-        .progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;}
-        .progress-section { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);}
-
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 15px; overflow: hidden; }
         th { background-color: rgba(0, 0, 0, 0.8); color: #81c784; padding: 15px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
         td { padding: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
@@ -66,8 +63,8 @@
     </script>
 
     <div id="welcomePage" class="page-container active-page glass-panel" style="text-align: center; margin-top: 15vh;">
-        <h1 style="font-size: 4.5em; font-weight: 900; line-height: 1.1;">ARREARS<br>MANAGEMENT</h1>
-        <p style="font-size: 1.6em; color: #a5d6a7;">Galenbindunuwewa Branch</p>
+        <h1 style="font-size: 4.5em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
+        <p style="font-size: 1.6em; color: #a5d6a7;" id="loadStatusMsg">Connecting to Aura Secure Vault...</p>
     </div>
 
     <div id="loginPage" class="page-container">
@@ -101,12 +98,17 @@
             </div>
             <div>
                 <div class="stat-box"><span>Total Active Accounts</span><div class="stat-value" id="dashTotal">0</div></div>
+                
                 <div class="stat-box" style="border-color: #ffc107;">
                     <span style="color: #ffeb3b;">Risk Accounts (Yellow)</span>
                     <button onclick="window.filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
-                <div class="stat-box" style="border-color: #f44336;"><span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span><div class="stat-value" id="dashRed">0</div></div>
+
+                <div class="stat-box" style="border-color: #f44336;">
+                    <span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span>
+                    <div class="stat-value" id="dashRed">0</div>
+                </div>
 
                 <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
@@ -122,6 +124,7 @@
                         <div class="stat-value" id="dashCollected" style="background: #4caf50; color: white;">Rs. 0</div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -268,25 +271,13 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ අලුත් Firebase එකට කෙලින්ම Connect වෙනවා 🌟
-        const fbConfig = { 
-            apiKey: atob("QUl6YVN5RGZiMGxSSldsOVJ3a3hpQ2VJTUpTOFlHSmY5TTU4WjBB"),
-            authDomain: "singer-gb-arrears.firebaseapp.com", 
-            projectId: "singer-gb-arrears", 
-            storageBucket: "singer-gb-arrears.firebasestorage.app", 
-            messagingSenderId: "966045703002", 
-            appId: "1:966045703002:web:8370b59535ff6310b87163" 
-        };
-        const app = initializeApp(fbConfig); 
-        const auth = getAuth(app); 
-        const db = getFirestore(app);
-        
-        // 🌟 ඔයාගේ අලුත් Cloudflare එක 🌟
-        const CLOUD_URL = "https://singer-gb-arrears.ranbindua.workers.dev/";
+        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක (AURA) 🌟
+        const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
+        let app, auth, db;
         let masterData = []; 
         let phoneDirectory = {}; 
 
@@ -297,405 +288,432 @@
             let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("staffDayFilter")];
             dayFilters.forEach(sel => {
                 if(!sel) return;
-                sel.innerHTML = "";
+                sel.innerHTML = ""; 
                 for(let i=1; i<=31; i++) {
                     let opt = document.createElement("option"); opt.value=i; 
-                    if(i===td) { opt.text=i + " වෙනිදා (Today)"; opt.selected=true; }
-                    else { opt.text=i + " වෙනිදා"; }
+                    if(i === td) { opt.text = i + " වෙනිදා (Today)"; opt.selected=true; }
+                    else { opt.text = i + " වෙනිදා"; }
                     sel.appendChild(opt);
                 }
             });
         };
         setupFilters();
 
-        // 🌟 Auto Login Check 🌟
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                let e = user.email.toLowerCase();
-                let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
-                
-                onSnapshot(collection(db, "phoneDirectory"), (snap) => {
-                    snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
-                });
-                
-                initLiveSync(isManager);
-                document.getElementById('welcomePage').classList.remove('active-page');
-            } else {
-                setTimeout(() => {
-                    if(document.getElementById('welcomePage').classList.contains('active-page')) {
-                        window.navigate('loginPage');
-                    }
-                }, 2000);
-            }
-        });
-
-        window.logout = () => { signOut(auth).then(() => { sessionStorage.removeItem("singerCache"); window.navigate('loginPage'); document.getElementById('loginStatus').innerText = ""; }); };
-
-        window.login = async () => {
-            const e = document.getElementById('username').value.trim(); const p = document.getElementById('password').value;
-            const status = document.getElementById('loginStatus'); status.innerText = "⏳ Authenticating...";
+        // Cloudflare එකෙන් API Keys ගන්න ලොජික් එක
+        async function bootSecureSystem() {
             try {
-                await signInWithEmailAndPassword(auth, e, p);
-                status.innerText = "✅ Loading Data...";
-            } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; }
-        };
-
-        function initLiveSync(isManager) {
-            onSnapshot(collection(db, "customers"), (snap) => {
-                masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                if(isManager) {
-                    window.renderManagerDashboard();
-                    if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView();
-                    if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList();
-                } else {
-                    if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI();
-                }
-                if(document.getElementById('loginPage').classList.contains('active-page')) {
-                    window.navigate(isManager ? 'dashboardPage' : 'staffTargetPage');
-                }
-            });
-        }
-
-        function getPhone(d) { return phoneDirectory[d.nic] ? phoneDirectory[d.nic].phone : (d.phone || 'N/A'); }
-        
-        function extractDay(s) { 
-            if(!s || s==="undefined" || s.trim()==="") return -1; 
-            let d = String(s).trim().split(" ")[0]; 
-            let day = -1;
-            if(d.includes("-")) { let p = d.split("-"); day = p[2].length===4 ? parseInt(p[0], 10) : parseInt(p[2], 10); } 
-            else if(d.includes("/")) { let p = d.split("/"); day = p[2].length===4 ? parseInt(p[0], 10) : parseInt(p[1], 10); } 
-            else { day = parseInt(d, 10); }
-            return isNaN(day) ? -1 : day; 
-        }
-        function genDays(sel) { let h="<option value=''>Day</option>"; for(let i=1; i<=31; i++) { h += `<option value="${i}" ${sel == i ? 'selected' : ''}>${i}</option>`; } return h; }
-        
-        function generateRowHTML(d, rowC, isForwarded) {
-            let att = parseInt(d.callAttempts) || 0;
-            let pSelect = `<select id="pdt_${d.id}" style="width: 80px; padding: 6px; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff;">${genDays(d.promiseDate)}</select>`;            
-            let rawName = d.customerName || ""; let cName = (rawName !== "" && rawName !== "undefined") ? rawName : "නම නොමැත";
-            let safeNic = (d.nic || "N/A").replace(/'/g, "\\'"); let safeProd = (d.product || "N/A").replace(/'/g, "\\'"); let safeAddr = (d.address || "N/A").replace(/'/g, "\\'"); let safeDate = (d.agreeDate || "N/A").replace(/'/g, "\\'");
-            let badge = isForwarded ? `<span class="forward-badge">(Missed/Remind)</span>` : ``;            
-            let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
-
-            return `<tr class="${rowC} ${isForwarded ? 'row-forward' : ''}" id="row_${d.id}">
-                <td>${d.accountNo} ${typeBadge} ${badge}</td><td><b>${cName}</b></td>                
-                <td><input type="text" id="ph_${d.id}" value="${getPhone(d)}" style="width:105px; padding:6px; font-size:12px; text-align:center;"></td>                
-                <td><input type="number" id="att_${d.id}" value="${att}" min="0" style="width:45px; padding:6px; text-align:center;"></td>                
-                <td>
-                    <select id="action_${d.id}" style="width: 140px; padding: 6px; font-size: 12px; text-align:center;">
-                        <option value="">Select Action</option>                        
-                        <option value="Call Not Answer" ${d.notes==='Call Not Answer'?'selected':''}>Call Not Answer</option>                        
-                        <option value="Promised to Pay" ${d.notes==='Promised to Pay'?'selected':''}>Promised to Pay</option>                        
-                        <option value="Customer Paid" ${d.notes==='Customer Paid'?'selected':''}>Customer Paid</option>                        
-                        <option value="Bad Feedback" ${d.notes==='Bad Feedback'?'selected':''}>Bad Feedback</option>                    
-                    </select>                
-                </td>                
-                <td>${pSelect}</td>                
-                <td><button onclick="window.saveData('${d.id}')" style="padding: 6px 12px; font-size:11px;">SAVE</button></td>
-                <td><button class="btn-info" onclick="window.showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}')">❗️</button></td>
-            </tr>`;        
-        }
-
-        window.renderManagerDashboard = () => {
-            let t=0, y=0, r=0;
-            let totalArrears = 0, collectedAmount = 0, todayCalls = 0, successCalls = 0;
-
-            masterData.forEach(d => {
-                t++; let att = parseInt(d.callAttempts) || 0;
-                let isRisk = (att >= 3 || d.notes === "Bad Feedback");
+                const response = await fetch(CLOUD_API_URL);
+                const fbConfig = await response.json();
                 
-                if(d.listType === "Red") {
-                    r++; 
-                    let amt = Number(d.arrearsAmount) || 0;
-                    totalArrears += amt;
-                    if (d.notes === "Customer Paid") collectedAmount += amt;
-                } else if (isRisk) {
-                    y++;
+                if(fbConfig.error) {
+                    document.getElementById('loadStatusMsg').innerText = "SECURITY BREACH: Access Denied!";
+                    document.getElementById('loadStatusMsg').style.color = "red";
+                    return;
                 }
 
-                if (d.lastCallDate === sysToday && (att > 0 || d.notes !== "")) {
-                    todayCalls++;
-                    if (d.notes === "Customer Paid" || d.notes === "Promised to Pay") successCalls++;
-                }
-            });
+                app = initializeApp(fbConfig); 
+                auth = getAuth(app); 
+                db = getFirestore(app);
 
-            if(document.getElementById('dashTotal')) document.getElementById('dashTotal').innerText = t; 
-            if(document.getElementById('dashYellow')) document.getElementById('dashYellow').innerText = y; 
-            if(document.getElementById('dashRed')) document.getElementById('dashRed').innerText = r; 
-
-            if(document.getElementById('dashTotalArrears')) document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
-            if(document.getElementById('dashToCollect')) document.getElementById('dashToCollect').innerText = "Rs. " + (totalArrears - collectedAmount).toLocaleString('en-US');
-            if(document.getElementById('dashCollected')) document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
-            
-            if(document.getElementById('dashTodayCalls')) document.getElementById('dashTodayCalls').innerText = todayCalls;
-            if(document.getElementById('dashSuccessRate')) document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
-        };
-
-        window.navigateManagerCC = () => { window.navigate('callCenterDetailsPage'); window.syncManagerView(); };
-        window.filterRiskAccounts = () => { document.getElementById('logStatusFilter').value = "RISK"; window.navigateManagerCC(); }
-
-        window.syncManagerView = () => {
-            let filterDay = parseInt(document.getElementById('managerDayFilter').value);
-            let filterStatus = document.getElementById('logStatusFilter').value;
-            let html = "", targetRed = 0, targetOpen = 0, called = 0;
-            
-            let sortedData = [...masterData].sort((a,b) => {
-                let aTop = (parseInt(a.promiseDate) === filterDay || extractDay(a.agreeDate) === filterDay) && a.listType !== "Red" ? 1 : 0;
-                let bTop = (parseInt(b.promiseDate) === filterDay || extractDay(b.agreeDate) === filterDay) && b.listType !== "Red" ? 1 : 0;
-                return bTop - aTop;
-            });
-
-            sortedData.forEach(d => {
-                let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let att = parseInt(d.callAttempts) || 0;
-                let isRisk = (att >= 3 || d.notes === "Bad Feedback");
-
-                let showOnDay = false;
-                if(filterDay === td) {
-                    if(d.listType === "Red") showOnDay = true;
-                    else if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true;
-                    else if(agreeDay > 0 && agreeDay < filterDay && (att === 0 || d.notes === "Call Not Answer")) showOnDay = true;
-                } else {
-                    if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true;
-                    else if(d.listType === "Red") showOnDay = true;
-                }
-
-                if(showOnDay) {
-                    if(d.listType === "Red") targetRed++; else targetOpen++;
-                    if(att > 0 || d.notes === "Customer Paid") called++;
-                    let statusText = "Pending"; let rowC = "";
-                    if(d.listType === "Red") rowC = "row-red"; else if (isRisk) rowC = "row-yellow"; else if (att > 0) rowC = "row-green";
-                    if(d.notes === "Customer Paid") { statusText = "Paid"; rowC = "row-green"; } else if(att > 0) statusText = "Called";
-
-                    let show = true;
-                    if(filterStatus === "CALLED" && statusText === "Pending") show = false;
-                    if(filterStatus === "PENDING" && statusText !== "Pending") show = false;
-                    if(filterStatus === "RISK" && !isRisk) show = false;
-
-                    if(show) {
-                        let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-";
-                        let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත";
-                        let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
-                        html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${statusText}</b></td></tr>`;
-                    }
-                }
-            });
-            document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='7'>No records found for selected day/filter.</td></tr>";
-            document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;            
-            document.getElementById('fCalled').innerText = called;
-        };
-
-        window.renderFieldList = () => {
-            let filterAgent = document.getElementById('agentFilterDrop') ? document.getElementById('agentFilterDrop').value : "ALL";
-            let html = "";
-            let stats = { "Group Sale": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Heenpahana": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Rohan": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Amila": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 } };
-
-            masterData.forEach(d => {
-                if(d.listType === "Red") {
-                    let amt = parseFloat(d.arrearsAmount) || 0;
-                    let agent = d.fieldAgent || "Unknown";
-                    let isPaid = (d.notes === "Customer Paid");
-
-                    if(stats[agent]) {
-                        stats[agent].tAmt += amt;
-                        stats[agent].tAcc += 1;
-                        if(!isPaid) {
-                            stats[agent].cAmt += amt;
-                            stats[agent].cAcc += 1;
-                        }
-                    }
-
-                    if(filterAgent === "ALL" || filterAgent === agent) {
-                        let rClass = isPaid ? "row-green" : "row-red";
-                        let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත";
-                        html += `<tr class="${rClass}"><td>${d.accountNo}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${agent}</td><td>Rs. ${amt.toLocaleString('en-US')}</td></tr>`;
-                    }
-                }
-            });
-            document.getElementById('fieldDetailsBody').innerHTML = html || "<tr><td colspan='5'>No accounts found.</td></tr>";
-            
-            ["Group Sale", "Heenpahana", "Rohan", "Amila"].forEach((ag, idx) => {
-                let code = ["G", "H", "R", "D"][idx];
-                let tAmt = stats[ag].tAmt; let cAmt = stats[ag].cAmt;
-                let amtRate = tAmt > 0 ? Math.round(((tAmt - cAmt) / tAmt) * 100) : 0; 
-                let tAcc = stats[ag].tAcc; let cAcc = stats[ag].cAcc;
-                let accRate = tAcc > 0 ? Math.round(((tAcc - cAcc) / tAcc) * 100) : 0; 
-
-                document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`;
-                document.getElementById(`fAcc_${code}`).innerText = tAcc;
-                document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`;
-                document.getElementById(`cAcc_${code}`).innerText = cAcc;
-                document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`;
-                document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
-            });
-        };
-
-        window.renderStaffUI = () => {
-            let filterDay = parseInt(document.getElementById('staffDayFilter') ? document.getElementById('staffDayFilter').value : td) || td;
-            
-            if(filterDay !== td) document.getElementById('dateWarning').style.display = 'block';
-            else document.getElementById('dateWarning').style.display = 'none';
-
-            let html = "", targetOpen = 0, targetRed = 0;
-            let sortedData = [...masterData].sort((a,b) => {
-                let aProm = parseInt(a.promiseDate) === filterDay ? 1 : 0; let bProm = parseInt(b.promiseDate) === filterDay ? 1 : 0;
-                if(aProm !== bProm) return bProm - aProm; 
-                let aOpenToday = (a.listType !== "Red" && extractDay(a.agreeDate) === filterDay) ? 1 : 0; let bOpenToday = (b.listType !== "Red" && extractDay(b.agreeDate) === filterDay) ? 1 : 0;
-                if(aOpenToday !== bOpenToday) return bOpenToday - aOpenToday; 
-                let aRed = a.listType === "Red" ? 1 : 0; let bRed = b.listType === "Red" ? 1 : 0;
-                if(aRed !== bRed) return bRed - aRed; 
-                return (Number(b.arrearsAmount)||0) - (Number(a.arrearsAmount)||0);
-            });
-
-            sortedData.forEach(d => {
-                if (d.notes === "Customer Paid") return; 
-
-                let att = parseInt(d.callAttempts) || 0; let isRisk = (att >= 3 || d.notes === "Bad Feedback");
-                let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : "");
-
-                let isTargetToday = false; let isForwarded = false;
-                let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
-
-                if (d.listType === "Red") {
-                    if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > filterDay) isTargetToday = false; 
-                    else isTargetToday = true;
-                } else if (!isNaN(promiseDay) && promiseDay > 0) {
-                    if(promiseDay === filterDay) { isTargetToday = true; }
-                    else if (promiseDay < filterDay && filterDay === td) { isTargetToday = true; isForwarded = true; }
-                } else if (agreeDay > 0) {
-                    if(agreeDay === filterDay) { isTargetToday = true; }
-                    else if (agreeDay < filterDay && att === 0 && filterDay === td) { isTargetToday = true; isForwarded = true; }
-                } 
-                if (d.listType !== "Red" && d.notes === "Call Not Answer" && filterDay === td) { isTargetToday = true; isForwarded = true; }
-
-                if (isTargetToday) {
-                    if(d.listType === "Red") targetRed++; else targetOpen++;
-                    html += generateRowHTML(d, rowC, isForwarded);
-                }
-            });
-            document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>අද දිනට ඉලක්ක නොමැත! (All targets completed)</td></tr>";
-            document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;        
-        };
-
-        window.searchGlobalStaffTable = () => {
-            let f = document.getElementById('staffSearch').value.toLowerCase().trim();
-            if(f === "") { window.renderStaffUI(); return; } 
-
-            let html = ""; let searchCount = 0;
-            masterData.forEach(d => {
-                let safeAcc = String(d.accountNo || "").toLowerCase();
-                if(safeAcc.includes(f)) {
-                    let isRisk = (parseInt(d.callAttempts) >= 3 || d.notes === "Bad Feedback");
-                    let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : "");
-                    html += generateRowHTML(d, rowC, false); searchCount++;
-                }
-            });
-            document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>ගිණුම් නොමැත (No accounts found).</td></tr>";
-            document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
-        };
-
-        window.saveData = async (docId) => {
-            let action = document.getElementById(`action_${docId}`).value; let phoneVal = document.getElementById(`ph_${docId}`).value.trim(); let pDate = document.getElementById(`pdt_${docId}`).value; let currentAtt = parseInt(document.getElementById(`att_${docId}`).value) || 0;
-            if(action === "") { alert("❌ Please select an action (Feedback)!"); return; }
-            if(action === "Promised to Pay" && pDate === "") { alert("❌ Please select a Promise Day (1-31)!"); return; }
-
-            let d = masterData.find(x => x.id === docId);
-            if(phoneVal !== d.phone && phoneVal !== "") await setDoc(doc(db, "phoneDirectory", d.nic || docId), { phone: phoneVal, name: d.customerName });
-            await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
-            
-            let btn = document.querySelector(`#row_${docId} button`); btn.innerText = "SAVED"; btn.style.background = "#4caf50";
-            setTimeout(() => { let row = document.getElementById(`row_${docId}`); if(row) row.style.display = 'none'; }, 800);
-            if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); 
-        };
-
-        window.downloadPhoneDirectory = () => {
-            let csvContent = "data:text/csv;charset=utf-8,NIC,Customer Name,Phone Number\n";
-            for (const [nic, data] of Object.entries(phoneDirectory)) { 
-                let cleanName = (data.name || 'N/A').replace(/,/g, ''); 
-                csvContent += `${nic},"${cleanName}",${data.phone}\n`; 
+                document.getElementById('loadStatusMsg').innerText = "System Ready. Redirecting...";
+                setTimeout(() => window.navigate('loginPage'), 1500);
+                
+                attachSystemFunctions(); 
+            } catch (err) {
+                document.getElementById('loadStatusMsg').innerText = "Failed to connect to Aura Secure Brain.";
+                document.getElementById('loadStatusMsg').style.color = "red";
             }
-            var encodedUri = encodeURI(csvContent); var link = document.createElement("a");
-            link.setAttribute("href", encodedUri); link.setAttribute("download", "Singer_Phone_Directory.csv");
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        };
+        }
 
-        window.showMasterModal = (nic, prod, addr, date) => {
-            document.getElementById('m_nic').innerText = nic; document.getElementById('m_prod').innerText = prod;
-            document.getElementById('m_addr').innerText = addr; document.getElementById('m_date').innerText = date;
-            document.getElementById('infoModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
-        };
-        window.closeModal = () => { document.getElementById('infoModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
-        
-        window.uploadExcel = async (ev, type) => {
-            const file = ev.target.files[0]; const reader = new FileReader();
-            if(!file) return;
-            document.getElementById('loadMsg').style.display = 'block';
-            
-            reader.onload = async (e) => {
+        function attachSystemFunctions() {
+            window.logout = () => { signOut(auth).then(() => { sessionStorage.removeItem("singerCache"); window.navigate('loginPage'); document.getElementById('loginStatus').innerText = ""; }); };
+
+            window.login = async () => {
+                const e = document.getElementById('username').value.trim().toLowerCase(); 
+                const p = document.getElementById('password').value;
+                const status = document.getElementById('loginStatus'); status.innerText = "⏳ Authenticating...";
                 try {
-                    const user = auth.currentUser;
-                    if (!user) throw new Error("You must be logged in to upload files!");
-                    const token = await user.getIdToken();
-
-                    const workbook = XLSX.read(e.target.result, {type:'array'});
-                    const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
-                    
-                    let deleteIds = []; let resetRedIds = []; 
-                    
-                    let excelIds = data.map(rawRow => {
-                        let cleanRow = {};
-                        for (let k in rawRow) { 
-                            let cleanK = String(k).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-                            cleanRow[cleanK] = rawRow[k]; 
-                        }
-                        let rawAcc = "";
-                        if (type === 'New') {
-                            rawAcc = cleanRow["ORIGINALACCTNO"] || cleanRow["ACCTNO"] || cleanRow["ACCNO"] || cleanRow["ACCOUNTNO"] || "";
-                        } else {
-                            rawAcc = cleanRow["ACCNO"] || cleanRow["ACCOUNTNO"] || cleanRow["ACCTNO"] || "";
-                        }
-                        return String(rawAcc).toUpperCase().replace(/[^A-Z0-9]/g, '');
-                    }).filter(id => id.length >= 4);
-
-                    if (excelIds.length < 10 && data.length > 10) {
-                        alert("❌ දෝෂයකි! Excel File එකේ ගිණුම් අංක හඳුනාගත නොහැක.");
-                        document.getElementById('loadMsg').style.display = 'none'; ev.target.value = '';
-                        return; 
-                    }
-
-                    if (type === 'New') {
-                        document.getElementById('loadMsg').innerText = "⏳ Preparing Cleanup...";
-                        deleteIds = masterData.filter(d => !excelIds.includes(d.id)).map(d => d.id);
-                    } else {
-                        document.getElementById('loadMsg').innerText = "⏳ Preparing Arrears Sync...";
-                        resetRedIds = masterData.filter(d => d.listType === "Red" && !excelIds.includes(d.id)).map(d => d.id);
-                    }
-
-                    document.getElementById('loadMsg').innerText = "⏳ Sending Data to Secure Vault...";
-                    
-                    let res = await fetch(CLOUD_URL, { 
-                        method: 'POST', 
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}` 
-                        },
-                        body: JSON.stringify({ listType: type, data: data, deleteIds: deleteIds, resetRedIds: resetRedIds }) 
+                    await signInWithEmailAndPassword(auth, e, p);
+                    status.innerText = "✅ Loading Data...";
+                    onSnapshot(collection(db, "phoneDirectory"), (snap) => {
+                        snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
                     });
                     
-                    let resData = await res.json();
-
-                    if (resData.success) {
-                        alert("✅ Sync Complete! Data is securely processed."); 
-                    } else {
-                        alert("❌ Backend Error: " + resData.error);
-                    }
+                    let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
+                    initLiveSync(isManager);
                     
-                    document.getElementById('loadMsg').style.display = 'none'; ev.target.value = '';
-                } catch(err) { 
-                    alert("❌ Error: " + err.message); document.getElementById('loadMsg').style.display = 'none'; ev.target.value = '';
-                }
+                } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; }
             };
-            reader.readAsArrayBuffer(file);
-        };
+
+            function initLiveSync(isManager) {
+                onSnapshot(collection(db, "customers"), (snap) => {
+                    masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                    if(isManager) {
+                        window.renderManagerDashboard();
+                        if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView();
+                        if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList();
+                    } else {
+                        if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI();
+                    }
+                    if(document.getElementById('loginPage').classList.contains('active-page')) {
+                        window.navigate(isManager ? 'dashboardPage' : 'staffTargetPage');
+                    }
+                });
+            }
+
+            function getPhone(d) { return phoneDirectory[d.nic] ? phoneDirectory[d.nic].phone : (d.phone || 'N/A'); }
+            
+            function extractDay(s) { 
+                if(!s || s==="undefined" || s.trim()==="") return -1; 
+                let d = String(s).trim().split(" ")[0]; 
+                let day = -1;
+                if(d.includes("-")) { let p = d.split("-"); day = p[2].length===4 ? parseInt(p[0], 10) : parseInt(p[2], 10); } 
+                else if(d.includes("/")) { let p = d.split("/"); day = p[2].length===4 ? parseInt(p[0], 10) : parseInt(p[1], 10); } 
+                else { day = parseInt(d, 10); }
+                return isNaN(day) ? -1 : day; 
+            }
+            function genDays(sel) { let h="<option value=''>Day</option>"; for(let i=1; i<=31; i++) { h += `<option value="${i}" ${sel == i ? 'selected' : ''}>${i}</option>`; } return h; }
+
+            function generateRowHTML(d, rowC, isForwarded) {
+                let att = parseInt(d.callAttempts) || 0;
+                let pSelect = `<select id="pdt_${d.id}" style="width: 80px; padding: 6px; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff;">${genDays(d.promiseDate)}</select>`;
+                let rawName = d.customerName || ""; let cName = (rawName !== "" && rawName !== "undefined") ? rawName : "නම නොමැත";
+                let safeNic = (d.nic || "N/A").replace(/'/g, "\\'"); let safeProd = (d.product || "N/A").replace(/'/g, "\\'"); let safeAddr = (d.address || "N/A").replace(/'/g, "\\'"); let safeDate = (d.agreeDate || "N/A").replace(/'/g, "\\'");
+                let badge = isForwarded ? `<span class="forward-badge">(Missed/Remind)</span>` : ``;
+                let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
+
+                return `<tr class="${rowC} ${isForwarded ? 'row-forward' : ''}" id="row_${d.id}">
+                    <td>${d.accountNo} ${typeBadge} ${badge}</td><td><b>${cName}</b></td>
+                    <td><input type="text" id="ph_${d.id}" value="${getPhone(d)}" style="width:105px; padding:6px; font-size:12px; text-align:center;"></td>
+                    <td><input type="number" id="att_${d.id}" value="${att}" min="0" style="width:45px; padding:6px; text-align:center;"></td>
+                    <td>
+                        <select id="action_${d.id}" style="width: 140px; padding: 6px; font-size: 12px; text-align:center;">
+                            <option value="">Select Action</option>
+                            <option value="Call Not Answer" ${d.notes==='Call Not Answer'?'selected':''}>Call Not Answer</option>
+                            <option value="Promised to Pay" ${d.notes==='Promised to Pay'?'selected':''}>Promised to Pay</option>
+                            <option value="Customer Paid" ${d.notes==='Customer Paid'?'selected':''}>Customer Paid</option>
+                            <option value="Bad Feedback" ${d.notes==='Bad Feedback'?'selected':''}>Bad Feedback</option>
+                        </select>
+                    </td>
+                    <td>${pSelect}</td>
+                    <td><button onclick="window.saveData('${d.id}')" style="padding: 6px 12px; font-size:11px;">SAVE</button></td>
+                    <td><button class="btn-info" onclick="window.showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}')">❗️</button></td>
+                </tr>`;
+            }
+
+            window.renderManagerDashboard = () => {
+                let t = 0, y = 0, r = 0;
+                let totalArrears = 0, collectedAmount = 0; 
+                let todayCalls = 0, successCalls = 0; 
+
+                masterData.forEach(d => {
+                    t++; 
+                    let att = parseInt(d.callAttempts) || 0;
+                    let isRisk = (att >= 3 || d.notes === "Bad Feedback");
+                    
+                    if (d.listType === "Red") {
+                        r++;
+                        let amt = Number(d.arrearsAmount) || 0;
+                        totalArrears += amt;
+                        if (d.notes === "Customer Paid") collectedAmount += amt;
+                    } else if (isRisk) {
+                        y++;
+                    }
+
+                    if (d.lastCallDate === sysToday && (att > 0 || d.notes !== "")) {
+                        todayCalls++;
+                        if (d.notes === "Customer Paid" || d.notes === "Promised to Pay") successCalls++;
+                    }
+                });
+
+                let toCollect = totalArrears - collectedAmount; 
+
+                document.getElementById('dashTotal').innerText = t; 
+                document.getElementById('dashYellow').innerText = y; 
+                document.getElementById('dashRed').innerText = r; 
+
+                document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
+                document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
+                document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
+
+                document.getElementById('dashTodayCalls').innerText = todayCalls;
+                document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
+            };
+
+            window.syncManagerView = () => {
+                let filterDay = parseInt(document.getElementById('managerDayFilter').value);
+                let filterStatus = document.getElementById('logStatusFilter').value;
+                let html = "", targetRed = 0, targetOpen = 0, called = 0;
+                
+                let sortedData = [...masterData].sort((a,b) => {
+                    let aTop = (parseInt(a.promiseDate) === filterDay || extractDay(a.agreeDate) === filterDay) && a.listType !== "Red" ? 1 : 0;
+                    let bTop = (parseInt(b.promiseDate) === filterDay || extractDay(b.agreeDate) === filterDay) && b.listType !== "Red" ? 1 : 0;
+                    return bTop - aTop;
+                });
+
+                sortedData.forEach(d => {
+                    let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let att = parseInt(d.callAttempts) || 0;
+                    let isRisk = (att >= 3 || d.notes === "Bad Feedback");
+
+                    let showOnDay = false;
+                    if(filterDay === td) {
+                        if(d.listType === "Red") showOnDay = true;
+                        else if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true;
+                        else if(agreeDay > 0 && agreeDay < filterDay && (att === 0 || d.notes === "Call Not Answer")) showOnDay = true;
+                    } else {
+                        if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true;
+                        else if(d.listType === "Red") showOnDay = true;
+                    }
+
+                    if(showOnDay) {
+                        if(d.listType === "Red") targetRed++; else targetOpen++;
+                        if(att > 0 || d.notes === "Customer Paid") called++;
+                        let statusText = "Pending"; let rowC = "";
+                        if(d.listType === "Red") rowC = "row-red"; else if (isRisk) rowC = "row-yellow"; else if (att > 0) rowC = "row-green";
+                        if(d.notes === "Customer Paid") { statusText = "Paid"; rowC = "row-green"; } else if(att > 0) statusText = "Called";
+
+                        let show = true;
+                        if(filterStatus === "CALLED" && statusText === "Pending") show = false;
+                        if(filterStatus === "PENDING" && statusText !== "Pending") show = false;
+                        if(filterStatus === "RISK" && !isRisk) show = false;
+
+                        if(show) {
+                            let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-";
+                            let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත";
+                            let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
+                            html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${statusText}</b></td></tr>`;
+                        }
+                    }
+                });
+                document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='7'>No records found for selected day/filter.</td></tr>";
+                document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
+                document.getElementById('fCalled').innerText = called;
+            };
+
+            window.renderFieldList = () => {
+                let filterAgent = document.getElementById('agentFilterDrop') ? document.getElementById('agentFilterDrop').value : "ALL";
+                let html = "";
+                let stats = { "Group Sale": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Heenpahana": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Rohan": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Amila": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 } };
+
+                masterData.forEach(d => {
+                    if(d.listType === "Red") {
+                        let amt = Number(d.arrearsAmount) || 0;
+                        let agent = d.fieldAgent || "Unknown";
+                        let isPaid = (d.notes === "Customer Paid");
+
+                        if(stats[agent]) {
+                            stats[agent].tAmt += amt;
+                            stats[agent].tAcc += 1;
+                            if(!isPaid) {
+                                stats[agent].cAmt += amt;
+                                stats[agent].cAcc += 1;
+                            }
+                        }
+
+                        if(filterAgent === "ALL" || filterAgent === agent) {
+                            let rClass = isPaid ? "row-green" : "row-red";
+                            let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත";
+                            html += `<tr class="${rClass}"><td>${d.accountNo}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${agent}</td><td>Rs. ${amt.toLocaleString('en-US')}</td></tr>`;
+                        }
+                    }
+                });
+                document.getElementById('fieldDetailsBody').innerHTML = html || "<tr><td colspan='5'>No accounts found.</td></tr>";
+                
+                ["Group Sale", "Heenpahana", "Rohan", "Amila"].forEach((ag, idx) => {
+                    let code = ["G", "H", "R", "D"][idx];
+                    let tAmt = stats[ag].tAmt; let cAmt = stats[ag].cAmt;
+                    let amtRate = tAmt > 0 ? Math.round(((tAmt - cAmt) / tAmt) * 100) : 0; 
+                    let tAcc = stats[ag].tAcc; let cAcc = stats[ag].cAcc;
+                    let accRate = tAcc > 0 ? Math.round(((tAcc - cAcc) / tAcc) * 100) : 0; 
+
+                    document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`;
+                    document.getElementById(`fAcc_${code}`).innerText = tAcc;
+                    document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`;
+                    document.getElementById(`cAcc_${code}`).innerText = cAcc;
+                    document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`;
+                    document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
+                });
+            };
+
+            window.renderStaffUI = () => {
+                let filterDay = parseInt(document.getElementById('staffDayFilter').value) || td;
+                
+                if(filterDay !== td) document.getElementById('dateWarning').style.display = 'block';
+                else document.getElementById('dateWarning').style.display = 'none';
+
+                let html = "", targetOpen = 0, targetRed = 0;
+                
+                let sortedData = [...masterData].sort((a,b) => {
+                    let aProm = parseInt(a.promiseDate) === filterDay ? 1 : 0; let bProm = parseInt(b.promiseDate) === filterDay ? 1 : 0;
+                    if(aProm !== bProm) return bProm - aProm; 
+                    let aOpenToday = (a.listType !== "Red" && extractDay(a.agreeDate) === filterDay) ? 1 : 0; let bOpenToday = (b.listType !== "Red" && extractDay(b.agreeDate) === filterDay) ? 1 : 0;
+                    if(aOpenToday !== bOpenToday) return bOpenToday - aOpenToday; 
+                    let aRed = a.listType === "Red" ? 1 : 0; let bRed = b.listType === "Red" ? 1 : 0;
+                    if(aRed !== bRed) return bRed - aRed; 
+                    return (Number(b.arrearsAmount)||0) - (Number(a.arrearsAmount)||0);
+                });
+
+                sortedData.forEach(d => {
+                    if (d.notes === "Customer Paid") return; 
+
+                    let att = parseInt(d.callAttempts) || 0; 
+                    let isRisk = (att >= 3 || d.notes === "Bad Feedback");
+                    let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : "");
+
+                    let isTargetForDay = false; 
+                    let isForwarded = false; 
+                    
+                    let agreeDay = extractDay(d.agreeDate); 
+                    let promiseDay = parseInt(d.promiseDate);
+
+                    if (d.listType === "Red") {
+                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > filterDay) isTargetForDay = false; 
+                        else isTargetForDay = true;
+                    } else {
+                        if (!isNaN(promiseDay) && promiseDay > 0) {
+                            if (promiseDay === filterDay) { isTargetForDay = true; }
+                            else if (promiseDay < filterDay && filterDay === td) { isTargetForDay = true; isForwarded = true; } 
+                        } else if (agreeDay > 0) {
+                            if (agreeDay === filterDay) { isTargetForDay = true; }
+                            else if (agreeDay < filterDay && att === 0 && filterDay === td) { isTargetForDay = true; isForwarded = true; } 
+                        } 
+                        
+                        if (d.notes === "Call Not Answer" && filterDay === td) { isTargetForDay = true; isForwarded = true; }
+                    }
+
+                    if (isTargetForDay) {
+                        if(d.listType === "Red") targetRed++; else targetOpen++;
+                        html += generateRowHTML(d, rowC, isForwarded);
+                    }
+                });
+                
+                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>මෙම දිනය සඳහා ගිණුම් නොමැත! (No targets for selected date)</td></tr>";
+                document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
+            };
+
+            window.searchGlobalStaffTable = () => {
+                let f = document.getElementById('staffSearch').value.toLowerCase().trim();
+                if(f === "") { window.renderStaffUI(); return; } 
+
+                let html = ""; let searchCount = 0;
+                masterData.forEach(d => {
+                    let safeAcc = String(d.accountNo || "").toLowerCase();
+                    if(safeAcc.includes(f)) {
+                        let isRisk = (parseInt(d.callAttempts) >= 3 || d.notes === "Bad Feedback");
+                        let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : "");
+                        html += generateRowHTML(d, rowC, false); searchCount++;
+                    }
+                });
+                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>ගිණුම් නොමැත (No accounts found).</td></tr>";
+                document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
+            };
+
+            window.saveData = async (docId) => {
+                let action = document.getElementById(`action_${docId}`).value; let phoneVal = document.getElementById(`ph_${docId}`).value.trim(); let pDate = document.getElementById(`pdt_${docId}`).value; let currentAtt = parseInt(document.getElementById(`att_${docId}`).value) || 0;
+                if(action === "") { alert("❌ Please select an action (Feedback)!"); return; }
+                if(action === "Promised to Pay" && pDate === "") { alert("❌ Please select a Promise Day (1-31)!"); return; }
+
+                let d = masterData.find(x => x.id === docId);
+                
+                let phoneKey = d.nic !== "" ? d.nic : docId; 
+                if(phoneVal !== d.phone && phoneVal !== "") {
+                    await setDoc(doc(db, "phoneDirectory", phoneKey), { phone: phoneVal, name: d.customerName });
+                }
+                
+                await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
+                
+                let btn = document.querySelector(`#row_${docId} button`); btn.innerText = "SAVED"; btn.style.background = "#4caf50";
+                setTimeout(() => { let row = document.getElementById(`row_${docId}`); if(row) row.style.display = 'none'; }, 800);
+                
+                if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); 
+            };
+
+            window.downloadPhoneDirectory = () => {
+                let csvContent = "data:text/csv;charset=utf-8,NIC / Account ID,Customer Name,Phone Number\n";
+                for (const [key, data] of Object.entries(phoneDirectory)) { 
+                    let cleanName = (data.name || 'N/A').replace(/,/g, ''); 
+                    csvContent += `${key},"${cleanName}",${data.phone}\n`; 
+                }
+                var encodedUri = encodeURI(csvContent); var link = document.createElement("a");
+                link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Customer_Phonebook.csv");
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            };
+
+            window.showMasterModal = (nic, prod, addr, date) => {
+                document.getElementById('m_nic').innerText = nic; document.getElementById('m_prod').innerText = prod;
+                document.getElementById('m_addr').innerText = addr; document.getElementById('m_date').innerText = date;
+                document.getElementById('infoModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
+            };
+            window.closeModal = () => { document.getElementById('infoModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
+            
+            window.uploadExcel = async (ev, type) => {
+                const file = ev.target.files[0]; const reader = new FileReader();
+                if(!file) return;
+                document.getElementById('loadMsg').style.display = 'block';
+                
+                reader.onload = async (e) => {
+                    try {
+                        const user = auth.currentUser;
+                        if (!user) throw new Error("You must be logged in to upload files!");
+                        const token = await user.getIdToken();
+
+                        const workbook = XLSX.read(e.target.result, {type:'array'});
+                        const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
+                        
+                        document.getElementById('loadMsg').innerText = "⏳ Cleaning up old records...";
+
+                        let excelIds = data.map(rawRow => {
+                            let cleanRow = {};
+                            for (let k in rawRow) { cleanRow[String(k).toUpperCase().replace(/[^A-Z0-9]/g, '')] = rawRow[k]; }
+                            let rawAcc = (type === 'New') ? (cleanRow["ORIGINALACCTNO"] || cleanRow["ACCTNO"] || cleanRow["ACCNO"] || cleanRow["ACCOUNTNO"] || "") : (cleanRow["ACCNO"] || cleanRow["ACCOUNTNO"] || cleanRow["ACCTNO"] || cleanRow["RESULTKEY"] || "");
+                            return String(rawAcc).toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        }).filter(id => id.length >= 4);
+
+                        if(excelIds.length < 10 && data.length > 10) {
+                            throw new Error("Could not detect Account Numbers in the Excel file. Please check the columns.");
+                        }
+
+                        let deleteIds = []; let resetRedIds = [];
+                        if (type === 'New') {
+                            deleteIds = masterData.filter(d => !excelIds.includes(d.id)).map(d => d.id);
+                        } else {
+                            resetRedIds = masterData.filter(d => d.listType === "Red" && !excelIds.includes(d.id)).map(d => d.id);
+                        }
+
+                        document.getElementById('loadMsg').innerText = "⏳ Connecting to Aura Secure Brain...";
+
+                        let totalProcessed = 0;
+                        for (let i = 0; i < data.length; i += 200) {
+                            const chunk = data.slice(i, i + 200);
+                            let res = await fetch(CLOUD_API_URL, { 
+                                method: 'POST', 
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}` 
+                                },
+                                body: JSON.stringify({ listType: type, data: chunk, deleteIds: deleteIds, resetRedIds: resetRedIds }) 
+                            });
+                            let resData = await res.json();
+                            
+                            if(!resData.success) throw new Error(resData.error);
+                            
+                            totalProcessed += chunk.length;
+                            document.getElementById('loadMsg').innerText = `⏳ Processing: ${totalProcessed} / ${data.length} ...`;
+                        }
+
+                        alert("✅ Aura Secure Upload Complete! Data is safely stored."); 
+                        document.getElementById('loadMsg').style.display = 'none'; ev.target.value = '';
+
+                    } catch(err) { 
+                        alert("❌ Upload Error: " + err.message); 
+                        document.getElementById('loadMsg').style.display = 'none'; ev.target.value = '';
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            };
+        }
+
+        bootSecureSystem();
     </script>
 </body>
 </html>
