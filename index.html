@@ -98,17 +98,12 @@
             </div>
             <div>
                 <div class="stat-box"><span>Total Active Accounts</span><div class="stat-value" id="dashTotal">0</div></div>
-                
                 <div class="stat-box" style="border-color: #ffc107;">
                     <span style="color: #ffeb3b;">Risk Accounts (Yellow)</span>
                     <button onclick="window.filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
-
-                <div class="stat-box" style="border-color: #f44336;">
-                    <span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span>
-                    <div class="stat-value" id="dashRed">0</div>
-                </div>
+                <div class="stat-box" style="border-color: #f44336;"><span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span><div class="stat-value" id="dashRed">0</div></div>
 
                 <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
@@ -270,26 +265,13 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 1. ඔයාගේ Firebase Config (Aura) 🌟
-        const fbConfig = {
-            apiKey: "AIzaSyCkvMk3DQt5Bq3rK_bA-GThbxB4wOXNq1g",
-            authDomain: "aura-7bc62.firebaseapp.com",
-            projectId: "aura-7bc62",
-            storageBucket: "aura-7bc62.firebasestorage.app",
-            messagingSenderId: "791728658552",
-            appId: "1:791728658552:web:7f62baa17d44e40dc5b58d"
-        };
-
-        const app = initializeApp(fbConfig); 
-        const auth = getAuth(app); 
-        const db = getFirestore(app);
-
-        // 🌟 2. ඔයාගේ Cloudflare ලින්ක් එක (Aura) 🌟
+        // 🔴 2. මෙතන API Keys නෑ. ඔයාගේ Cloudflare ලින්ක් එක විතරයි තියෙන්නේ. 🔴
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
+        let app, auth, db;
         let masterData = []; 
         let phoneDirectory = {}; 
 
@@ -311,17 +293,47 @@
         };
         setupFilters();
 
+        // 🌟 3. සිස්ටම් එක ලෝඩ් වෙද්දී Cloudflare එකෙන් Keys ටික ඉල්ලගන්නවා 🌟
         async function bootSecureSystem() {
             try {
-                // Verify link is alive
                 const response = await fetch(CLOUD_API_URL);
-                const check = await response.json();
-                if(check.error) throw new Error("Security Breach");
+                if (!response.ok) throw new Error("Failed to reach Cloudflare.");
+                
+                const fbConfig = await response.json();
+                if(fbConfig.error) {
+                    document.getElementById('loadStatusMsg').innerText = "SECURITY BREACH: Access Denied!";
+                    document.getElementById('loadStatusMsg').style.color = "red";
+                    return;
+                }
+
+                // Cloudflare එකෙන් ආපු Keys වලින් Firebase පටන් ගන්නවා
+                app = initializeApp(fbConfig); 
+                auth = getAuth(app); 
+                db = getFirestore(app);
 
                 document.getElementById('loadStatusMsg').innerText = "System Ready. Redirecting...";
-                setTimeout(() => window.navigate('loginPage'), 1500);
+                
+                setTimeout(() => {
+                    document.getElementById('welcomePage').classList.remove('active-page');
+                    onAuthStateChanged(auth, (user) => {
+                        if (user) {
+                            let e = user.email.toLowerCase();
+                            let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
+                            
+                            onSnapshot(collection(db, "phoneDirectory"), (snap) => {
+                                snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
+                            });
+                            
+                            initLiveSync(isManager);
+                        } else {
+                            window.navigate('loginPage');
+                        }
+                    });
+                }, 1500);
+
                 attachSystemFunctions(); 
             } catch (err) {
+                console.error(err);
                 document.getElementById('loadStatusMsg').innerText = "Failed to connect to Aura Secure Brain.";
                 document.getElementById('loadStatusMsg').style.color = "red";
             }
@@ -337,13 +349,6 @@
                 try {
                     await signInWithEmailAndPassword(auth, e, p);
                     status.innerText = "✅ Loading Data...";
-                    onSnapshot(collection(db, "phoneDirectory"), (snap) => {
-                        snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
-                    });
-                    
-                    let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
-                    initLiveSync(isManager);
-                    
                 } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; }
             };
 
@@ -430,16 +435,16 @@
 
                 let toCollect = totalArrears - collectedAmount; 
 
-                document.getElementById('dashTotal').innerText = t; 
-                document.getElementById('dashYellow').innerText = y; 
-                document.getElementById('dashRed').innerText = r; 
+                if(document.getElementById('dashTotal')) document.getElementById('dashTotal').innerText = t; 
+                if(document.getElementById('dashYellow')) document.getElementById('dashYellow').innerText = y; 
+                if(document.getElementById('dashRed')) document.getElementById('dashRed').innerText = r; 
 
-                document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
-                document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
-                document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
+                if(document.getElementById('dashTotalArrears')) document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
+                if(document.getElementById('dashToCollect')) document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
+                if(document.getElementById('dashCollected')) document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
 
-                document.getElementById('dashTodayCalls').innerText = todayCalls;
-                document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
+                if(document.getElementById('dashTodayCalls')) document.getElementById('dashTodayCalls').innerText = todayCalls;
+                if(document.getElementById('dashSuccessRate')) document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
             };
 
             window.syncManagerView = () => {
@@ -556,7 +561,6 @@
                 });
 
                 sortedData.forEach(d => {
-                    // 🌟 Customer Paid කරපු ගමන් ලිස්ට් එකෙන් අයින් වෙන ලොජික් එක 🌟
                     if (d.notes === "Customer Paid") return; 
 
                     let att = parseInt(d.callAttempts) || 0; 
@@ -570,11 +574,9 @@
                     let promiseDay = parseInt(d.promiseDate);
 
                     if (d.listType === "Red") {
-                        // Red අය අනිවාර්යයෙන්ම එනවා, Paid දානකම්!
                         if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > filterDay) isTargetForDay = false; 
                         else isTargetForDay = true;
                     } else {
-                        // Open ලිස්ට් එකේ දවස අනුව එන ලොජික් එක
                         if (!isNaN(promiseDay) && promiseDay > 0) {
                             if (promiseDay === filterDay) { isTargetForDay = true; }
                             else if (promiseDay < filterDay && filterDay === td) { isTargetForDay = true; isForwarded = true; } 
@@ -718,6 +720,7 @@
             };
         }
 
+        // Initialize Everything
         bootSecureSystem();
     </script>
 </body>
