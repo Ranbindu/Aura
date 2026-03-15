@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aura Recovery Management System</title>
+    <title>Singer Arrears Management System - Master Premium</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; background: url('https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920&auto=format&fit=crop') no-repeat center fixed; background-size: cover; color: #fff; display: flex; justify-content: center; min-height: 100vh; }
@@ -63,11 +63,6 @@
             document.querySelectorAll('.page-container').forEach(function(p) { p.classList.remove('active-page'); });
             document.getElementById(pageId).classList.add('active-page'); window.scrollTo(0,0);
         };
-        document.addEventListener("DOMContentLoaded", function() {
-            setTimeout(function() {
-                if(document.getElementById('welcomePage').classList.contains('active-page')) window.navigate('loginPage');
-            }, 2000);
-        });
     </script>
 
     <div id="welcomePage" class="page-container active-page glass-panel" style="text-align: center; margin-top: 15vh;">
@@ -79,8 +74,8 @@
         <div class="glass-panel" style="max-width: 400px; margin: auto; padding: 50px; text-align: center;">
             <h2 class="mb-20">SECURE LOGIN</h2>
             <input type="text" id="username" placeholder="Email Address">
-            <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') login()">
-            <button onclick="login()" id="loginBtn" style="width: 100%; margin-top: 20px; padding: 15px;">LOGIN TO SYSTEM</button>
+            <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()">
+            <button onclick="window.login()" id="loginBtn" style="width: 100%; margin-top: 20px; padding: 15px;">LOGIN TO SYSTEM</button>
             <div id="loginStatus" style="color: #ff8a80; margin-top: 15px; font-weight: bold;"></div>
         </div>
     </div>
@@ -88,14 +83,14 @@
     <div id="dashboardPage" class="page-container glass-panel">
         <div class="flex-between mb-20">
             <h2 class="branch-name" style="margin:0;">MANAGER DASHBOARD</h2>
-            <button onclick="logout()" class="btn-danger">Logout</button>
+            <button onclick="window.logout()" class="btn-danger">Logout</button>
         </div>
         <div class="dashboard-grid">
             <div class="sidebar-menu">
-                <button onclick="navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
-                <button onclick="navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
-                <button onclick="navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
-                <button onclick="downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
+                <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
+                <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
+                <button onclick="window.navigate('fieldDetailsPage')" style="width: 100%; margin-bottom: 10px;">🏃 Field Agent Collection</button>
+                <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50;">
                     <h3 style="margin-bottom: 5px; font-size: 14px;">Today's Success Rate</h3>
@@ -108,10 +103,10 @@
                 <div class="stat-box"><span>Total Active Accounts</span><div class="stat-value" id="dashTotal">0</div></div>
                 <div class="stat-box" style="border-color: #ffc107;">
                     <span style="color: #ffeb3b;">Risk Accounts (Yellow)</span>
-                    <button onclick="filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
+                    <button onclick="window.filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
-                <div class="stat-box" style="border-color: #f44336;"><span style="color: #ff8a80;">Red Arrears (Issu)</span><div class="stat-value" id="dashRed">0</div></div>
+                <div class="stat-box" style="border-color: #f44336;"><span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span><div class="stat-value" id="dashRed">0</div></div>
 
                 <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
@@ -131,59 +126,13 @@
         </div>
     </div>
 
-    <div id="progressPage" class="page-container glass-panel">
-        <div class="flex-between mb-20">
-            <button onclick="navigate('dashboardPage')">&larr; Back to Dashboard</button>
-            <button onclick="forceRefreshData()" class="btn-refresh">🔄 Refresh Live Data</button>
-        </div>
-        <h2>Real-Time Performance Overview</h2>
-        
-        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
-            <span style="font-size: 16px; font-weight: bold;">📅 ප්‍රගතිය බැලීමට දිනය තෝරන්න: </span>
-            <select id="progressDaySelect" onchange="updateProgressSummary()" style="width: 200px; padding: 8px; margin-left: 15px; display: inline-block;">
-                <option value="today">අද දිනය (Today)</option>
-            </select>
-        </div>
-
-        <div class="progress-grid">
-            <div class="progress-section">
-                <h3 style="margin-top:0;">Call Center Progress</h3>
-                <div style="display: flex; justify-content: space-around; margin: 20px 0; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px;">
-                    <div style="text-align: center;">
-                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">SELECTED DAY RATE</h4>
-                        <h1 id="pRateDay" style="font-size: 3.5em; color: #4caf50; margin: 5px 0;">0%</h1>
-                    </div>
-                    <div style="width: 2px; background: rgba(255,255,255,0.1);"></div>
-                    <div style="text-align: center;">
-                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">TOTAL MONTH RATE</h4>
-                        <h1 id="pRateMonth" style="font-size: 3.5em; color: #2196f3; margin: 5px 0;">0%</h1>
-                    </div>
-                </div>
-                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
-                    <span>Selected Day Call Target:</span><span id="pTarget" style="font-weight: bold; font-size: 1.3em;">0</span>
-                </div>
-                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
-                    <span>Calls Completed (Selected Day):</span><span id="pDone" style="font-weight: bold; font-size: 1.3em;">0</span>
-                </div>
-                <button onclick="navigateManagerCC()" style="margin-top: 15px; width: 100%;">View Detailed Logs</button>
-            </div>
-            
-            <div class="progress-section" style="text-align: center;">
-                <h3 style="margin-top:0;">Field Collection Status</h3>
-                <h1 id="pFieldCount" style="font-size: 5em; color: #f44336; margin: 30px 0;">0</h1>
-                <p>Total Red Accounts (Field Visit Required)</p>
-                <button onclick="navigate('fieldDetailsPage')" style="margin-top: 15px; width: 100%;">View Field Agent Allocation</button>
-            </div>
-        </div>
-    </div>
-
     <div id="callCenterDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
-        <button onclick="navigate('progressPage')" class="mb-20">&larr; Back</button>
+        <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back to Dashboard</button>
         <h2>Call Center Detailed Logs</h2>
         <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-             <span>📅 <b>Select Day:</b></span><select id="managerDayFilter" onchange="syncManagerView()" style="width: 150px; margin: 0;"></select>
+             <span>📅 <b>Select Day:</b></span><select id="managerDayFilter" onchange="window.syncManagerView()" style="width: 150px; margin: 0;"></select>
              <span>🔍 <b>Status Filter:</b></span>
-             <select id="logStatusFilter" onchange="syncManagerView()" style="width: 150px; margin: 0;">
+             <select id="logStatusFilter" onchange="window.syncManagerView()" style="width: 150px; margin: 0;">
                  <option value="ALL">All Accounts</option>
                  <option value="CALLED">Called / Paid</option>
                  <option value="PENDING">Pending (No Answer)</option>
@@ -201,7 +150,7 @@
     </div>
 
     <div id="fieldDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
-        <button onclick="navigate('progressPage')" class="mb-20">&larr; Back</button>
+        <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back to Dashboard</button>
         <h2>Field Agent Performance (Issu Accounts)</h2>
         <table style="margin-bottom: 40px; background: rgba(0,0,0,0.6);">
             <thead><tr><th>Group Sale (G)</th><th>Heenpahana (H)</th><th>Rohan (R)</th><th>Amila (D)</th></tr></thead>
@@ -264,7 +213,7 @@
         </table>
         <div class="flex-between">
             <h3 style="color:#ff8a80; margin:0;">Arrears Accounts Breakdown</h3>
-            <select id="agentFilterDrop" onchange="renderFieldList()" style="width: 250px; margin:0;">
+            <select id="agentFilterDrop" onchange="window.renderFieldList()" style="width: 250px; margin:0;">
                 <option value="ALL">All Agents</option><option value="Group Sale">Group Sale (G)</option><option value="Heenpahana">Heenpahana (H)</option><option value="Rohan">Rohan (R)</option><option value="Amila">Amila (D)</option>
             </select>
         </div>
@@ -280,10 +229,10 @@
             <div style="display: flex; gap: 10px; align-items: center;">
                 <div style="background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 10px; display: flex; align-items: center; gap: 10px; border: 1px solid #4caf50;">
                     <span>📅 Target Day:</span>
-                    <select id="staffDayFilter" onchange="renderStaffUI()" style="width: 130px; margin:0; font-weight: bold; color: #4caf50;"></select>
+                    <select id="staffDayFilter" onchange="window.renderStaffUI()" style="width: 130px; margin:0; font-weight: bold; color: #4caf50;"></select>
                 </div>
-                <input type="text" id="staffSearch" onkeyup="searchGlobalStaffTable()" placeholder="🔍 Search Account No Only..." style="width: 250px; margin:0;">
-                <button onclick="logout()" class="btn-danger" style="margin:0;">Logout</button>
+                <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No Only..." style="width: 250px; margin:0;">
+                <button onclick="window.logout()" class="btn-danger" style="margin:0;">Logout</button>
             </div>
         </div>
         <div id="dateWarning" style="display:none; text-align: center; color: #ff9800; font-weight: bold; background: rgba(255, 152, 0, 0.2); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ff9800;">
@@ -296,33 +245,33 @@
     </div>
 
     <div id="importPage" class="page-container glass-panel">
-        <button onclick="navigate('dashboardPage')" class="mb-20">&larr; Back</button>
+        <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back</button>
         <h2>IFS Data Synchronization</h2>
         <div style="display: flex; gap: 30px; justify-content: center; margin-top: 40px;">
             <button onclick="document.getElementById('f_new').click()" style="padding: 30px 20px; font-size: 16px;">📂 1. Upload Master Open List</button>
             <button onclick="document.getElementById('f_red').click()" style="padding: 30px 20px; font-size: 16px; background: linear-gradient(135deg, #f44336, #b71c1c);">📂 2. Upload Arrears (Red) List</button>
         </div>
         <div id="loadMsg" style="text-align: center; color: #ffeb3b; margin-top: 20px; display: none; font-weight: bold;">⏳ BATCH PROCESSING & CLEANUP... PLEASE WAIT...</div>
-        <input type="file" id="f_new" style="display:none" onchange="uploadExcel(event, 'New')">
-        <input type="file" id="f_red" style="display:none" onchange="uploadExcel(event, 'Red')">
+        <input type="file" id="f_new" style="display:none" onchange="window.uploadExcel(event, 'New')">
+        <input type="file" id="f_red" style="display:none" onchange="window.uploadExcel(event, 'Red')">
     </div>
 
-    <div id="modalOverlay" onclick="closeModal()"></div>
+    <div id="modalOverlay" onclick="window.closeModal()"></div>
     <div id="infoModal" class="glass-panel">
         <h2 style="border-bottom: 2px solid #4caf50; padding-bottom: 10px;">MASTER INFO</h2>
         <p><b>NIC:</b> <span id="m_nic" style="color:#ffeb3b;"></span></p>
         <p><b>Product:</b> <span id="m_prod" style="color:#81c784;"></span></p>
         <p><b>Address:</b> <span id="m_addr"></span></p>
         <p><b>Agree Date:</b> <span id="m_date"></span></p>
-        <button onclick="closeModal()" style="width: 100%; background: #444; margin-top: 20px;">Close Window</button>
+        <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 20px;">Close Window</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ Firebase Config එක 🌟
+        // 🌟 ඔයාගේ අලුත් Firebase එකට කෙලින්ම Connect වෙනවා 🌟
         const fbConfig = { 
             apiKey: atob("QUl6YVN5RGZiMGxSSldsOVJ3a3hpQ2VJTUpTOFlHSmY5TTU4WjBB"),
             authDomain: "singer-gb-arrears.firebaseapp.com", 
@@ -335,7 +284,7 @@
         const auth = getAuth(app); 
         const db = getFirestore(app);
         
-        // 🌟 ඔයාගේ Cloudflare Link එක 🌟
+        // 🌟 ඔයාගේ අලුත් Cloudflare එක 🌟
         const CLOUD_URL = "https://singer-gb-arrears.ranbindua.workers.dev/";
 
         let masterData = []; 
@@ -345,7 +294,7 @@
         let sysToday = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + String(tdObj.getDate()).padStart(2,'0');
 
         const setupFilters = () => {
-            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("progressDaySelect"), document.getElementById("staffDayFilter")];
+            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("staffDayFilter")];
             dayFilters.forEach(sel => {
                 if(!sel) return;
                 sel.innerHTML = "";
@@ -359,7 +308,28 @@
         };
         setupFilters();
 
-        window.logout = () => { signOut(auth).then(() => { sessionStorage.removeItem("singerCache"); navigate('loginPage'); document.getElementById('loginStatus').innerText = ""; }); };
+        // 🌟 Auto Login Check 🌟
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                let e = user.email.toLowerCase();
+                let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
+                
+                onSnapshot(collection(db, "phoneDirectory"), (snap) => {
+                    snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
+                });
+                
+                initLiveSync(isManager);
+                document.getElementById('welcomePage').classList.remove('active-page');
+            } else {
+                setTimeout(() => {
+                    if(document.getElementById('welcomePage').classList.contains('active-page')) {
+                        window.navigate('loginPage');
+                    }
+                }, 2000);
+            }
+        });
+
+        window.logout = () => { signOut(auth).then(() => { sessionStorage.removeItem("singerCache"); window.navigate('loginPage'); document.getElementById('loginStatus').innerText = ""; }); };
 
         window.login = async () => {
             const e = document.getElementById('username').value.trim(); const p = document.getElementById('password').value;
@@ -367,10 +337,6 @@
             try {
                 await signInWithEmailAndPassword(auth, e, p);
                 status.innerText = "✅ Loading Data...";
-                onSnapshot(collection(db, "phoneDirectory"), (snap) => {
-                    snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
-                });
-                initLiveSync(e.includes('manager') || e.includes('admin'));
             } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; }
         };
 
@@ -378,11 +344,11 @@
             onSnapshot(collection(db, "customers"), (snap) => {
                 masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 if(isManager) {
-                    renderManagerDashboard();
-                    if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) syncManagerView();
-                    if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) renderFieldList();
+                    window.renderManagerDashboard();
+                    if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView();
+                    if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList();
                 } else {
-                    if(document.getElementById('staffSearch').value.trim() === "") renderStaffUI();
+                    if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI();
                 }
                 if(document.getElementById('loginPage').classList.contains('active-page')) {
                     window.navigate(isManager ? 'dashboardPage' : 'staffTargetPage');
@@ -390,7 +356,6 @@
             });
         }
 
-        window.forceRefreshData = () => { alert("Fetching latest live data..."); renderManagerDashboard(); }
         function getPhone(d) { return phoneDirectory[d.nic] ? phoneDirectory[d.nic].phone : (d.phone || 'N/A'); }
         
         function extractDay(s) { 
@@ -409,7 +374,7 @@
             let pSelect = `<select id="pdt_${d.id}" style="width: 80px; padding: 6px; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff;">${genDays(d.promiseDate)}</select>`;            
             let rawName = d.customerName || ""; let cName = (rawName !== "" && rawName !== "undefined") ? rawName : "නම නොමැත";
             let safeNic = (d.nic || "N/A").replace(/'/g, "\\'"); let safeProd = (d.product || "N/A").replace(/'/g, "\\'"); let safeAddr = (d.address || "N/A").replace(/'/g, "\\'"); let safeDate = (d.agreeDate || "N/A").replace(/'/g, "\\'");
-            let badge = isForwarded ? `<span class="forward-badge">(පෙර දිනෙන්)</span>` : ``;            
+            let badge = isForwarded ? `<span class="forward-badge">(Missed/Remind)</span>` : ``;            
             let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
 
             return `<tr class="${rowC} ${isForwarded ? 'row-forward' : ''}" id="row_${d.id}">
@@ -426,12 +391,11 @@
                     </select>                
                 </td>                
                 <td>${pSelect}</td>                
-                <td><button onclick="saveData('${d.id}')" style="padding: 6px 12px; font-size:11px;">SAVE</button></td>
-                <td><button class="btn-info" onclick="showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}')">❗️</button></td>
+                <td><button onclick="window.saveData('${d.id}')" style="padding: 6px 12px; font-size:11px;">SAVE</button></td>
+                <td><button class="btn-info" onclick="window.showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}')">❗️</button></td>
             </tr>`;        
         }
 
-        // 🌟 අලුත් ගණනය කිරීම් (Bulletproofed to prevent freezing) 🌟
         window.renderManagerDashboard = () => {
             let t=0, y=0, r=0;
             let totalArrears = 0, collectedAmount = 0, todayCalls = 0, successCalls = 0;
@@ -455,11 +419,9 @@
                 }
             });
 
-            // Prevent JS execution stop by checking if elements exist
             if(document.getElementById('dashTotal')) document.getElementById('dashTotal').innerText = t; 
             if(document.getElementById('dashYellow')) document.getElementById('dashYellow').innerText = y; 
             if(document.getElementById('dashRed')) document.getElementById('dashRed').innerText = r; 
-            if(document.getElementById('pFieldCount')) document.getElementById('pFieldCount').innerText = r;
 
             if(document.getElementById('dashTotalArrears')) document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
             if(document.getElementById('dashToCollect')) document.getElementById('dashToCollect').innerText = "Rs. " + (totalArrears - collectedAmount).toLocaleString('en-US');
@@ -467,51 +429,10 @@
             
             if(document.getElementById('dashTodayCalls')) document.getElementById('dashTodayCalls').innerText = todayCalls;
             if(document.getElementById('dashSuccessRate')) document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
-
-            if(typeof updateProgressSummary === "function") updateProgressSummary();
         };
 
-        window.navigateProgress = () => { navigate('progressPage'); updateProgressSummary(); };
-        window.navigateManagerCC = () => { navigate('callCenterDetailsPage'); syncManagerView(); };
-        window.filterRiskAccounts = () => { document.getElementById('logStatusFilter').value = "RISK"; navigateManagerCC(); }
-
-        window.updateProgressSummary = () => {
-            let filterVal = document.getElementById('progressDaySelect') ? document.getElementById('progressDaySelect').value : "today";
-            let selectedDay = filterVal === "today" ? td : parseInt(filterVal);
-            let targetDay = 0, doneDay = 0, targetMonth = 0, doneMonth = 0;
-            let openTarget = 0, redTarget = 0;
-
-            masterData.forEach(d => {
-                let att = parseInt(d.callAttempts) || 0; let isPaid = (d.notes === "Customer Paid");
-                let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
-                
-                let isTargetOverall = false;
-                if (d.listType === "Red") isTargetOverall = true;
-                else if (agreeDay > 0 || promiseDay > 0) isTargetOverall = true;
-
-                if (isTargetOverall) { targetMonth++; if (att > 0 || isPaid) doneMonth++; }
-
-                let isTargetForSelectedDay = false;
-                if (d.listType === "Red") {
-                    if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedDay) isTargetForSelectedDay = false; 
-                    else if (!isPaid) isTargetForSelectedDay = true;
-                } else if (!isNaN(promiseDay) && promiseDay === selectedDay) { isTargetForSelectedDay = true;
-                } else if (agreeDay === selectedDay) { isTargetForSelectedDay = true;
-                } else if (agreeDay > 0 && agreeDay < selectedDay && (att === 0 || d.notes === "Call Not Answer") && selectedDay === td) {
-                    isTargetForSelectedDay = true; 
-                }
-
-                if (isTargetForSelectedDay || (isPaid && agreeDay === selectedDay)) {
-                    targetDay++; if(d.listType === "Red") redTarget++; else openTarget++;
-                    if (att > 0 || isPaid) doneDay++;
-                }
-            });
-
-            if(document.getElementById('pRateDay')) document.getElementById('pRateDay').innerText = (targetDay > 0 ? Math.round((doneDay/targetDay)*100) : 0) + "%";            
-            if(document.getElementById('pRateMonth')) document.getElementById('pRateMonth').innerText = (targetMonth > 0 ? Math.round((doneMonth/targetMonth)*100) : 0) + "%";            
-            if(document.getElementById('pTarget')) document.getElementById('pTarget').innerHTML = `${targetDay} <div style="font-size:12px; margin-top:5px; opacity:0.8;">(Open: ${openTarget} | Issu: ${redTarget})</div>`;            
-            if(document.getElementById('pDone')) document.getElementById('pDone').innerText = doneDay;
-        };
+        window.navigateManagerCC = () => { window.navigate('callCenterDetailsPage'); window.syncManagerView(); };
+        window.filterRiskAccounts = () => { document.getElementById('logStatusFilter').value = "RISK"; window.navigateManagerCC(); }
 
         window.syncManagerView = () => {
             let filterDay = parseInt(document.getElementById('managerDayFilter').value);
@@ -554,11 +475,13 @@
                         let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-";
                         let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත";
                         let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
-                        html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${statusText}</b></td></tr>`;                    }
+                        html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${statusText}</b></td></tr>`;
+                    }
                 }
             });
             document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='7'>No records found for selected day/filter.</td></tr>";
-            document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;            document.getElementById('fCalled').innerText = called;
+            document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;            
+            document.getElementById('fCalled').innerText = called;
         };
 
         window.renderFieldList = () => {
@@ -650,11 +573,12 @@
                 }
             });
             document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>අද දිනට ඉලක්ක නොමැත! (All targets completed)</td></tr>";
-            document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;        };
+            document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;        
+        };
 
         window.searchGlobalStaffTable = () => {
             let f = document.getElementById('staffSearch').value.toLowerCase().trim();
-            if(f === "") { renderStaffUI(); return; } 
+            if(f === "") { window.renderStaffUI(); return; } 
 
             let html = ""; let searchCount = 0;
             masterData.forEach(d => {
@@ -680,7 +604,7 @@
             
             let btn = document.querySelector(`#row_${docId} button`); btn.innerText = "SAVED"; btn.style.background = "#4caf50";
             setTimeout(() => { let row = document.getElementById(`row_${docId}`); if(row) row.style.display = 'none'; }, 800);
-            if(document.getElementById('staffSearch').value.trim() === "") renderStaffUI(); 
+            if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); 
         };
 
         window.downloadPhoneDirectory = () => {
@@ -748,7 +672,6 @@
 
                     document.getElementById('loadMsg').innerText = "⏳ Sending Data to Secure Vault...";
                     
-                    // 🌟 Cloudflare එකට Gate Pass එකත් එක්ක දත්ත යැවීම 🌟
                     let res = await fetch(CLOUD_URL, { 
                         method: 'POST', 
                         headers: {
