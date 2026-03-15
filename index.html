@@ -30,9 +30,6 @@
         .stat-box { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; margin-bottom: 15px; border-left: 6px solid #4caf50; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
         .stat-value { background: #fff; color: #000; padding: 6px 18px; border-radius: 10px; font-weight: 900; font-size: 1.4em; }
         
-        .progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;}
-        .progress-section { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);}
-
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 15px; overflow: hidden; }
         th { background-color: rgba(0, 0, 0, 0.8); color: #81c784; padding: 15px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
         td { padding: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
@@ -88,28 +85,25 @@
         <div class="dashboard-grid">
             <div class="sidebar-menu">
                 <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
-                <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
+                <button onclick="window.navigate('fieldDetailsPage')" style="width: 100%; margin-bottom: 10px;">🏃 Field Agent Collection</button>
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50;">
-                    <h3 style="margin-bottom: 5px; font-size: 14px;">Monthly Success Rate</h3>
-                    <h1 style="color: #4caf50; font-size: 3em; margin: 0;" id="dashRate">0%</h1>
+                    <h3 style="margin-bottom: 5px; font-size: 14px;">Call Center Success Rate</h3>
+                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 10px;">(Paid & Promised / Total Called)</div>
+                    <h1 style="color: #4caf50; font-size: 3em; margin: 0;" id="dashSuccessRate">0%</h1>
+                    <div style="margin-top: 10px; font-weight: bold; font-size: 14px;">Total Calls Taken: <span id="dashTotalCalls" style="color:#ffeb3b;">0</span></div>
                 </div>
             </div>
             <div>
                 <div class="stat-box"><span>Total Active Accounts</span><div class="stat-value" id="dashTotal">0</div></div>
-                
                 <div class="stat-box" style="border-color: #ffc107;">
                     <span style="color: #ffeb3b;">Risk Accounts (Yellow)</span>
                     <button onclick="window.filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
-
-                <div class="stat-box" style="border-color: #f44336;">
-                    <span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span>
-                    <div class="stat-value" id="dashRed">0</div>
-                </div>
+                <div class="stat-box" style="border-color: #f44336;"><span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span><div class="stat-value" id="dashRed">0</div></div>
 
                 <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
@@ -125,59 +119,12 @@
                         <div class="stat-value" id="dashCollected" style="background: #4caf50; color: white;">Rs. 0</div>
                     </div>
                 </div>
-
-            </div>
-        </div>
-    </div>
-
-    <div id="progressPage" class="page-container glass-panel">
-        <div class="flex-between mb-20">
-            <button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button>
-            <button onclick="window.forceRefreshData()" class="btn-refresh">🔄 Refresh Live Data</button>
-        </div>
-        <h2>Real-Time Performance Overview</h2>
-        
-        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
-            <span style="font-size: 16px; font-weight: bold;">📅 ප්‍රගතිය බැලීමට දිනය තෝරන්න: </span>
-            <select id="progressDaySelect" onchange="window.updateProgressSummary()" style="width: 200px; padding: 8px; margin-left: 15px; display: inline-block;">
-                <option value="today">අද දිනය (Today)</option>
-            </select>
-        </div>
-
-        <div class="progress-grid">
-            <div class="progress-section">
-                <h3 style="margin-top:0;">Call Center Progress</h3>
-                <div style="display: flex; justify-content: space-around; margin: 20px 0; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px;">
-                    <div style="text-align: center;">
-                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">SELECTED DAY RATE</h4>
-                        <h1 id="pRateDay" style="font-size: 3.5em; color: #4caf50; margin: 5px 0;">0%</h1>
-                    </div>
-                    <div style="width: 2px; background: rgba(255,255,255,0.1);"></div>
-                    <div style="text-align: center;">
-                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">TOTAL MONTH RATE</h4>
-                        <h1 id="pRateMonth" style="font-size: 3.5em; color: #2196f3; margin: 5px 0;">0%</h1>
-                    </div>
-                </div>
-                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
-                    <span>Selected Day Call Target:</span><span id="pTarget" style="font-weight: bold; font-size: 1.3em;">0</span>
-                </div>
-                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
-                    <span>Calls Completed (Selected Day):</span><span id="pDone" style="font-weight: bold; font-size: 1.3em;">0</span>
-                </div>
-                <button onclick="window.navigateManagerCC()" style="margin-top: 15px; width: 100%;">View Detailed Logs</button>
-            </div>
-            
-            <div class="progress-section" style="text-align: center;">
-                <h3 style="margin-top:0;">Field Collection Status</h3>
-                <h1 id="pFieldCount" style="font-size: 5em; color: #f44336; margin: 30px 0;">0</h1>
-                <p>Total Red Accounts (Field Visit Required)</p>
-                <button onclick="window.navigate('fieldDetailsPage')" style="margin-top: 15px; width: 100%;">View Field Agent Allocation</button>
             </div>
         </div>
     </div>
 
     <div id="callCenterDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
-        <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
+        <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back to Dashboard</button>
         <h2>Call Center Detailed Logs</h2>
         <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
              <span>📅 <b>Select Day:</b></span><select id="managerDayFilter" onchange="window.syncManagerView()" style="width: 150px; margin: 0;"></select>
@@ -200,7 +147,7 @@
     </div>
 
     <div id="fieldDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
-        <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
+        <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back to Dashboard</button>
         <h2>Field Agent Performance (Issu Accounts)</h2>
         <table style="margin-bottom: 40px; background: rgba(0,0,0,0.6);">
             <thead><tr><th>Group Sale (G)</th><th>Heenpahana (H)</th><th>Rohan (R)</th><th>Amila (D)</th></tr></thead>
@@ -275,11 +222,19 @@
 
     <div id="staffTargetPage" class="page-container glass-panel" style="max-width: 1450px;">
         <div class="flex-between mb-20">
-            <h2 style="margin:0;">TODAY'S TARGET: <span class="target-badge" id="staffTargetNum">0</span></h2>
-            <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No Only..." style="width: 350px; margin:0;">
+            <h2 style="margin:0;">CALL CENTER TARGET: <span class="target-badge" id="staffTargetNum">0</span></h2>
+            
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div style="background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 10px; display: flex; align-items: center; gap: 10px; border: 1px solid #4caf50;">
+                    <span>📅 Target Day:</span>
+                    <select id="staffDayFilter" onchange="window.renderStaffUI()" style="width: 130px; margin:0; font-weight: bold; color: #4caf50;"></select>
+                </div>
+                <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No..." style="width: 250px; margin:0;">
                 <button onclick="window.logout()" class="btn-danger" style="margin:0;">Logout</button>
             </div>
+        </div>
+        <div id="dateWarning" style="display:none; text-align: center; color: #ff9800; font-weight: bold; background: rgba(255, 152, 0, 0.2); padding: 10px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #ff9800;">
+            ⚠️ සටහන: ඔබ තෝරාගෙන ඇත්තේ අද දිනය නොවේ!
         </div>
         <table id="staffTable">
             <thead><tr><th>Account</th><th>Customer Name</th><th>Mobile (Editable)</th><th>Att.</th><th>Action Taken</th><th>P. Date</th><th>Save</th><th>Info</th></tr></thead>
@@ -314,6 +269,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db;
@@ -324,12 +280,14 @@
         let sysToday = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + String(tdObj.getDate()).padStart(2,'0');
 
         const setupFilters = () => {
-            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("progressDaySelect")];
+            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("staffDayFilter")];
             dayFilters.forEach(sel => {
                 if(!sel) return;
+                sel.innerHTML = ""; // Clear existing
                 for(let i=1; i<=31; i++) {
-                    let opt = document.createElement("option"); opt.value=i; opt.text=i + " වෙනිදා"; 
-                    if(i===td && sel.id !== "progressDaySelect") opt.selected=true; 
+                    let opt = document.createElement("option"); opt.value=i; 
+                    if(i === td) { opt.text = i + " වෙනිදා (Today)"; opt.selected=true; }
+                    else { opt.text = i + " වෙනිදා"; }
                     sel.appendChild(opt);
                 }
             });
@@ -397,7 +355,6 @@
                 });
             }
 
-            window.forceRefreshData = () => { alert("Fetching latest live data..."); window.renderManagerDashboard(); }
             function getPhone(d) { return phoneDirectory[d.nic] ? phoneDirectory[d.nic].phone : (d.phone || 'N/A'); }
             
             function extractDay(s) { 
@@ -416,7 +373,7 @@
                 let pSelect = `<select id="pdt_${d.id}" style="width: 80px; padding: 6px; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff;">${genDays(d.promiseDate)}</select>`;
                 let rawName = d.customerName || ""; let cName = (rawName !== "" && rawName !== "undefined") ? rawName : "නම නොමැත";
                 let safeNic = (d.nic || "N/A").replace(/'/g, "\\'"); let safeProd = (d.product || "N/A").replace(/'/g, "\\'"); let safeAddr = (d.address || "N/A").replace(/'/g, "\\'"); let safeDate = (d.agreeDate || "N/A").replace(/'/g, "\\'");
-                let badge = isForwarded ? `<span class="forward-badge">(පෙර දිනෙන්)</span>` : ``;
+                let badge = isForwarded ? `<span class="forward-badge">(Missed/Remind)</span>` : ``;
                 let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
 
                 return `<tr class="${rowC} ${isForwarded ? 'row-forward' : ''}" id="row_${d.id}">
@@ -438,88 +395,46 @@
                 </tr>`;
             }
 
-            // 🌟 ඩෑෂ්බෝඩ් එකේ ගණන් හදන ලොජික් එක 🌟
             window.renderManagerDashboard = () => {
                 let t = 0, y = 0, r = 0;
-                let totalArrears = 0, collectedAmount = 0; // සල්ලි ගණන් කරන්න Variables
+                let totalArrears = 0, collectedAmount = 0; 
+                let totalCalls = 0, successCalls = 0; // 🌟 අලුත් Success Rate එකට 🌟
 
                 masterData.forEach(d => {
                     t++; 
                     let att = parseInt(d.callAttempts) || 0;
                     let isRisk = (att >= 3 || d.notes === "Bad Feedback");
                     
+                    // සල්ලි ගණන් කිරිල්ල
                     if (d.listType === "Red") {
                         r++;
-                        // සල්ලි ගාණ එකතු කිරීම
                         let amt = Number(d.arrearsAmount) || 0;
                         totalArrears += amt;
-                        
-                        // කෝල් සෙන්ටර් එකෙන් 'Customer Paid' දැම්මම එකතු වෙන ගාණ
-                        if (d.notes === "Customer Paid") {
-                            collectedAmount += amt;
-                        }
+                        if (d.notes === "Customer Paid") collectedAmount += amt;
                     } else if (isRisk) {
                         y++;
                     }
+
+                    // Success Rate එක ගණන් කිරිල්ල
+                    if (att > 0 || d.notes !== "") {
+                        totalCalls++;
+                        if (d.notes === "Customer Paid" || d.notes === "Promised to Pay") successCalls++;
+                    }
                 });
 
-                let toCollect = totalArrears - collectedAmount; // ඉතුරු ගාණ හැදෙන හැටි
+                let toCollect = totalArrears - collectedAmount; 
 
-                // පරණ බොක්ස් ටික
                 document.getElementById('dashTotal').innerText = t; 
                 document.getElementById('dashYellow').innerText = y; 
                 document.getElementById('dashRed').innerText = r; 
-                document.getElementById('pFieldCount').innerText = r;
 
-                // 🌟 අලුත් Financial Box එකේ ගණන් අප්ඩේට් වෙන තැන 🌟
                 document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
                 document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
                 document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
 
-                window.updateProgressSummary();
-            };
-
-            window.navigateProgress = () => { window.navigate('progressPage'); window.updateProgressSummary(); };
-            window.navigateManagerCC = () => { window.navigate('callCenterDetailsPage'); window.syncManagerView(); };
-            window.filterRiskAccounts = () => { document.getElementById('logStatusFilter').value = "RISK"; window.navigateManagerCC(); }
-
-            window.updateProgressSummary = () => {
-                let filterVal = document.getElementById('progressDaySelect').value;
-                let selectedDay = filterVal === "today" ? td : parseInt(filterVal);
-                let targetDay = 0, doneDay = 0, targetMonth = 0, doneMonth = 0;
-                let openTarget = 0, redTarget = 0;
-
-                masterData.forEach(d => {
-                    let att = parseInt(d.callAttempts) || 0; let isPaid = (d.notes === "Customer Paid");
-                    let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
-                    
-                    let isTargetOverall = false;
-                    if (d.listType === "Red") isTargetOverall = true;
-                    else if (agreeDay > 0 || promiseDay > 0) isTargetOverall = true;
-
-                    if (isTargetOverall) { targetMonth++; if (att > 0 || isPaid) doneMonth++; }
-
-                    let isTargetForSelectedDay = false;
-                    if (d.listType === "Red") {
-                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedDay) isTargetForSelectedDay = false; 
-                        else if (!isPaid) isTargetForSelectedDay = true;
-                    } else if (!isNaN(promiseDay) && promiseDay === selectedDay) { isTargetForSelectedDay = true;
-                    } else if (agreeDay === selectedDay) { isTargetForSelectedDay = true;
-                    } else if (agreeDay > 0 && agreeDay < selectedDay && (att === 0 || d.notes === "Call Not Answer") && selectedDay === td) {
-                        isTargetForSelectedDay = true; 
-                    }
-
-                    if (isTargetForSelectedDay || (isPaid && agreeDay === selectedDay)) {
-                        targetDay++; if(d.listType === "Red") redTarget++; else openTarget++;
-                        if (att > 0 || isPaid) doneDay++;
-                    }
-                });
-
-                document.getElementById('pRateDay').innerText = (targetDay > 0 ? Math.round((doneDay/targetDay)*100) : 0) + "%";
-                document.getElementById('pRateMonth').innerText = (targetMonth > 0 ? Math.round((doneMonth/targetMonth)*100) : 0) + "%";
-                document.getElementById('pTarget').innerHTML = `${targetDay} <div style="font-size:12px; margin-top:5px; opacity:0.8;">(Open: ${openTarget} | Issu: ${redTarget})</div>`;
-                document.getElementById('pDone').innerText = doneDay;
-                if(document.getElementById('dashRate')) document.getElementById('dashRate').innerText = (targetMonth > 0 ? Math.round((doneMonth/targetMonth)*100) : 0) + "%";
+                // අලුත් Success Rate එක දානවා
+                document.getElementById('dashTotalCalls').innerText = totalCalls;
+                document.getElementById('dashSuccessRate').innerText = totalCalls > 0 ? Math.round((successCalls/totalCalls)*100) + "%" : "0%";
             };
 
             window.syncManagerView = () => {
@@ -617,12 +532,20 @@
                 });
             };
 
+            // 🌟 අලුත් Date Filter ලොජික් එක (Staff ට) 🌟
             window.renderStaffUI = () => {
+                let filterDay = parseInt(document.getElementById('staffDayFilter').value) || td;
+                
+                // Warning එක පෙන්වන එක
+                if(filterDay !== td) document.getElementById('dateWarning').style.display = 'block';
+                else document.getElementById('dateWarning').style.display = 'none';
+
                 let html = "", targetOpen = 0, targetRed = 0;
+                
                 let sortedData = [...masterData].sort((a,b) => {
-                    let aProm = parseInt(a.promiseDate) === td ? 1 : 0; let bProm = parseInt(b.promiseDate) === td ? 1 : 0;
+                    let aProm = parseInt(a.promiseDate) === filterDay ? 1 : 0; let bProm = parseInt(b.promiseDate) === filterDay ? 1 : 0;
                     if(aProm !== bProm) return bProm - aProm; 
-                    let aOpenToday = (a.listType !== "Red" && extractDay(a.agreeDate) === td) ? 1 : 0; let bOpenToday = (b.listType !== "Red" && extractDay(b.agreeDate) === td) ? 1 : 0;
+                    let aOpenToday = (a.listType !== "Red" && extractDay(a.agreeDate) === filterDay) ? 1 : 0; let bOpenToday = (b.listType !== "Red" && extractDay(b.agreeDate) === filterDay) ? 1 : 0;
                     if(aOpenToday !== bOpenToday) return bOpenToday - aOpenToday; 
                     let aRed = a.listType === "Red" ? 1 : 0; let bRed = b.listType === "Red" ? 1 : 0;
                     if(aRed !== bRed) return bRed - aRed; 
@@ -631,30 +554,41 @@
 
                 sortedData.forEach(d => {
                     if (d.notes === "Customer Paid") return; 
-                    if (d.lastCallDate === sysToday) return;
 
-                    let att = parseInt(d.callAttempts) || 0; let isRisk = (att >= 3 || d.notes === "Bad Feedback");
+                    let att = parseInt(d.callAttempts) || 0; 
+                    let isRisk = (att >= 3 || d.notes === "Bad Feedback");
                     let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : "");
 
-                    let isTargetToday = false; let isForwarded = false;
-                    let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
+                    let isTargetForDay = false; 
+                    let isForwarded = false; // මේකෙන් කියන්නේ Miss වුණු ඒවා
+                    
+                    let agreeDay = extractDay(d.agreeDate); 
+                    let promiseDay = parseInt(d.promiseDate);
 
                     if (d.listType === "Red") {
-                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > td) isTargetToday = false; 
-                        else isTargetToday = true;
-                    } else if (!isNaN(promiseDay) && promiseDay > 0) {
-                        if(promiseDay <= td) { isTargetToday = true; if(promiseDay < td) isForwarded = true; }
-                    } else if (agreeDay > 0) {
-                        if(agreeDay <= td && att === 0) { isTargetToday = true; if(agreeDay < td) isForwarded = true; }
-                    } 
-                    if (d.listType !== "Red" && d.notes === "Call Not Answer") { isTargetToday = true; isForwarded = true; }
+                        // Red ලිස්ට් එකේ උන් හැමදාම ලිස්ට් එකේ ඉන්නවා (Paid වෙනකම්)
+                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > filterDay) isTargetForDay = false; 
+                        else isTargetForDay = true;
+                    } else {
+                        // Open List ලොජික් එක 
+                        if (!isNaN(promiseDay) && promiseDay > 0) {
+                            if (promiseDay === filterDay) { isTargetForDay = true; }
+                            else if (promiseDay < filterDay && filterDay === td) { isTargetForDay = true; isForwarded = true; } // ඊයේ Promise කරලා අදටත් ඇවිත්
+                        } else if (agreeDay > 0) {
+                            if (agreeDay === filterDay) { isTargetForDay = true; }
+                            else if (agreeDay < filterDay && att === 0 && filterDay === td) { isTargetForDay = true; isForwarded = true; } // ඊයේ කතා කරේ නැති ඒවා
+                        } 
+                        
+                        if (d.notes === "Call Not Answer" && filterDay === td) { isTargetForDay = true; isForwarded = true; }
+                    }
 
-                    if (isTargetToday) {
+                    if (isTargetForDay) {
                         if(d.listType === "Red") targetRed++; else targetOpen++;
                         html += generateRowHTML(d, rowC, isForwarded);
                     }
                 });
-                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>අද දිනට ඉලක්ක නොමැත! (All targets completed)</td></tr>";
+                
+                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>මෙම දිනය සඳහා ගිණුම් නොමැත! (No targets for selected date)</td></tr>";
                 document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
             };
 
@@ -681,14 +615,22 @@
                 if(action === "Promised to Pay" && pDate === "") { alert("❌ Please select a Promise Day (1-31)!"); return; }
 
                 let d = masterData.find(x => x.id === docId);
-                if(phoneVal !== d.phone && phoneVal !== "") await setDoc(doc(db, "phoneDirectory", d.nic), { phone: phoneVal, name: d.customerName });
+                
+                // 🌟 Phonebook එකට සේව් කරනවා 🌟
+                if(phoneVal !== d.phone && phoneVal !== "" && d.nic !== "") {
+                    await setDoc(doc(db, "phoneDirectory", d.nic), { phone: phoneVal, name: d.customerName });
+                }
+                
                 await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
                 
                 let btn = document.querySelector(`#row_${docId} button`); btn.innerText = "SAVED"; btn.style.background = "#4caf50";
                 setTimeout(() => { let row = document.getElementById(`row_${docId}`); if(row) row.style.display = 'none'; }, 800);
+                
+                // Save කළාම අදාළ දවසේ ලිස්ට් එකම ආයෙත් අප්ඩේට් වෙනවා
                 if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); 
             };
 
+            // 🌟 Phonebook Download Function 🌟
             window.downloadPhoneDirectory = () => {
                 let csvContent = "data:text/csv;charset=utf-8,NIC,Customer Name,Phone Number\n";
                 for (const [nic, data] of Object.entries(phoneDirectory)) { 
@@ -696,7 +638,7 @@
                     csvContent += `${nic},"${cleanName}",${data.phone}\n`; 
                 }
                 var encodedUri = encodeURI(csvContent); var link = document.createElement("a");
-                link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Phonebook.csv");
+                link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Customer_Phonebook.csv");
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
             };
 
