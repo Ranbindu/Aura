@@ -30,6 +30,9 @@
         .stat-box { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; margin-bottom: 15px; border-left: 6px solid #4caf50; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
         .stat-value { background: #fff; color: #000; padding: 6px 18px; border-radius: 10px; font-weight: 900; font-size: 1.4em; }
         
+        .progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;}
+        .progress-section { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);}
+
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 15px; overflow: hidden; }
         th { background-color: rgba(0, 0, 0, 0.8); color: #81c784; padding: 15px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
         td { padding: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
@@ -62,18 +65,16 @@
         };
     </script>
 
-    <div id="welcomePage" class="page-container active-page glass-panel" style="text-align: center; margin-top: 15vh;">
-        <h1 style="font-size: 4.5em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
-        <p style="font-size: 1.6em; color: #a5d6a7;" id="loadStatusMsg">Connecting to Aura Secure Vault...</p>
-    </div>
-
-    <div id="loginPage" class="page-container">
+    <div id="loginPage" class="page-container active-page">
         <div class="glass-panel" style="max-width: 400px; margin: auto; padding: 50px; text-align: center;">
-            <h2 class="mb-20">SECURE LOGIN</h2>
-            <input type="text" id="username" placeholder="Email Address">
-            <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()">
-            <button onclick="window.login()" id="loginBtn" style="width: 100%; margin-top: 20px; padding: 15px;">LOGIN TO SYSTEM</button>
-            <div id="loginStatus" style="color: #ff8a80; margin-top: 15px; font-weight: bold;"></div>
+            <h1 style="margin-top:0; font-size: 3em; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
+            <h2 class="mb-20" style="color: #a5d6a7;">SECURE LOGIN</h2>
+            
+            <input type="text" id="username" placeholder="Email Address" disabled>
+            <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()" disabled>
+            
+            <button onclick="window.login()" id="loginBtn" style="width: 100%; margin-top: 20px; padding: 15px; background: #555; cursor: not-allowed;" disabled>CONNECTING...</button>
+            <div id="loginStatus" style="color: #ffeb3b; margin-top: 15px; font-weight: bold;">⏳ Fetching Secure Keys...</div>
         </div>
     </div>
 
@@ -85,8 +86,8 @@
         <div class="dashboard-grid">
             <div class="sidebar-menu">
                 <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
+                <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
-                <button onclick="window.navigate('fieldDetailsPage')" style="width: 100%; margin-bottom: 10px;">🏃 Field Agent Collection</button>
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50;">
@@ -128,6 +129,52 @@
         </div>
     </div>
 
+    <div id="progressPage" class="page-container glass-panel">
+        <div class="flex-between mb-20">
+            <button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button>
+            <button onclick="window.forceRefreshData()" class="btn-refresh">🔄 Refresh Live Data</button>
+        </div>
+        <h2>Real-Time Performance Overview</h2>
+        
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+            <span style="font-size: 16px; font-weight: bold;">📅 ප්‍රගතිය බැලීමට දිනය තෝරන්න: </span>
+            <select id="progressDaySelect" onchange="window.updateProgressSummary()" style="width: 200px; padding: 8px; margin-left: 15px; display: inline-block;">
+                <option value="today">අද දිනය (Today)</option>
+            </select>
+        </div>
+
+        <div class="progress-grid">
+            <div class="progress-section">
+                <h3 style="margin-top:0;">Call Center Progress</h3>
+                <div style="display: flex; justify-content: space-around; margin: 20px 0; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px;">
+                    <div style="text-align: center;">
+                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">SELECTED DAY RATE</h4>
+                        <h1 id="pRateDay" style="font-size: 3.5em; color: #4caf50; margin: 5px 0;">0%</h1>
+                    </div>
+                    <div style="width: 2px; background: rgba(255,255,255,0.1);"></div>
+                    <div style="text-align: center;">
+                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">TOTAL MONTH RATE</h4>
+                        <h1 id="pRateMonth" style="font-size: 3.5em; color: #2196f3; margin: 5px 0;">0%</h1>
+                    </div>
+                </div>
+                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
+                    <span>Selected Day Call Target:</span><span id="pTarget" style="font-weight: bold; font-size: 1.3em;">0</span>
+                </div>
+                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
+                    <span>Calls Completed (Selected Day):</span><span id="pDone" style="font-weight: bold; font-size: 1.3em;">0</span>
+                </div>
+                <button onclick="window.navigateManagerCC()" style="margin-top: 15px; width: 100%;">View Detailed Logs</button>
+            </div>
+            
+            <div class="progress-section" style="text-align: center;">
+                <h3 style="margin-top:0;">Field Collection Status</h3>
+                <h1 id="pFieldCount" style="font-size: 5em; color: #f44336; margin: 30px 0;">0</h1>
+                <p>Total Red Accounts (Field Visit Required)</p>
+                <button onclick="window.navigate('fieldDetailsPage')" style="margin-top: 15px; width: 100%;">View Field Agent Allocation</button>
+            </div>
+        </div>
+    </div>
+
     <div id="callCenterDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
         <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back to Dashboard</button>
         <h2>Call Center Detailed Logs</h2>
@@ -152,7 +199,7 @@
     </div>
 
     <div id="fieldDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
-        <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back to Dashboard</button>
+        <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back to Performance</button>
         <h2>Field Agent Performance (Issu Accounts)</h2>
         <table style="margin-bottom: 40px; background: rgba(0,0,0,0.6);">
             <thead><tr><th>Group Sale (G)</th><th>Heenpahana (H)</th><th>Rohan (R)</th><th>Amila (D)</th></tr></thead>
@@ -273,7 +320,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ ලින්ක් එක විතරයි මෙතන තියෙන්නේ. API Keys හැංගිලා! 🌟
+        // 🌟 1. ඔයාගේ නියම Cloudflare ලින්ක් එක (Aura) 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db;
@@ -284,7 +331,7 @@
         let sysToday = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + String(tdObj.getDate()).padStart(2,'0');
 
         const setupFilters = () => {
-            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("staffDayFilter")];
+            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("progressDaySelect"), document.getElementById("staffDayFilter")];
             dayFilters.forEach(sel => {
                 if(!sel) return;
                 sel.innerHTML = ""; 
@@ -298,7 +345,7 @@
         };
         setupFilters();
 
-        // 🌟 ලොගින් පේජ් එක හිරවෙන්නේ නැති වෙන්න හැදුවා 🌟
+        // 🌟 2. ලොගින් පේජ් එක හිරවෙන්නේ නැති වෙන්න Bulletproof කරපු තැන 🌟
         async function bootSecureSystem() {
             try {
                 // Cloudflare එකෙන් API Keys ගන්නවා
@@ -307,42 +354,47 @@
                 
                 const fbConfig = await response.json();
                 if(fbConfig.error) {
-                    document.getElementById('loadStatusMsg').innerText = "SECURITY BREACH: Access Denied!";
-                    document.getElementById('loadStatusMsg').style.color = "red";
+                    document.getElementById('loginStatus').innerText = "❌ SECURITY BREACH: " + fbConfig.error;
+                    document.getElementById('loginStatus').style.color = "red";
                     return;
                 }
 
-                // Cloudflare එකෙන් ආපු Keys වලින් Firebase අරඹනවා
+                // Keys ලැබුණට පස්සේ Firebase පටන් ගන්නවා
                 app = initializeApp(fbConfig); 
                 auth = getAuth(app); 
                 db = getFirestore(app);
 
-                document.getElementById('loadStatusMsg').innerText = "System Ready. Redirecting...";
+                // 🌟 Login Button එක Active කරනවා 🌟
+                document.getElementById('username').disabled = false;
+                document.getElementById('password').disabled = false;
                 
-                setTimeout(() => {
-                    document.getElementById('welcomePage').classList.remove('active-page');
-                    onAuthStateChanged(auth, (user) => {
-                        if (user) {
-                            let e = user.email.toLowerCase();
-                            let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
-                            
-                            onSnapshot(collection(db, "phoneDirectory"), (snap) => {
-                                snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
-                            });
-                            
-                            initLiveSync(isManager);
-                        } else {
-                            window.navigate('loginPage');
-                        }
-                    });
-                }, 1500);
+                let btn = document.getElementById('loginBtn');
+                btn.disabled = false;
+                btn.innerText = "LOGIN TO SYSTEM";
+                btn.style.background = "linear-gradient(135deg, #4caf50 0%, #1b5e20 100%)";
+                btn.style.cursor = "pointer";
+                
+                document.getElementById('loginStatus').innerText = "✅ Secure Connection Ready.";
+                document.getElementById('loginStatus').style.color = "#4caf50";
 
                 attachSystemFunctions(); 
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        let e = user.email.toLowerCase();
+                        let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
+                        
+                        onSnapshot(collection(db, "phoneDirectory"), (snap) => {
+                            snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
+                        });
+                        
+                        initLiveSync(isManager);
+                    }
+                });
+
             } catch (err) {
-                // Cloudflare අවුල් ගියොත් හිරවෙන්නේ නැතුව Login පේජ් එක පෙන්නනවා
-                document.getElementById('welcomePage').classList.remove('active-page');
-                window.navigate('loginPage');
                 document.getElementById('loginStatus').innerText = "❌ Security Lock Active: Cannot reach Backend.";
+                document.getElementById('loginStatus').style.color = "red";
             }
         }
 
@@ -356,7 +408,7 @@
                 try {
                     await signInWithEmailAndPassword(auth, e, p);
                     status.innerText = "✅ Loading Data...";
-                } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; }
+                } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; status.style.color = "red"; }
             };
 
             function initLiveSync(isManager) {
@@ -366,6 +418,7 @@
                         window.renderManagerDashboard();
                         if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView();
                         if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList();
+                        if(document.getElementById('progressPage').classList.contains('active-page')) window.updateProgressSummary();
                     } else {
                         if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI();
                     }
@@ -445,6 +498,7 @@
                 if(document.getElementById('dashTotal')) document.getElementById('dashTotal').innerText = t; 
                 if(document.getElementById('dashYellow')) document.getElementById('dashYellow').innerText = y; 
                 if(document.getElementById('dashRed')) document.getElementById('dashRed').innerText = r; 
+                if(document.getElementById('pFieldCount')) document.getElementById('pFieldCount').innerText = r;
 
                 if(document.getElementById('dashTotalArrears')) document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
                 if(document.getElementById('dashToCollect')) document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
@@ -452,6 +506,45 @@
 
                 if(document.getElementById('dashTodayCalls')) document.getElementById('dashTodayCalls').innerText = todayCalls;
                 if(document.getElementById('dashSuccessRate')) document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
+            };
+
+            window.updateProgressSummary = () => {
+                if(!document.getElementById('progressDaySelect')) return;
+                let filterVal = document.getElementById('progressDaySelect').value;
+                let selectedDay = filterVal === "today" ? td : parseInt(filterVal);
+                let targetDay = 0, doneDay = 0, targetMonth = 0, doneMonth = 0;
+                let openTarget = 0, redTarget = 0;
+
+                masterData.forEach(d => {
+                    let att = parseInt(d.callAttempts) || 0; let isPaid = (d.notes === "Customer Paid");
+                    let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
+                    
+                    let isTargetOverall = false;
+                    if (d.listType === "Red") isTargetOverall = true;
+                    else if (agreeDay > 0 || promiseDay > 0) isTargetOverall = true;
+
+                    if (isTargetOverall) { targetMonth++; if (att > 0 || isPaid) doneMonth++; }
+
+                    let isTargetForSelectedDay = false;
+                    if (d.listType === "Red") {
+                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedDay) isTargetForSelectedDay = false; 
+                        else if (!isPaid) isTargetForSelectedDay = true;
+                    } else if (!isNaN(promiseDay) && promiseDay === selectedDay) { isTargetForSelectedDay = true;
+                    } else if (agreeDay === selectedDay) { isTargetForSelectedDay = true;
+                    } else if (agreeDay > 0 && agreeDay < selectedDay && (att === 0 || d.notes === "Call Not Answer") && selectedDay === td) {
+                        isTargetForSelectedDay = true; 
+                    }
+
+                    if (isTargetForSelectedDay || (isPaid && agreeDay === selectedDay)) {
+                        targetDay++; if(d.listType === "Red") redTarget++; else openTarget++;
+                        if (att > 0 || isPaid) doneDay++;
+                    }
+                });
+
+                document.getElementById('pRateDay').innerText = (targetDay > 0 ? Math.round((doneDay/targetDay)*100) : 0) + "%";
+                document.getElementById('pRateMonth').innerText = (targetMonth > 0 ? Math.round((doneMonth/targetMonth)*100) : 0) + "%";
+                document.getElementById('pTarget').innerHTML = `${targetDay} <div style="font-size:12px; margin-top:5px; opacity:0.8;">(Open: ${openTarget} | Issu: ${redTarget})</div>`;
+                document.getElementById('pDone').innerText = doneDay;
             };
 
             window.syncManagerView = () => {
@@ -499,9 +592,9 @@
                         }
                     }
                 });
-                document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='7'>No records found for selected day/filter.</td></tr>";
-                document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
-                document.getElementById('fCalled').innerText = called;
+                if(document.getElementById('managerCCBody')) document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='7'>No records found for selected day/filter.</td></tr>";
+                if(document.getElementById('fTarget')) document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
+                if(document.getElementById('fCalled')) document.getElementById('fCalled').innerText = called;
             };
 
             window.renderFieldList = () => {
@@ -531,7 +624,7 @@
                         }
                     }
                 });
-                document.getElementById('fieldDetailsBody').innerHTML = html || "<tr><td colspan='5'>No accounts found.</td></tr>";
+                if(document.getElementById('fieldDetailsBody')) document.getElementById('fieldDetailsBody').innerHTML = html || "<tr><td colspan='5'>No accounts found.</td></tr>";
                 
                 ["Group Sale", "Heenpahana", "Rohan", "Amila"].forEach((ag, idx) => {
                     let code = ["G", "H", "R", "D"][idx];
@@ -540,12 +633,12 @@
                     let tAcc = stats[ag].tAcc; let cAcc = stats[ag].cAcc;
                     let accRate = tAcc > 0 ? Math.round(((tAcc - cAcc) / tAcc) * 100) : 0; 
 
-                    document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`;
-                    document.getElementById(`fAcc_${code}`).innerText = tAcc;
-                    document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`;
-                    document.getElementById(`cAcc_${code}`).innerText = cAcc;
-                    document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`;
-                    document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
+                    if(document.getElementById(`fAmt_${code}`)) document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`;
+                    if(document.getElementById(`fAcc_${code}`)) document.getElementById(`fAcc_${code}`).innerText = tAcc;
+                    if(document.getElementById(`cAmt_${code}`)) document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`;
+                    if(document.getElementById(`cAcc_${code}`)) document.getElementById(`cAcc_${code}`).innerText = cAcc;
+                    if(document.getElementById(`rRateAmt_${code}`)) document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`;
+                    if(document.getElementById(`rRateAcc_${code}`)) document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
                 });
             };
 
@@ -601,8 +694,8 @@
                     }
                 });
                 
-                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>මෙම දිනය සඳහා ගිණුම් නොමැත! (No targets for selected date)</td></tr>";
-                document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
+                if(document.getElementById('staffTableBody')) document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>මෙම දිනය සඳහා ගිණුම් නොමැත! (No targets for selected date)</td></tr>";
+                if(document.getElementById('staffTargetNum')) document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
             };
 
             window.searchGlobalStaffTable = () => {
@@ -618,8 +711,8 @@
                         html += generateRowHTML(d, rowC, false); searchCount++;
                     }
                 });
-                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>ගිණුම් නොමැත (No accounts found).</td></tr>";
-                document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
+                if(document.getElementById('staffTableBody')) document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>ගිණුම් නොමැත (No accounts found).</td></tr>";
+                if(document.getElementById('staffTargetNum')) document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
             };
 
             window.saveData = async (docId) => {
@@ -727,6 +820,7 @@
             };
         }
 
+        // Initialize System
         bootSecureSystem();
     </script>
 </body>
