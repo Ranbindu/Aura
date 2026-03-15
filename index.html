@@ -30,9 +30,6 @@
         .stat-box { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; margin-bottom: 15px; border-left: 6px solid #4caf50; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
         .stat-value { background: #fff; color: #000; padding: 6px 18px; border-radius: 10px; font-weight: 900; font-size: 1.4em; }
         
-        .progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;}
-        .progress-section { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);}
-
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 15px; overflow: hidden; }
         th { background-color: rgba(0, 0, 0, 0.8); color: #81c784; padding: 15px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
         td { padding: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
@@ -59,6 +56,7 @@
 <body>
 
     <script>
+        // Pages මාරු කරන Function එක
         window.navigate = function(pageId) {
             document.querySelectorAll('.page-container').forEach(function(p) { p.classList.remove('active-page'); });
             document.getElementById(pageId).classList.add('active-page'); window.scrollTo(0,0);
@@ -66,15 +64,13 @@
     </script>
 
     <div id="loginPage" class="page-container active-page">
-        <div class="glass-panel" style="max-width: 400px; margin: auto; padding: 50px; text-align: center;">
-            <h1 style="margin-top:0; font-size: 3em; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
+        <div class="glass-panel" style="max-width: 400px; margin: 15vh auto; padding: 50px; text-align: center;">
+            <h1 style="font-size: 3.5em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
             <h2 class="mb-20" style="color: #a5d6a7;">SECURE LOGIN</h2>
-            
-            <input type="text" id="username" placeholder="Email Address" disabled>
-            <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()" disabled>
-            
-            <button onclick="window.login()" id="loginBtn" style="width: 100%; margin-top: 20px; padding: 15px; background: #555; cursor: not-allowed;" disabled>CONNECTING...</button>
-            <div id="loginStatus" style="color: #ffeb3b; margin-top: 15px; font-weight: bold;">⏳ Fetching Secure Keys...</div>
+            <input type="text" id="username" placeholder="Email Address">
+            <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()">
+            <button onclick="window.login()" id="loginBtn" style="width: 100%; margin-top: 20px; padding: 15px;">LOGIN TO SYSTEM</button>
+            <div id="loginStatus" style="color: #ffeb3b; margin-top: 15px; font-weight: bold;">⏳ Securing Connection...</div>
         </div>
     </div>
 
@@ -86,8 +82,9 @@
         <div class="dashboard-grid">
             <div class="sidebar-menu">
                 <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
-                <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
+                <button onclick="window.navigate('progressPage'); window.updateProgressSummary();" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
+                <button onclick="window.navigate('fieldDetailsPage')" style="width: 100%; margin-bottom: 10px;">🏃 Field Agent Collection</button>
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50;">
@@ -99,13 +96,11 @@
             </div>
             <div>
                 <div class="stat-box"><span>Total Active Accounts</span><div class="stat-value" id="dashTotal">0</div></div>
-                
                 <div class="stat-box" style="border-color: #ffc107;">
                     <span style="color: #ffeb3b;">Risk Accounts (Yellow)</span>
                     <button onclick="window.filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
-
                 <div class="stat-box" style="border-color: #f44336;">
                     <span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span>
                     <div class="stat-value" id="dashRed">0</div>
@@ -199,7 +194,7 @@
     </div>
 
     <div id="fieldDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
-        <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back to Performance</button>
+        <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back to Dashboard</button>
         <h2>Field Agent Performance (Issu Accounts)</h2>
         <table style="margin-bottom: 40px; background: rgba(0,0,0,0.6);">
             <thead><tr><th>Group Sale (G)</th><th>Heenpahana (H)</th><th>Rohan (R)</th><th>Amila (D)</th></tr></thead>
@@ -320,7 +315,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 1. ඔයාගේ නියම Cloudflare ලින්ක් එක (Aura) 🌟
+        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක (AURA) 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db;
@@ -345,7 +340,7 @@
         };
         setupFilters();
 
-        // 🌟 2. ලොගින් පේජ් එක හිරවෙන්නේ නැති වෙන්න Bulletproof කරපු තැන 🌟
+        // 🌟 ලොගින් පේජ් එක හිරවෙන්නේ නැති වෙන්න Bulletproof කරපු තැන 🌟
         async function bootSecureSystem() {
             try {
                 // Cloudflare එකෙන් API Keys ගන්නවා
@@ -364,21 +359,12 @@
                 auth = getAuth(app); 
                 db = getFirestore(app);
 
-                // 🌟 Login Button එක Active කරනවා 🌟
-                document.getElementById('username').disabled = false;
-                document.getElementById('password').disabled = false;
-                
-                let btn = document.getElementById('loginBtn');
-                btn.disabled = false;
-                btn.innerText = "LOGIN TO SYSTEM";
-                btn.style.background = "linear-gradient(135deg, #4caf50 0%, #1b5e20 100%)";
-                btn.style.cursor = "pointer";
-                
                 document.getElementById('loginStatus').innerText = "✅ Secure Connection Ready.";
                 document.getElementById('loginStatus').style.color = "#4caf50";
 
                 attachSystemFunctions(); 
 
+                // 🌟 Auto Login Check එක 🌟
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         let e = user.email.toLowerCase();
@@ -393,7 +379,7 @@
                 });
 
             } catch (err) {
-                document.getElementById('loginStatus').innerText = "❌ Security Lock Active: Cannot reach Backend.";
+                document.getElementById('loginStatus').innerText = "❌ Offline: Reconnect to Internet and Refresh.";
                 document.getElementById('loginStatus').style.color = "red";
             }
         }
@@ -645,8 +631,11 @@
             window.renderStaffUI = () => {
                 let filterDay = parseInt(document.getElementById('staffDayFilter').value) || td;
                 
-                if(filterDay !== td) document.getElementById('dateWarning').style.display = 'block';
-                else document.getElementById('dateWarning').style.display = 'none';
+                if(filterDay !== td) {
+                    if(document.getElementById('dateWarning')) document.getElementById('dateWarning').style.display = 'block';
+                } else {
+                    if(document.getElementById('dateWarning')) document.getElementById('dateWarning').style.display = 'none';
+                }
 
                 let html = "", targetOpen = 0, targetRed = 0;
                 
