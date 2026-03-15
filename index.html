@@ -124,7 +124,6 @@
                         <div class="stat-value" id="dashCollected" style="background: #4caf50; color: white;">Rs. 0</div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -274,10 +273,23 @@
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක (AURA) 🌟
+        // 🌟 1. ඔයාගේ Firebase Config (Aura) 🌟
+        const fbConfig = {
+            apiKey: "AIzaSyCkvMk3DQt5Bq3rK_bA-GThbxB4wOXNq1g",
+            authDomain: "aura-7bc62.firebaseapp.com",
+            projectId: "aura-7bc62",
+            storageBucket: "aura-7bc62.firebasestorage.app",
+            messagingSenderId: "791728658552",
+            appId: "1:791728658552:web:7f62baa17d44e40dc5b58d"
+        };
+
+        const app = initializeApp(fbConfig); 
+        const auth = getAuth(app); 
+        const db = getFirestore(app);
+
+        // 🌟 2. ඔයාගේ Cloudflare ලින්ක් එක (Aura) 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
-        let app, auth, db;
         let masterData = []; 
         let phoneDirectory = {}; 
 
@@ -299,25 +311,15 @@
         };
         setupFilters();
 
-        // Cloudflare එකෙන් API Keys ගන්න ලොජික් එක
         async function bootSecureSystem() {
             try {
+                // Verify link is alive
                 const response = await fetch(CLOUD_API_URL);
-                const fbConfig = await response.json();
-                
-                if(fbConfig.error) {
-                    document.getElementById('loadStatusMsg').innerText = "SECURITY BREACH: Access Denied!";
-                    document.getElementById('loadStatusMsg').style.color = "red";
-                    return;
-                }
-
-                app = initializeApp(fbConfig); 
-                auth = getAuth(app); 
-                db = getFirestore(app);
+                const check = await response.json();
+                if(check.error) throw new Error("Security Breach");
 
                 document.getElementById('loadStatusMsg').innerText = "System Ready. Redirecting...";
                 setTimeout(() => window.navigate('loginPage'), 1500);
-                
                 attachSystemFunctions(); 
             } catch (err) {
                 document.getElementById('loadStatusMsg').innerText = "Failed to connect to Aura Secure Brain.";
@@ -554,6 +556,7 @@
                 });
 
                 sortedData.forEach(d => {
+                    // 🌟 Customer Paid කරපු ගමන් ලිස්ට් එකෙන් අයින් වෙන ලොජික් එක 🌟
                     if (d.notes === "Customer Paid") return; 
 
                     let att = parseInt(d.callAttempts) || 0; 
@@ -567,9 +570,11 @@
                     let promiseDay = parseInt(d.promiseDate);
 
                     if (d.listType === "Red") {
+                        // Red අය අනිවාර්යයෙන්ම එනවා, Paid දානකම්!
                         if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > filterDay) isTargetForDay = false; 
                         else isTargetForDay = true;
                     } else {
+                        // Open ලිස්ට් එකේ දවස අනුව එන ලොජික් එක
                         if (!isNaN(promiseDay) && promiseDay > 0) {
                             if (promiseDay === filterDay) { isTargetForDay = true; }
                             else if (promiseDay < filterDay && filterDay === td) { isTargetForDay = true; isForwarded = true; } 
