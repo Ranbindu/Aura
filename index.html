@@ -56,21 +56,24 @@
 <body>
 
     <script>
-        // Pages මාරු කරන Function එක
         window.navigate = function(pageId) {
             document.querySelectorAll('.page-container').forEach(function(p) { p.classList.remove('active-page'); });
             document.getElementById(pageId).classList.add('active-page'); window.scrollTo(0,0);
         };
     </script>
 
-    <div id="loginPage" class="page-container active-page">
-        <div class="glass-panel" style="max-width: 400px; margin: 15vh auto; padding: 50px; text-align: center;">
-            <h1 style="font-size: 3.5em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
-            <h2 class="mb-20" style="color: #a5d6a7;">SECURE LOGIN</h2>
+    <div id="welcomePage" class="page-container active-page glass-panel" style="text-align: center; margin-top: 15vh;">
+        <h1 style="font-size: 4.5em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
+        <p style="font-size: 1.6em; color: #a5d6a7;" id="loadStatusMsg">Connecting to Aura Secure Vault...</p>
+    </div>
+
+    <div id="loginPage" class="page-container">
+        <div class="glass-panel" style="max-width: 400px; margin: auto; padding: 50px; text-align: center;">
+            <h2 class="mb-20">SECURE LOGIN</h2>
             <input type="text" id="username" placeholder="Email Address">
             <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()">
             <button onclick="window.login()" id="loginBtn" style="width: 100%; margin-top: 20px; padding: 15px;">LOGIN TO SYSTEM</button>
-            <div id="loginStatus" style="color: #ffeb3b; margin-top: 15px; font-weight: bold;">⏳ Securing Connection...</div>
+            <div id="loginStatus" style="color: #ff8a80; margin-top: 15px; font-weight: bold;"></div>
         </div>
     </div>
 
@@ -82,16 +85,15 @@
         <div class="dashboard-grid">
             <div class="sidebar-menu">
                 <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
-                <button onclick="window.navigate('progressPage'); window.updateProgressSummary();" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
                 <button onclick="window.navigate('fieldDetailsPage')" style="width: 100%; margin-bottom: 10px;">🏃 Field Agent Collection</button>
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50;">
-                    <h3 style="margin-bottom: 5px; font-size: 14px;">Today's Success Rate</h3>
-                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 10px;">(Paid & Promised / Today's Calls)</div>
+                    <h3 style="margin-bottom: 5px; font-size: 14px;">Call Center Success Rate</h3>
+                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 10px;">(Paid & Promised / Total Called)</div>
                     <h1 style="color: #4caf50; font-size: 3em; margin: 0;" id="dashSuccessRate">0%</h1>
-                    <div style="margin-top: 10px; font-weight: bold; font-size: 14px;">Today Completed Calls: <span id="dashTodayCalls" style="color:#ffeb3b;">0</span></div>
+                    <div style="margin-top: 10px; font-weight: bold; font-size: 14px;">Total Calls Taken: <span id="dashTotalCalls" style="color:#ffeb3b;">0</span></div>
                 </div>
             </div>
             <div>
@@ -101,10 +103,7 @@
                     <button onclick="window.filterRiskAccounts()" style="padding: 5px 10px; font-size: 10px;">View</button>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
-                <div class="stat-box" style="border-color: #f44336;">
-                    <span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span>
-                    <div class="stat-value" id="dashRed">0</div>
-                </div>
+                <div class="stat-box" style="border-color: #f44336;"><span style="color: #ff8a80;">Red Arrears Accounts (Issu)</span><div class="stat-value" id="dashRed">0</div></div>
 
                 <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
@@ -120,52 +119,6 @@
                         <div class="stat-value" id="dashCollected" style="background: #4caf50; color: white;">Rs. 0</div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="progressPage" class="page-container glass-panel">
-        <div class="flex-between mb-20">
-            <button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button>
-            <button onclick="window.forceRefreshData()" class="btn-refresh">🔄 Refresh Live Data</button>
-        </div>
-        <h2>Real-Time Performance Overview</h2>
-        
-        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
-            <span style="font-size: 16px; font-weight: bold;">📅 ප්‍රගතිය බැලීමට දිනය තෝරන්න: </span>
-            <select id="progressDaySelect" onchange="window.updateProgressSummary()" style="width: 200px; padding: 8px; margin-left: 15px; display: inline-block;">
-                <option value="today">අද දිනය (Today)</option>
-            </select>
-        </div>
-
-        <div class="progress-grid">
-            <div class="progress-section">
-                <h3 style="margin-top:0;">Call Center Progress</h3>
-                <div style="display: flex; justify-content: space-around; margin: 20px 0; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px;">
-                    <div style="text-align: center;">
-                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">SELECTED DAY RATE</h4>
-                        <h1 id="pRateDay" style="font-size: 3.5em; color: #4caf50; margin: 5px 0;">0%</h1>
-                    </div>
-                    <div style="width: 2px; background: rgba(255,255,255,0.1);"></div>
-                    <div style="text-align: center;">
-                        <h4 style="margin:0; opacity:0.8; font-size: 12px;">TOTAL MONTH RATE</h4>
-                        <h1 id="pRateMonth" style="font-size: 3.5em; color: #2196f3; margin: 5px 0;">0%</h1>
-                    </div>
-                </div>
-                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
-                    <span>Selected Day Call Target:</span><span id="pTarget" style="font-weight: bold; font-size: 1.3em;">0</span>
-                </div>
-                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;">
-                    <span>Calls Completed (Selected Day):</span><span id="pDone" style="font-weight: bold; font-size: 1.3em;">0</span>
-                </div>
-                <button onclick="window.navigateManagerCC()" style="margin-top: 15px; width: 100%;">View Detailed Logs</button>
-            </div>
-            
-            <div class="progress-section" style="text-align: center;">
-                <h3 style="margin-top:0;">Field Collection Status</h3>
-                <h1 id="pFieldCount" style="font-size: 5em; color: #f44336; margin: 30px 0;">0</h1>
-                <p>Total Red Accounts (Field Visit Required)</p>
-                <button onclick="window.navigate('fieldDetailsPage')" style="margin-top: 15px; width: 100%;">View Field Agent Allocation</button>
             </div>
         </div>
     </div>
@@ -269,13 +222,14 @@
 
     <div id="staffTargetPage" class="page-container glass-panel" style="max-width: 1450px;">
         <div class="flex-between mb-20">
-            <h2 style="margin:0;">TODAY'S TARGET: <span class="target-badge" id="staffTargetNum">0</span></h2>
-            <div style="display: flex; gap: 10px; align-items: center;">
+            <h2 style="margin:0;">CALL CENTER TARGET: <span class="target-badge" id="staffTargetNum">0</span></h2>
+            
+            <div style="display: flex; gap: 15px; align-items: center;">
                 <div style="background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 10px; display: flex; align-items: center; gap: 10px; border: 1px solid #4caf50;">
                     <span>📅 Target Day:</span>
                     <select id="staffDayFilter" onchange="window.renderStaffUI()" style="width: 130px; margin:0; font-weight: bold; color: #4caf50;"></select>
                 </div>
-                <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No Only..." style="width: 250px; margin:0;">
+                <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No..." style="width: 250px; margin:0;">
                 <button onclick="window.logout()" class="btn-danger" style="margin:0;">Logout</button>
             </div>
         </div>
@@ -295,7 +249,7 @@
             <button onclick="document.getElementById('f_new').click()" style="padding: 30px 20px; font-size: 16px;">📂 1. Upload Master Open List</button>
             <button onclick="document.getElementById('f_red').click()" style="padding: 30px 20px; font-size: 16px; background: linear-gradient(135deg, #f44336, #b71c1c);">📂 2. Upload Arrears (Red) List</button>
         </div>
-        <div id="loadMsg" style="text-align: center; color: #ffeb3b; margin-top: 20px; display: none; font-weight: bold;">⏳ BATCH PROCESSING & CLEANUP... PLEASE WAIT...</div>
+        <div id="loadMsg" style="text-align: center; color: #ffeb3b; margin-top: 20px; display: none; font-weight: bold;">⏳ BATCH PROCESSING... PLEASE WAIT...</div>
         <input type="file" id="f_new" style="display:none" onchange="window.uploadExcel(event, 'New')">
         <input type="file" id="f_red" style="display:none" onchange="window.uploadExcel(event, 'Red')">
     </div>
@@ -312,10 +266,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක (AURA) 🌟
+        // 🌟 ඔයාගේ නියම Cloudflare ලින්ක් එක 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db;
@@ -326,10 +280,10 @@
         let sysToday = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + String(tdObj.getDate()).padStart(2,'0');
 
         const setupFilters = () => {
-            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("progressDaySelect"), document.getElementById("staffDayFilter")];
+            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("staffDayFilter")];
             dayFilters.forEach(sel => {
                 if(!sel) return;
-                sel.innerHTML = ""; 
+                sel.innerHTML = ""; // Clear existing
                 for(let i=1; i<=31; i++) {
                     let opt = document.createElement("option"); opt.value=i; 
                     if(i === td) { opt.text = i + " වෙනිදා (Today)"; opt.selected=true; }
@@ -340,47 +294,28 @@
         };
         setupFilters();
 
-        // 🌟 ලොගින් පේජ් එක හිරවෙන්නේ නැති වෙන්න Bulletproof කරපු තැන 🌟
         async function bootSecureSystem() {
             try {
-                // Cloudflare එකෙන් API Keys ගන්නවා
                 const response = await fetch(CLOUD_API_URL);
-                if (!response.ok) throw new Error("Failed to reach Cloudflare.");
-                
                 const fbConfig = await response.json();
+                
                 if(fbConfig.error) {
-                    document.getElementById('loginStatus').innerText = "❌ SECURITY BREACH: " + fbConfig.error;
-                    document.getElementById('loginStatus').style.color = "red";
+                    document.getElementById('loadStatusMsg').innerText = "SECURITY BREACH: Access Denied!";
+                    document.getElementById('loadStatusMsg').style.color = "red";
                     return;
                 }
 
-                // Keys ලැබුණට පස්සේ Firebase පටන් ගන්නවා
                 app = initializeApp(fbConfig); 
                 auth = getAuth(app); 
                 db = getFirestore(app);
 
-                document.getElementById('loginStatus').innerText = "✅ Secure Connection Ready.";
-                document.getElementById('loginStatus').style.color = "#4caf50";
-
+                document.getElementById('loadStatusMsg').innerText = "System Ready. Redirecting...";
+                setTimeout(() => window.navigate('loginPage'), 1500);
+                
                 attachSystemFunctions(); 
-
-                // 🌟 Auto Login Check එක 🌟
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        let e = user.email.toLowerCase();
-                        let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
-                        
-                        onSnapshot(collection(db, "phoneDirectory"), (snap) => {
-                            snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
-                        });
-                        
-                        initLiveSync(isManager);
-                    }
-                });
-
             } catch (err) {
-                document.getElementById('loginStatus').innerText = "❌ Offline: Reconnect to Internet and Refresh.";
-                document.getElementById('loginStatus').style.color = "red";
+                document.getElementById('loadStatusMsg').innerText = "Failed to connect to Aura Secure Brain.";
+                document.getElementById('loadStatusMsg').style.color = "red";
             }
         }
 
@@ -394,7 +329,14 @@
                 try {
                     await signInWithEmailAndPassword(auth, e, p);
                     status.innerText = "✅ Loading Data...";
-                } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; status.style.color = "red"; }
+                    onSnapshot(collection(db, "phoneDirectory"), (snap) => {
+                        snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; });
+                    });
+                    
+                    let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
+                    initLiveSync(isManager);
+                    
+                } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; }
             };
 
             function initLiveSync(isManager) {
@@ -404,7 +346,6 @@
                         window.renderManagerDashboard();
                         if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView();
                         if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList();
-                        if(document.getElementById('progressPage').classList.contains('active-page')) window.updateProgressSummary();
                     } else {
                         if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI();
                     }
@@ -457,13 +398,14 @@
             window.renderManagerDashboard = () => {
                 let t = 0, y = 0, r = 0;
                 let totalArrears = 0, collectedAmount = 0; 
-                let todayCalls = 0, successCalls = 0; 
+                let totalCalls = 0, successCalls = 0; // 🌟 අලුත් Success Rate එකට 🌟
 
                 masterData.forEach(d => {
                     t++; 
                     let att = parseInt(d.callAttempts) || 0;
                     let isRisk = (att >= 3 || d.notes === "Bad Feedback");
                     
+                    // සල්ලි ගණන් කිරිල්ල
                     if (d.listType === "Red") {
                         r++;
                         let amt = Number(d.arrearsAmount) || 0;
@@ -473,64 +415,26 @@
                         y++;
                     }
 
-                    if (d.lastCallDate === sysToday && (att > 0 || d.notes !== "")) {
-                        todayCalls++;
+                    // Success Rate එක ගණන් කිරිල්ල
+                    if (att > 0 || d.notes !== "") {
+                        totalCalls++;
                         if (d.notes === "Customer Paid" || d.notes === "Promised to Pay") successCalls++;
                     }
                 });
 
                 let toCollect = totalArrears - collectedAmount; 
 
-                if(document.getElementById('dashTotal')) document.getElementById('dashTotal').innerText = t; 
-                if(document.getElementById('dashYellow')) document.getElementById('dashYellow').innerText = y; 
-                if(document.getElementById('dashRed')) document.getElementById('dashRed').innerText = r; 
-                if(document.getElementById('pFieldCount')) document.getElementById('pFieldCount').innerText = r;
+                document.getElementById('dashTotal').innerText = t; 
+                document.getElementById('dashYellow').innerText = y; 
+                document.getElementById('dashRed').innerText = r; 
 
-                if(document.getElementById('dashTotalArrears')) document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
-                if(document.getElementById('dashToCollect')) document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
-                if(document.getElementById('dashCollected')) document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
+                document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US');
+                document.getElementById('dashToCollect').innerText = "Rs. " + toCollect.toLocaleString('en-US');
+                document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
 
-                if(document.getElementById('dashTodayCalls')) document.getElementById('dashTodayCalls').innerText = todayCalls;
-                if(document.getElementById('dashSuccessRate')) document.getElementById('dashSuccessRate').innerText = todayCalls > 0 ? Math.round((successCalls/todayCalls)*100) + "%" : "0%";
-            };
-
-            window.updateProgressSummary = () => {
-                if(!document.getElementById('progressDaySelect')) return;
-                let filterVal = document.getElementById('progressDaySelect').value;
-                let selectedDay = filterVal === "today" ? td : parseInt(filterVal);
-                let targetDay = 0, doneDay = 0, targetMonth = 0, doneMonth = 0;
-                let openTarget = 0, redTarget = 0;
-
-                masterData.forEach(d => {
-                    let att = parseInt(d.callAttempts) || 0; let isPaid = (d.notes === "Customer Paid");
-                    let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
-                    
-                    let isTargetOverall = false;
-                    if (d.listType === "Red") isTargetOverall = true;
-                    else if (agreeDay > 0 || promiseDay > 0) isTargetOverall = true;
-
-                    if (isTargetOverall) { targetMonth++; if (att > 0 || isPaid) doneMonth++; }
-
-                    let isTargetForSelectedDay = false;
-                    if (d.listType === "Red") {
-                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedDay) isTargetForSelectedDay = false; 
-                        else if (!isPaid) isTargetForSelectedDay = true;
-                    } else if (!isNaN(promiseDay) && promiseDay === selectedDay) { isTargetForSelectedDay = true;
-                    } else if (agreeDay === selectedDay) { isTargetForSelectedDay = true;
-                    } else if (agreeDay > 0 && agreeDay < selectedDay && (att === 0 || d.notes === "Call Not Answer") && selectedDay === td) {
-                        isTargetForSelectedDay = true; 
-                    }
-
-                    if (isTargetForSelectedDay || (isPaid && agreeDay === selectedDay)) {
-                        targetDay++; if(d.listType === "Red") redTarget++; else openTarget++;
-                        if (att > 0 || isPaid) doneDay++;
-                    }
-                });
-
-                document.getElementById('pRateDay').innerText = (targetDay > 0 ? Math.round((doneDay/targetDay)*100) : 0) + "%";
-                document.getElementById('pRateMonth').innerText = (targetMonth > 0 ? Math.round((doneMonth/targetMonth)*100) : 0) + "%";
-                document.getElementById('pTarget').innerHTML = `${targetDay} <div style="font-size:12px; margin-top:5px; opacity:0.8;">(Open: ${openTarget} | Issu: ${redTarget})</div>`;
-                document.getElementById('pDone').innerText = doneDay;
+                // අලුත් Success Rate එක දානවා
+                document.getElementById('dashTotalCalls').innerText = totalCalls;
+                document.getElementById('dashSuccessRate').innerText = totalCalls > 0 ? Math.round((successCalls/totalCalls)*100) + "%" : "0%";
             };
 
             window.syncManagerView = () => {
@@ -578,9 +482,9 @@
                         }
                     }
                 });
-                if(document.getElementById('managerCCBody')) document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='7'>No records found for selected day/filter.</td></tr>";
-                if(document.getElementById('fTarget')) document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
-                if(document.getElementById('fCalled')) document.getElementById('fCalled').innerText = called;
+                document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='7'>No records found for selected day/filter.</td></tr>";
+                document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
+                document.getElementById('fCalled').innerText = called;
             };
 
             window.renderFieldList = () => {
@@ -610,7 +514,7 @@
                         }
                     }
                 });
-                if(document.getElementById('fieldDetailsBody')) document.getElementById('fieldDetailsBody').innerHTML = html || "<tr><td colspan='5'>No accounts found.</td></tr>";
+                document.getElementById('fieldDetailsBody').innerHTML = html || "<tr><td colspan='5'>No accounts found.</td></tr>";
                 
                 ["Group Sale", "Heenpahana", "Rohan", "Amila"].forEach((ag, idx) => {
                     let code = ["G", "H", "R", "D"][idx];
@@ -619,23 +523,22 @@
                     let tAcc = stats[ag].tAcc; let cAcc = stats[ag].cAcc;
                     let accRate = tAcc > 0 ? Math.round(((tAcc - cAcc) / tAcc) * 100) : 0; 
 
-                    if(document.getElementById(`fAmt_${code}`)) document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`;
-                    if(document.getElementById(`fAcc_${code}`)) document.getElementById(`fAcc_${code}`).innerText = tAcc;
-                    if(document.getElementById(`cAmt_${code}`)) document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`;
-                    if(document.getElementById(`cAcc_${code}`)) document.getElementById(`cAcc_${code}`).innerText = cAcc;
-                    if(document.getElementById(`rRateAmt_${code}`)) document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`;
-                    if(document.getElementById(`rRateAcc_${code}`)) document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
+                    document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`;
+                    document.getElementById(`fAcc_${code}`).innerText = tAcc;
+                    document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`;
+                    document.getElementById(`cAcc_${code}`).innerText = cAcc;
+                    document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`;
+                    document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
                 });
             };
 
+            // 🌟 අලුත් Date Filter ලොජික් එක (Staff ට) 🌟
             window.renderStaffUI = () => {
                 let filterDay = parseInt(document.getElementById('staffDayFilter').value) || td;
                 
-                if(filterDay !== td) {
-                    if(document.getElementById('dateWarning')) document.getElementById('dateWarning').style.display = 'block';
-                } else {
-                    if(document.getElementById('dateWarning')) document.getElementById('dateWarning').style.display = 'none';
-                }
+                // Warning එක පෙන්වන එක
+                if(filterDay !== td) document.getElementById('dateWarning').style.display = 'block';
+                else document.getElementById('dateWarning').style.display = 'none';
 
                 let html = "", targetOpen = 0, targetRed = 0;
                 
@@ -657,21 +560,23 @@
                     let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : "");
 
                     let isTargetForDay = false; 
-                    let isForwarded = false; 
+                    let isForwarded = false; // මේකෙන් කියන්නේ Miss වුණු ඒවා
                     
                     let agreeDay = extractDay(d.agreeDate); 
                     let promiseDay = parseInt(d.promiseDate);
 
                     if (d.listType === "Red") {
+                        // Red ලිස්ට් එකේ උන් හැමදාම ලිස්ට් එකේ ඉන්නවා (Paid වෙනකම්)
                         if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > filterDay) isTargetForDay = false; 
                         else isTargetForDay = true;
                     } else {
+                        // Open List ලොජික් එක 
                         if (!isNaN(promiseDay) && promiseDay > 0) {
                             if (promiseDay === filterDay) { isTargetForDay = true; }
-                            else if (promiseDay < filterDay && filterDay === td) { isTargetForDay = true; isForwarded = true; } 
+                            else if (promiseDay < filterDay && filterDay === td) { isTargetForDay = true; isForwarded = true; } // ඊයේ Promise කරලා අදටත් ඇවිත්
                         } else if (agreeDay > 0) {
                             if (agreeDay === filterDay) { isTargetForDay = true; }
-                            else if (agreeDay < filterDay && att === 0 && filterDay === td) { isTargetForDay = true; isForwarded = true; } 
+                            else if (agreeDay < filterDay && att === 0 && filterDay === td) { isTargetForDay = true; isForwarded = true; } // ඊයේ කතා කරේ නැති ඒවා
                         } 
                         
                         if (d.notes === "Call Not Answer" && filterDay === td) { isTargetForDay = true; isForwarded = true; }
@@ -683,8 +588,8 @@
                     }
                 });
                 
-                if(document.getElementById('staffTableBody')) document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>මෙම දිනය සඳහා ගිණුම් නොමැත! (No targets for selected date)</td></tr>";
-                if(document.getElementById('staffTargetNum')) document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
+                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>මෙම දිනය සඳහා ගිණුම් නොමැත! (No targets for selected date)</td></tr>";
+                document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
             };
 
             window.searchGlobalStaffTable = () => {
@@ -700,8 +605,8 @@
                         html += generateRowHTML(d, rowC, false); searchCount++;
                     }
                 });
-                if(document.getElementById('staffTableBody')) document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>ගිණුම් නොමැත (No accounts found).</td></tr>";
-                if(document.getElementById('staffTargetNum')) document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
+                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>ගිණුම් නොමැත (No accounts found).</td></tr>";
+                document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
             };
 
             window.saveData = async (docId) => {
@@ -711,9 +616,9 @@
 
                 let d = masterData.find(x => x.id === docId);
                 
-                let phoneKey = d.nic !== "" ? d.nic : docId; 
-                if(phoneVal !== d.phone && phoneVal !== "") {
-                    await setDoc(doc(db, "phoneDirectory", phoneKey), { phone: phoneVal, name: d.customerName });
+                // 🌟 Phonebook එකට සේව් කරනවා 🌟
+                if(phoneVal !== d.phone && phoneVal !== "" && d.nic !== "") {
+                    await setDoc(doc(db, "phoneDirectory", d.nic), { phone: phoneVal, name: d.customerName });
                 }
                 
                 await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
@@ -721,14 +626,16 @@
                 let btn = document.querySelector(`#row_${docId} button`); btn.innerText = "SAVED"; btn.style.background = "#4caf50";
                 setTimeout(() => { let row = document.getElementById(`row_${docId}`); if(row) row.style.display = 'none'; }, 800);
                 
+                // Save කළාම අදාළ දවසේ ලිස්ට් එකම ආයෙත් අප්ඩේට් වෙනවා
                 if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); 
             };
 
+            // 🌟 Phonebook Download Function 🌟
             window.downloadPhoneDirectory = () => {
-                let csvContent = "data:text/csv;charset=utf-8,NIC / Account ID,Customer Name,Phone Number\n";
-                for (const [key, data] of Object.entries(phoneDirectory)) { 
+                let csvContent = "data:text/csv;charset=utf-8,NIC,Customer Name,Phone Number\n";
+                for (const [nic, data] of Object.entries(phoneDirectory)) { 
                     let cleanName = (data.name || 'N/A').replace(/,/g, ''); 
-                    csvContent += `${key},"${cleanName}",${data.phone}\n`; 
+                    csvContent += `${nic},"${cleanName}",${data.phone}\n`; 
                 }
                 var encodedUri = encodeURI(csvContent); var link = document.createElement("a");
                 link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Customer_Phonebook.csv");
@@ -756,26 +663,6 @@
                         const workbook = XLSX.read(e.target.result, {type:'array'});
                         const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
                         
-                        document.getElementById('loadMsg').innerText = "⏳ Cleaning up old records...";
-
-                        let excelIds = data.map(rawRow => {
-                            let cleanRow = {};
-                            for (let k in rawRow) { cleanRow[String(k).toUpperCase().replace(/[^A-Z0-9]/g, '')] = rawRow[k]; }
-                            let rawAcc = (type === 'New') ? (cleanRow["ORIGINALACCTNO"] || cleanRow["ACCTNO"] || cleanRow["ACCNO"] || cleanRow["ACCOUNTNO"] || "") : (cleanRow["ACCNO"] || cleanRow["ACCOUNTNO"] || cleanRow["ACCTNO"] || cleanRow["RESULTKEY"] || "");
-                            return String(rawAcc).toUpperCase().replace(/[^A-Z0-9]/g, '');
-                        }).filter(id => id.length >= 4);
-
-                        if(excelIds.length < 10 && data.length > 10) {
-                            throw new Error("Could not detect Account Numbers in the Excel file. Please check the columns.");
-                        }
-
-                        let deleteIds = []; let resetRedIds = [];
-                        if (type === 'New') {
-                            deleteIds = masterData.filter(d => !excelIds.includes(d.id)).map(d => d.id);
-                        } else {
-                            resetRedIds = masterData.filter(d => d.listType === "Red" && !excelIds.includes(d.id)).map(d => d.id);
-                        }
-
                         document.getElementById('loadMsg').innerText = "⏳ Connecting to Aura Secure Brain...";
 
                         let totalProcessed = 0;
@@ -787,7 +674,7 @@
                                     'Content-Type': 'application/json',
                                     'Authorization': `Bearer ${token}` 
                                 },
-                                body: JSON.stringify({ listType: type, data: chunk, deleteIds: deleteIds, resetRedIds: resetRedIds }) 
+                                body: JSON.stringify({ listType: type, data: chunk }) 
                             });
                             let resData = await res.json();
                             
@@ -809,7 +696,6 @@
             };
         }
 
-        // Initialize System
         bootSecureSystem();
     </script>
 </body>
