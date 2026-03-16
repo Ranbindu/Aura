@@ -374,8 +374,8 @@
         let app, auth, db;
         let masterData = []; 
         let phoneDirectory = {}; 
-        let agentMapping = {}; // 🌟 අලුත්: Agent Mapping
-        let bmIssuesList = []; // 🌟 අලුත්: BM Issues
+        let agentMapping = {}; // 🌟 Agent Mapping
+        let bmIssuesList = []; // 🌟 BM Issues
 
         let tdObj = new Date(); let td = tdObj.getDate();
         let sysToday = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + String(tdObj.getDate()).padStart(2,'0');
@@ -417,7 +417,6 @@
                     status.innerText = "✅ Loading Data...";
                     onSnapshot(collection(db, "phoneDirectory"), (snap) => { snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); });
                     
-                    // 🌟 අලුත්: Listening to new databases 🌟
                     onSnapshot(collection(db, "agent_mapping"), (snap) => { 
                         snap.forEach(d => { agentMapping[d.id] = d.data().fieldAgent; }); 
                         if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues();
@@ -495,13 +494,17 @@
                 window.updateProgressSummary();
             };
 
-            // 🌟 අලුත්: Render BM Out of Pocket Stats 🌟
+            // 🌟 Render BM Out of Pocket Stats 🌟
             window.renderBMStats = () => {
                 let issued = 0, collected = 0, bal = 0, accIssueCount = 0, accOutCount = 0;
                 bmIssuesList.forEach(d => {
-                    issued += d.issuedAmount; collected += d.settledAmount; bal += d.balance;
-                    if(d.issuedAmount > 0) accIssueCount++;
-                    if(d.balance > 0) accOutCount++;
+                    let issuedNum = Number(d.issuedAmount) || 0;
+                    let settledNum = Number(d.settledAmount) || 0;
+                    let balNum = Number(d.balance) || 0;
+
+                    issued += issuedNum; collected += settledNum; bal += balNum;
+                    if(issuedNum > 0) accIssueCount++;
+                    if(balNum > 0) accOutCount++;
                 });
                 if(document.getElementById('bmTotalIssued')) document.getElementById('bmTotalIssued').innerText = "Rs. " + issued.toLocaleString('en-US');
                 if(document.getElementById('bmTotalCollected')) document.getElementById('bmTotalCollected').innerText = "Rs. " + collected.toLocaleString('en-US');
@@ -510,31 +513,36 @@
                 if(document.getElementById('bmOutCount')) document.getElementById('bmOutCount').innerText = accOutCount;
             };
 
-            // 🌟 අලුත්: Render BM Issue Detail Page 🌟
+            // 🌟 Render BM Issue Detail Page 🌟
             window.renderBMIssues = () => {
                 let search = document.getElementById('bmSearch') ? document.getElementById('bmSearch').value.toLowerCase().trim() : "";
                 let agentFilt = document.getElementById('bmAgentFilter') ? document.getElementById('bmAgentFilter').value : "ALL";
                 let statusFilt = document.getElementById('bmStatusFilter') ? document.getElementById('bmStatusFilter').value : "ALL";
 
                 let html = "";
-                let sortedList = [...bmIssuesList].sort((a, b) => b.balance - a.balance); // Highest balance first
+                let sortedList = [...bmIssuesList].sort((a, b) => (Number(b.balance) || 0) - (Number(a.balance) || 0)); // Highest balance first
 
                 sortedList.forEach(d => {
+                    let balNum = Number(d.balance) || 0;
+                    let settledNum = Number(d.settledAmount) || 0;
+                    let issuedNum = Number(d.issuedAmount) || 0;
+
+                    if(balNum <= 0) return; // Zero balance auto hide
+
                     let agent = agentMapping[d.id] || "Unknown";
                     if(agentFilt !== "ALL" && agent !== agentFilt) return;
-                    if(search !== "" && !(d.accountNo.toLowerCase().includes(search))) return;
-                    if(statusFilt === "NOPAY" && d.settledAmount > 0) return;
-                    if(statusFilt === "PAID" && d.settledAmount === 0) return;
-                    if(d.balance <= 0) return; // Zero balance auto hide
+                    if(search !== "" && !(String(d.accountNo).toLowerCase().includes(search))) return;
+                    if(statusFilt === "NOPAY" && settledNum > 0) return;
+                    if(statusFilt === "PAID" && settledNum === 0) return;
 
                     html += `<tr class="row-purple">
                         <td>${d.accountNo}</td>
                         <td>${d.customerName || "N/A"}</td>
                         <td>${agent}</td>
-                        <td>Rs. ${d.issuedAmount.toLocaleString('en-US')}</td>
-                        <td style="color: #81c784;">Rs. ${d.settledAmount.toLocaleString('en-US')}</td>
-                        <td style="color: #ff9800; font-weight: bold;">Rs. ${d.balance.toLocaleString('en-US')}</td>
-                        <td><button onclick="window.openBMPayment('${d.id}', '${d.accountNo}', ${d.balance}, ${d.settledAmount}, ${d.issuedAmount})" style="padding: 6px 10px; font-size: 11px; background: #ce93d8; color: #000;">+ Pay</button></td>
+                        <td>Rs. ${issuedNum.toLocaleString('en-US')}</td>
+                        <td style="color: #81c784;">Rs. ${settledNum.toLocaleString('en-US')}</td>
+                        <td style="color: #ff9800; font-weight: bold;">Rs. ${balNum.toLocaleString('en-US')}</td>
+                        <td><button onclick="window.openBMPayment('${d.id}', '${d.accountNo}', ${balNum}, ${settledNum}, ${issuedNum})" style="padding: 6px 10px; font-size: 11px; background: #ce93d8; color: #000;">+ Pay</button></td>
                     </tr>`;
                 });
                 let tb = document.getElementById('bmIssueBody'); if(tb) tb.innerHTML = html || "<tr><td colspan='7'>No outstanding accounts found.</td></tr>";
@@ -569,7 +577,6 @@
                 } catch(e) { alert("Failed to update: " + e.message); }
             };
 
-            // Existing methods continued
             window.navigateProgress = () => { window.navigate('progressPage'); window.updateProgressSummary(); };
             window.navigateManagerCC = () => { window.navigate('callCenterDetailsPage'); window.syncManagerView(); };
             window.filterRiskAccounts = () => { document.getElementById('logStatusFilter').value = "RISK"; window.navigateManagerCC(); }
@@ -609,7 +616,7 @@
                         if(show) { let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`; let displayStatus = (statusText === "Pending" && d.notes === "Call Not Answer") ? "Not Answer" : statusText; html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${displayStatus}</b></td></tr>`; }
                     }
                 });
-                document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='7'>No records found.</td></tr>"; document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`; document.getElementById('fCalled').innerText = called;
+                document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='7'>No records found for selected day/filter.</td></tr>"; document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`; document.getElementById('fCalled').innerText = called;
             };
 
             window.renderFieldList = () => {
