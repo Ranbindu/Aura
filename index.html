@@ -7,55 +7,61 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; background: url('https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920&auto=format&fit=crop') no-repeat center fixed; background-size: cover; color: #fff; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
-        /* 🌟 Compact Sizes for No-Scroll Layout 🌟 */
-        .glass-panel { background: rgba(15, 25, 20, 0.85); border-radius: 15px; box-shadow: 0 5px 25px rgba(0, 0, 0, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.15); }
-        .page-container { display: none; width: 98%; max-width: 1500px; margin: 15px auto; padding: 20px; animation: fadeIn 0.4s ease-in-out; }
+        
+        /* 🌟 Restored to Original Large & Bold Sizes 🌟 */
+        .glass-panel { background: rgba(15, 25, 20, 0.85); border-radius: 20px; box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.15); }
+        .page-container { display: none; width: 95%; max-width: 1450px; margin: 30px auto; padding: 30px; animation: fadeIn 0.4s ease-in-out; }
         .active-page { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
         
-        h1, h2, h3 { text-align: center; text-shadow: 1px 2px 5px rgba(0,0,0,0.8); margin-top: 0; margin-bottom: 10px; }
-        .branch-name { background: rgba(0, 0, 0, 0.5); padding: 8px 25px; border-radius: 30px; border: 1px solid #4caf50; font-size: 1.1em; display: inline-block; margin-bottom: 15px; }
+        h1, h2, h3 { text-align: center; text-shadow: 2px 4px 8px rgba(0,0,0,0.8); margin-top: 0; }
+        .branch-name { background: rgba(0, 0, 0, 0.5); padding: 12px 30px; border-radius: 40px; border: 1px solid #4caf50; font-size: 1.2em; display: inline-block; margin-bottom: 20px; }
         
-        button { background: linear-gradient(135deg, #4caf50 0%, #1b5e20 100%); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 25px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
-        button:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.5); filter: brightness(1.1); }
-        .btn-info { padding: 5px 10px; border-radius: 8px; background: #2196f3; border:none; font-size: 14px; margin: 0; }
+        button { background: linear-gradient(135deg, #4caf50 0%, #1b5e20 100%); color: white; border: 1px solid rgba(255,255,255,0.2); padding: 12px 25px; border-radius: 30px; cursor: pointer; font-weight: bold; text-transform: uppercase; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.5); filter: brightness(1.1); }
+        .btn-info { padding: 6px 12px; border-radius: 10px; background: #2196f3; border:none; font-size: 16px; margin: 0; }
         .btn-danger { background: linear-gradient(135deg, #f44336 0%, #b71c1c 100%); }
         .btn-refresh { background: linear-gradient(135deg, #ff9800 0%, #e65100 100%); }
-        .btn-download { background: linear-gradient(135deg, #00bcd4 0%, #01579b 100%); width: 100%; margin-top: 10px; }
+        .btn-download { background: linear-gradient(135deg, #00bcd4 0%, #01579b 100%); width: 100%; margin-top: 15px; }
 
-        input, select { width: 100%; padding: 8px; margin: 3px 0; border-radius: 8px; background: rgba(0, 0, 0, 0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 12px; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; background: rgba(0, 0, 0, 0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 14px; box-sizing: border-box; }
         input:focus, select:focus { border-color: #4caf50; outline: none; background: rgba(0,0,0,0.8); }
         select option { background: #1a1a1a; color: #fff; }
         
-        .dashboard-grid { display: grid; grid-template-columns: 300px 1fr; gap: 15px; }
-        .stat-box { background: rgba(0, 0, 0, 0.5); padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 5px solid #4caf50; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
-        .stat-value { background: #fff; color: #000; padding: 5px 12px; border-radius: 8px; font-weight: 900; font-size: 1.2em; }
+        .dashboard-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+        .stat-box { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; margin-bottom: 15px; border-left: 6px solid #4caf50; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .stat-value { background: #fff; color: #000; padding: 8px 20px; border-radius: 10px; font-weight: 900; font-size: 1.5em; }
         
-        .progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;}
-        .progress-section { background: rgba(0, 0, 0, 0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);}
+        .progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px;}
+        .progress-section { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);}
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: rgba(0, 0, 0, 0.4); border-radius: 10px; overflow: hidden; }
-        th { background-color: rgba(0, 0, 0, 0.8); color: #81c784; padding: 12px; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
-        td { padding: 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: rgba(0, 0, 0, 0.4); border-radius: 15px; overflow: hidden; }
+        th { background-color: rgba(0, 0, 0, 0.8); color: #81c784; padding: 15px; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
         
         .row-yellow { background-color: rgba(255, 193, 7, 0.3); } 
         .row-red { background-color: rgba(244, 67, 54, 0.4); }
         .row-green { background-color: rgba(76, 175, 80, 0.25); }
-        .row-forward { border-left: 4px solid #ff9800; background-color: rgba(255, 152, 0, 0.15); } 
+        .row-forward { border-left: 5px solid #ff9800; background-color: rgba(255, 152, 0, 0.15); } 
         .row-purple { background-color: rgba(156, 39, 176, 0.2); border-left: 4px solid #9c27b0; }
 
-        .target-badge { background: #f44336; color: white; padding: 4px 12px; border-radius: 15px; font-weight: bold; margin-left: 10px; }
-        .forward-badge { color: #ff9800; font-size: 10px; font-weight: bold; display: block; margin-top: 2px; background: rgba(0,0,0,0.5); padding: 2px; border-radius: 5px;}
-        .type-badge-open { background: #4caf50; padding: 2px 6px; border-radius: 5px; font-size: 9px; font-weight: bold; margin-left: 6px; color: white; }
-        .type-badge-issu { background: #f44336; padding: 2px 6px; border-radius: 5px; font-size: 9px; font-weight: bold; margin-left: 6px; color: white; }
+        .target-badge { background: #f44336; color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; margin-left: 10px; }
+        .forward-badge { color: #ff9800; font-size: 11px; font-weight: bold; display: block; margin-top: 3px; background: rgba(0,0,0,0.5); padding: 2px; border-radius: 5px;}
+        .type-badge-open { background: #4caf50; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 8px; color: white; }
+        .type-badge-issu { background: #f44336; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 8px; color: white; }
 
-        .reduce-box { background: rgba(76,175,80,0.3); border: 1px solid #4caf50; padding: 5px; border-radius: 5px; margin-bottom: 4px; font-size: 12px; }
-        .reduce-box-acc { background: rgba(33,150,243,0.3); border: 1px solid #2196f3; padding: 5px; border-radius: 5px; font-size: 12px; }
+        .reduce-box { background: rgba(76,175,80,0.3); border: 1px solid #4caf50; padding: 6px; border-radius: 5px; margin-bottom: 6px; font-size: 14px; }
+        .reduce-box-acc { background: rgba(33,150,243,0.3); border: 1px solid #2196f3; padding: 6px; border-radius: 5px; font-size: 14px; }
 
-        #infoModal, #bmPaymentModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 380px; padding: 25px; }
+        #infoModal, #bmPaymentModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 420px; padding: 30px; }
         #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
-        .mb-20 { margin-bottom: 15px; }
+        .mb-20 { margin-bottom: 20px; }
+
+        /* 🌟 Restored Login Size 🌟 */
+        .login-box { max-width: 450px; margin: auto; padding: 50px; text-align: center; }
+        .login-box input { padding: 15px; font-size: 15px; }
+        .login-box button { padding: 15px; font-size: 16px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -68,17 +74,17 @@
     </script>
 
     <div id="welcomePage" class="page-container active-page glass-panel" style="text-align: center; margin-top: 15vh;">
-        <h1 style="font-size: 4em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
-        <p style="font-size: 1.4em; color: #a5d6a7;" id="loadStatusMsg">Connecting to Aura Secure Vault...</p>
+        <h1 style="font-size: 5em; font-weight: 900; line-height: 1.1; letter-spacing: 2px;">AURA<br>SYSTEMS</h1>
+        <p style="font-size: 1.6em; color: #a5d6a7;" id="loadStatusMsg">Connecting to Aura Secure Vault...</p>
     </div>
 
     <div id="loginPage" class="page-container">
-        <div class="glass-panel" style="max-width: 400px; margin: auto; padding: 40px; text-align: center;">
-            <h2 class="mb-20">SECURE LOGIN</h2>
+        <div class="glass-panel login-box">
+            <h2 class="mb-20" style="font-size: 1.8em;">SECURE LOGIN</h2>
             <input type="text" id="username" placeholder="Email Address">
             <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()">
-            <button onclick="window.login()" id="loginBtn" style="width: 100%; margin-top: 15px; padding: 12px;">LOGIN TO SYSTEM</button>
-            <div id="loginStatus" style="color: #ff8a80; margin-top: 15px; font-weight: bold;"></div>
+            <button onclick="window.login()" id="loginBtn" style="width: 100%;">LOGIN TO SYSTEM</button>
+            <div id="loginStatus" style="color: #ff8a80; margin-top: 15px; font-weight: bold; font-size: 1.1em;"></div>
         </div>
     </div>
 
@@ -89,20 +95,20 @@
         </div>
         <div class="dashboard-grid">
             <div class="sidebar-menu">
-                <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 8px;">📤 Import IFS Data</button>
-                <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 8px;">📊 Performance Overview</button>
-                <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 8px;">📋 Call Center Detailed Logs</button>
+                <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
+                <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
+                <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
-                <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; margin-top: 15px; text-align: center; border: 1px solid #4caf50; display: flex; justify-content: space-around;">
+                <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50; display: flex; justify-content: space-around;">
                     <div>
-                        <h3 style="margin-bottom: 5px; font-size: 11px; color: #a5d6a7; text-transform: uppercase;">Monthly Success</h3>
-                        <h1 style="color: #4caf50; font-size: 2em; margin: 0;" id="dashRate">0%</h1>
+                        <h3 style="margin-bottom: 5px; font-size: 13px; color: #a5d6a7; text-transform: uppercase;">Monthly Success</h3>
+                        <h1 style="color: #4caf50; font-size: 2.5em; margin: 0;" id="dashRate">0%</h1>
                     </div>
                     <div style="width: 1px; background: rgba(255,255,255,0.2);"></div>
                     <div>
-                        <h3 style="margin-bottom: 5px; font-size: 11px; color: #90caf9; text-transform: uppercase;">Today Complete</h3>
-                        <h1 style="color: #2196f3; font-size: 2em; margin: 0;" id="dashTodayCompleted">0</h1>
+                        <h3 style="margin-bottom: 5px; font-size: 13px; color: #90caf9; text-transform: uppercase;">Today Complete</h3>
+                        <h1 style="color: #2196f3; font-size: 2.5em; margin: 0;" id="dashTodayCompleted">0</h1>
                     </div>
                 </div>
 
@@ -110,57 +116,57 @@
             <div>
                 <div class="stat-box">
                     <div>
-                        <span style="display:block; font-size: 14px;">Total Active (Open) Accounts</span>
-                        <b style="color: #81c784; font-size: 12px;">Total Expect: <span id="dashTotalValue">Rs. 0</span></b>
+                        <span style="display:block; font-size: 16px;">Total Active (Open) Accounts</span>
+                        <b style="color: #81c784; font-size: 14px;">Total Expect: <span id="dashTotalValue">Rs. 0</span></b>
                     </div>
                     <div class="stat-value" id="dashTotal">0</div>
                 </div>
                 
                 <div class="stat-box" style="border-color: #ffc107;">
                     <div>
-                        <span style="display:block; color: #ffeb3b; font-size: 14px;">Not Responding Account (Not Ans/Bad)</span>
-                        <b style="color: #ffe082; font-size: 12px;">Risk Amount: <span id="dashYellowValue">Rs. 0</span></b>
-                        <button onclick="window.filterRiskAccounts()" style="padding: 2px 8px; font-size: 9px; margin-top:3px;">View</button>
+                        <span style="display:block; color: #ffeb3b; font-size: 16px;">Not Responding Account (Not Ans/Bad)</span>
+                        <b style="color: #ffe082; font-size: 14px;">Risk Amount: <span id="dashYellowValue">Rs. 0</span></b>
+                        <button onclick="window.filterRiskAccounts()" style="padding: 4px 10px; font-size: 11px; margin-top:5px;">View</button>
                     </div>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
 
                 <div class="stat-box" style="border-color: #f44336;">
                     <div>
-                        <span style="display:block; color: #ff8a80; font-size: 14px;">Current Arrears (Open Arrears) Account</span>
-                        <b style="color: #ffcdd2; font-size: 12px;">Arrears Value: <span id="dashRedValue">Rs. 0</span></b>
+                        <span style="display:block; color: #ff8a80; font-size: 16px;">Current Arrears (Open Arrears) Account</span>
+                        <b style="color: #ffcdd2; font-size: 14px;">Arrears Value: <span id="dashRedValue">Rs. 0</span></b>
                     </div>
                     <div class="stat-value" id="dashRed">0</div>
                 </div>
 
-                <div class="stat-box" style="border-color: #2196f3; display: block; padding: 15px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
-                        <span style="color: #90caf9; font-size: 0.9em; text-transform: uppercase; font-weight: bold;">💰 Open Month Arrears (Total)</span>
-                        <b id="dashTotalArrears" style="font-size: 1.2em; color: #fff;">Rs. 0</b>
+                <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
+                        <span style="color: #90caf9; font-size: 1em; text-transform: uppercase; font-weight: bold;">💰 Open Month Arrears (Total)</span>
+                        <b id="dashTotalArrears" style="font-size: 1.3em; color: #fff;">Rs. 0</b>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
-                        <span style="color: #ffeb3b; font-size: 0.9em; text-transform: uppercase; font-weight: bold;">⏳ To Collect (Remaining)</span>
-                        <b id="dashToCollect" style="font-size: 1.2em; color: #ffeb3b;">Rs. 0</b>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; align-items: center;">
+                        <span style="color: #ffeb3b; font-size: 1em; text-transform: uppercase; font-weight: bold;">⏳ To Collect (Remaining)</span>
+                        <b id="dashToCollect" style="font-size: 1.4em; color: #ffeb3b;">Rs. 0</b>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;">
-                        <span style="color: #4caf50; font-size: 0.9em; font-weight: bold; text-transform: uppercase;">✅ Collected Amount</span>
-                        <div class="stat-value" id="dashCollected" style="background: #4caf50; color: white; font-size:1.1em; padding:4px 10px;">Rs. 0</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                        <span style="color: #4caf50; font-size: 1em; font-weight: bold; text-transform: uppercase;">✅ Collected Amount</span>
+                        <div class="stat-value" id="dashCollected" style="background: #4caf50; color: white; font-size:1.2em; padding:6px 15px;">Rs. 0</div>
                     </div>
                 </div>
 
-                <div class="stat-box" style="border-color: #9c27b0; display: block; padding: 15px; margin-top: 10px; cursor: pointer; background: rgba(156, 39, 176, 0.1);" onclick="window.navigate('bmIssuePage')">
-                    <h3 style="color: #ce93d8; margin-top: 0; font-size:14px; text-transform: uppercase;">💼 Issue Management (BM Paid) &rarr;</h3>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="color: #e1bee7; font-size: 12px;">Total Issue Amount (<span id="bmIssueCount">0</span> Acc)</span>
-                        <b id="bmTotalIssued" style="font-size: 13px;">Rs. 0</b>
+                <div class="stat-box" style="border-color: #9c27b0; display: block; padding: 20px; margin-top: 15px; cursor: pointer; background: rgba(156, 39, 176, 0.1);" onclick="window.navigate('bmIssuePage')">
+                    <h3 style="color: #ce93d8; margin-top: 0; font-size:16px; text-transform: uppercase;">💼 Issue Management (BM Paid) &rarr;</h3>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="color: #e1bee7; font-size: 14px;">Total Issue Amount (<span id="bmIssueCount">0</span> Acc)</span>
+                        <b id="bmTotalIssued" style="font-size: 15px;">Rs. 0</b>
                     </div>
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                        <span style="color: #4caf50; font-size: 12px;">Total Collected Amount</span>
-                        <b id="bmTotalCollected" style="color: #4caf50; font-size: 13px;">Rs. 0</b>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span style="color: #4caf50; font-size: 14px;">Total Collected Amount</span>
+                        <b id="bmTotalCollected" style="color: #4caf50; font-size: 15px;">Rs. 0</b>
                     </div>
-                    <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 8px;">
-                        <span style="color: #ff9800; font-size:12px; font-weight: bold;">Outstanding Balance (<span id="bmOutCount">0</span> Acc)</span>
-                        <b id="bmTotalBalance" style="color: #ff9800; font-size: 1.1em;">Rs. 0</b>
+                    <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 10px;">
+                        <span style="color: #ff9800; font-size:14px; font-weight: bold;">Outstanding Balance (<span id="bmOutCount">0</span> Acc)</span>
+                        <b id="bmTotalBalance" style="color: #ff9800; font-size: 1.3em;">Rs. 0</b>
                     </div>
                 </div>
 
@@ -173,14 +179,14 @@
             <h2 style="margin:0; color: #ce93d8;">💼 Issue Management (BM Wallet)</h2>
             <button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button>
         </div>
-        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-            <input type="text" id="bmSearch" onkeyup="window.renderBMIssues()" placeholder="🔍 Search Account No..." style="width: 200px; margin:0;">
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+            <input type="text" id="bmSearch" onkeyup="window.renderBMIssues()" placeholder="🔍 Search Account No..." style="width: 250px; margin:0;">
             <span><b>Field:</b></span>
-            <select id="bmAgentFilter" onchange="window.renderBMIssues()" style="width: 130px; margin: 0;">
+            <select id="bmAgentFilter" onchange="window.renderBMIssues()" style="width: 150px; margin: 0;">
                 <option value="ALL">All Agents</option><option value="Group Sale">Group Sale</option><option value="Heenpahana">Heenpahana</option><option value="Rohan">Rohan</option><option value="Amila">Amila</option>
             </select>
             <span><b>Status:</b></span>
-            <select id="bmStatusFilter" onchange="window.renderBMIssues()" style="width: 180px; margin: 0;">
+            <select id="bmStatusFilter" onchange="window.renderBMIssues()" style="width: 200px; margin: 0;">
                 <option value="ALL">All Accounts</option><option value="NOPAY">No Payments Yet</option><option value="PAID">Partially/Fully Paid</option>
             </select>
         </div>
@@ -197,9 +203,9 @@
         </div>
         <h2>Real-Time Performance Overview</h2>
         
-        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 15px; text-align: center;">
-            <span style="font-size: 14px; font-weight: bold;">📅 ප්‍රගතිය බැලීමට දිනය තෝරන්න: </span>
-            <select id="progressDaySelect" onchange="window.updateProgressSummary()" style="width: 150px; padding: 6px; margin-left: 15px; display: inline-block;">
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center;">
+            <span style="font-size: 16px; font-weight: bold;">📅 ප්‍රගතිය බැලීමට දිනය තෝරන්න: </span>
+            <select id="progressDaySelect" onchange="window.updateProgressSummary()" style="width: 200px; padding: 8px; margin-left: 15px; display: inline-block;">
                 <option value="today">අද දිනය (Today)</option>
             </select>
         </div>
@@ -207,21 +213,21 @@
         <div class="progress-grid">
             <div class="progress-section">
                 <h3 style="margin-top:0;">Call Center Progress</h3>
-                <div style="display: flex; justify-content: space-around; margin: 15px 0; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">
-                    <div style="text-align: center;"><h4 style="margin:0; opacity:0.8; font-size: 11px;">SELECTED DAY RATE</h4><h1 id="pRateDay" style="font-size: 2.5em; color: #4caf50; margin: 5px 0;">0%</h1></div>
-                    <div style="width: 1px; background: rgba(255,255,255,0.1);"></div>
-                    <div style="text-align: center;"><h4 style="margin:0; opacity:0.8; font-size: 11px;">TOTAL MONTH RATE</h4><h1 id="pRateMonth" style="font-size: 2.5em; color: #2196f3; margin: 5px 0;">0%</h1></div>
+                <div style="display: flex; justify-content: space-around; margin: 20px 0; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px;">
+                    <div style="text-align: center;"><h4 style="margin:0; opacity:0.8; font-size: 12px;">SELECTED DAY RATE</h4><h1 id="pRateDay" style="font-size: 3.5em; color: #4caf50; margin: 5px 0;">0%</h1></div>
+                    <div style="width: 2px; background: rgba(255,255,255,0.1);"></div>
+                    <div style="text-align: center;"><h4 style="margin:0; opacity:0.8; font-size: 12px;">TOTAL MONTH RATE</h4><h1 id="pRateMonth" style="font-size: 3.5em; color: #2196f3; margin: 5px 0;">0%</h1></div>
                 </div>
-                <div class="flex-between" style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 8px; font-size:13px;"><span>Selected Day Call Target:</span><span id="pTarget" style="font-weight: bold; font-size: 1.2em;">0</span></div>
-                <div class="flex-between" style="padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 8px; font-size:13px;"><span>Calls Completed (Selected Day):</span><span id="pDone" style="font-weight: bold; font-size: 1.2em;">0</span></div>
-                <button onclick="window.navigateManagerCC()" style="margin-top: 10px; width: 100%;">View Detailed Logs</button>
+                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px; font-size:14px;"><span>Selected Day Call Target:</span><span id="pTarget" style="font-weight: bold; font-size: 1.3em;">0</span></div>
+                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px; font-size:14px;"><span>Calls Completed (Selected Day):</span><span id="pDone" style="font-weight: bold; font-size: 1.3em;">0</span></div>
+                <button onclick="window.navigateManagerCC()" style="margin-top: 15px; width: 100%;">View Detailed Logs</button>
             </div>
             
             <div class="progress-section" style="text-align: center;">
                 <h3 style="margin-top:0;">Field Collection Status</h3>
-                <h1 id="pFieldCount" style="font-size: 4em; color: #f44336; margin: 20px 0;">0</h1>
-                <p style="font-size:13px;">Total Red Accounts (Field Visit Required)</p>
-                <button onclick="window.navigate('fieldDetailsPage')" style="margin-top: 10px; width: 100%;">View Field Agent Allocation</button>
+                <h1 id="pFieldCount" style="font-size: 5em; color: #f44336; margin: 30px 0;">0</h1>
+                <p style="font-size:14px;">Total Red Accounts (Field Visit Required)</p>
+                <button onclick="window.navigate('fieldDetailsPage')" style="margin-top: 15px; width: 100%;">View Field Agent Allocation</button>
             </div>
         </div>
     </div>
@@ -229,14 +235,14 @@
     <div id="callCenterDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
         <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
         <h2>Call Center Detailed Logs</h2>
-        <div style="background: rgba(0,0,0,0.5); padding: 12px; border-radius: 12px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; font-size: 13px;">
-             <span>📅 <b>Day:</b></span><select id="managerDayFilter" onchange="window.syncManagerView()" style="width: 80px; margin: 0;"></select>
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 14px;">
+             <span>📅 <b>Day:</b></span><select id="managerDayFilter" onchange="window.syncManagerView()" style="width: 100px; margin: 0;"></select>
              <span><b>Field:</b></span>
-             <select id="ccAgentFilter" onchange="window.syncManagerView()" style="width: 120px; margin: 0;">
+             <select id="ccAgentFilter" onchange="window.syncManagerView()" style="width: 150px; margin: 0;">
                  <option value="ALL">All Agents</option><option value="Group Sale">Group Sale</option><option value="Heenpahana">Heenpahana</option><option value="Rohan">Rohan</option><option value="Amila">Amila</option>
              </select>
              <span>🔍 <b>Filter:</b></span>
-             <select id="logStatusFilter" onchange="window.syncManagerView()" style="width: 160px; margin: 0;">
+             <select id="logStatusFilter" onchange="window.syncManagerView()" style="width: 180px; margin: 0;">
                  <option value="ALL">All Accounts</option>
                  <option value="CALLED">Called / Paid</option>
                  <option value="PENDING">Pending (New)</option>
@@ -246,8 +252,8 @@
                  <option value="BAD_FEEDBACK">Bad Feedback</option>
              </select>
              <div style="margin-left: auto; text-align: right;">
-                 <div style="margin-bottom: 3px;">Target: <b id="fTarget" style="color: #ffeb3b; font-size: 1.1em;">0</b></div>
-                 <div>Called: <b id="fCalled" style="color: #4caf50; font-size: 1.1em;">0</b></div>
+                 <div style="margin-bottom: 5px;">Target: <b id="fTarget" style="color: #ffeb3b; font-size: 1.2em;">0</b></div>
+                 <div>Called: <b id="fCalled" style="color: #4caf50; font-size: 1.2em;">0</b></div>
              </div>
         </div>
         <table id="ccReportTable">
@@ -259,32 +265,32 @@
     <div id="fieldDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
         <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
         <h2>Field Agent Performance (Issu Accounts)</h2>
-        <table style="margin-bottom: 20px; background: rgba(0,0,0,0.6);">
+        <table style="margin-bottom: 40px; background: rgba(0,0,0,0.6);">
             <thead><tr><th>Group Sale (G)</th><th>Heenpahana (H)</th><th>Rohan (R)</th><th>Amila (D)</th></tr></thead>
             <tbody id="fieldAgentTopBody">
                 <tr>
-                    <td style="padding:10px;">Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_G">Rs. 0</b><br><span style="color:#aaa; font-size:11px;">Accounts: <b id="fAcc_G" style="color:#fff;">0</b></span></td>
-                    <td style="padding:10px;">Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_H">Rs. 0</b><br><span style="color:#aaa; font-size:11px;">Accounts: <b id="fAcc_H" style="color:#fff;">0</b></span></td>
-                    <td style="padding:10px;">Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_R">Rs. 0</b><br><span style="color:#aaa; font-size:11px;">Accounts: <b id="fAcc_R" style="color:#fff;">0</b></span></td>
-                    <td style="padding:10px;">Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_D">Rs. 0</b><br><span style="color:#aaa; font-size:11px;">Accounts: <b id="fAcc_D" style="color:#fff;">0</b></span></td>
+                    <td style="padding:15px;">Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_G">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Accounts: <b id="fAcc_G" style="color:#fff;">0</b></span></td>
+                    <td style="padding:15px;">Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_H">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Accounts: <b id="fAcc_H" style="color:#fff;">0</b></span></td>
+                    <td style="padding:15px;">Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_R">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Accounts: <b id="fAcc_R" style="color:#fff;">0</b></span></td>
+                    <td style="padding:15px;">Total Arrears: <b style="color:#ff8a80; font-size:1.1em;" id="fAmt_D">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Accounts: <b id="fAcc_D" style="color:#fff;">0</b></span></td>
                 </tr>
                 <tr>
-                    <td style="padding:10px;">To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_G">Rs. 0</b><br><span style="color:#aaa; font-size:11px;">Pending Acc: <b id="cAcc_G" style="color:#fff;">0</b></span></td>
-                    <td style="padding:10px;">To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_H">Rs. 0</b><br><span style="color:#aaa; font-size:11px;">Pending Acc: <b id="cAcc_H" style="color:#fff;">0</b></span></td>
-                    <td style="padding:10px;">To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_R">Rs. 0</b><br><span style="color:#aaa; font-size:11px;">Pending Acc: <b id="cAcc_R" style="color:#fff;">0</b></span></td>
-                    <td style="padding:10px;">To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_D">Rs. 0</b><br><span style="color:#aaa; font-size:11px;">Pending Acc: <b id="cAcc_D" style="color:#fff;">0</b></span></td>
+                    <td style="padding:15px;">To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_G">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_G" style="color:#fff;">0</b></span></td>
+                    <td style="padding:15px;">To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_H">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_H" style="color:#fff;">0</b></span></td>
+                    <td style="padding:15px;">To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_R">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_R" style="color:#fff;">0</b></span></td>
+                    <td style="padding:15px;">To Collect: <b style="color:#ffeb3b; font-size:1.1em;" id="cAmt_D">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_D" style="color:#fff;">0</b></span></td>
                 </tr>
                 <tr>
-                    <td style="padding: 15px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_G">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_G">0%</b> Reduce</div></td>
-                    <td style="padding: 15px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_H">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_H">0%</b> Reduce</div></td>
-                    <td style="padding: 15px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_R">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_R">0%</b> Reduce</div></td>
-                    <td style="padding: 15px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_D">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_D">0%</b> Reduce</div></td>
+                    <td style="padding: 20px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_G">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_G">0%</b> Reduce</div></td>
+                    <td style="padding: 20px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_H">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_H">0%</b> Reduce</div></td>
+                    <td style="padding: 20px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_R">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_R">0%</b> Reduce</div></td>
+                    <td style="padding: 20px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_D">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_D">0%</b> Reduce</div></td>
                 </tr>
             </tbody>
         </table>
         <div class="flex-between">
-            <h3 style="color:#ff8a80; margin:0; font-size:15px;">Arrears Accounts Breakdown</h3>
-            <select id="agentFilterDrop" onchange="window.renderFieldList()" style="width: 200px; margin:0;">
+            <h3 style="color:#ff8a80; margin:0; font-size:16px;">Arrears Accounts Breakdown</h3>
+            <select id="agentFilterDrop" onchange="window.renderFieldList()" style="width: 250px; margin:0;">
                 <option value="ALL">All Agents</option><option value="Group Sale">Group Sale (G)</option><option value="Heenpahana">Heenpahana (H)</option><option value="Rohan">Rohan (R)</option><option value="Amila">Amila (D)</option>
             </select>
         </div>
@@ -298,15 +304,15 @@
         <div class="flex-between mb-20">
             <h2 id="staffTargetTitle" style="margin:0;">TODAY'S TARGET: <span class="target-badge" id="staffTargetNum">0</span></h2>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No Only..." style="width: 250px; margin:0;">
+                <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No Only..." style="width: 350px; margin:0;">
                 <button onclick="window.logout()" class="btn-danger" style="margin:0;">Logout</button>
             </div>
         </div>
-        <div style="background: rgba(0,0,0,0.5); padding: 12px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px;">
-            <span style="font-weight: bold; font-size: 14px;">📅 දිනය තෝරන්න (Filter Queue by Day):</span>
-            <select id="staffDaySelect" onchange="window.renderStaffUI()" style="width: 120px; margin: 0; padding: 6px;"></select>
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
+            <span style="font-weight: bold; font-size: 16px;">📅 දිනය තෝරන්න (Filter Queue by Day):</span>
+            <select id="staffDaySelect" onchange="window.renderStaffUI()" style="width: 150px; margin: 0; padding: 8px;"></select>
         </div>
-        <div id="staffDateWarning" style="display: none; background: rgba(244, 67, 54, 0.9); border: 2px solid #ff5252; color: white; padding: 10px; text-align: center; border-radius: 8px; margin-bottom: 15px; font-weight: bold; font-size: 14px; text-shadow: 1px 1px 2px black;">
+        <div id="staffDateWarning" style="display: none; background: rgba(244, 67, 54, 0.9); border: 2px solid #ff5252; color: white; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 20px; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 2px black;">
             ⚠️ අවධානයට: ඔබ අද දිනය තෝරාගෙන නොමැත!
         </div>
         <table id="staffTable">
@@ -319,20 +325,20 @@
         <button onclick="window.navigate('dashboardPage')" class="mb-20">&larr; Back</button>
         <h2>IFS Data Synchronization</h2>
         
-        <h3 style="color: #81c784; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; font-size:15px;">Primary Sync (Arrears & Calls)</h3>
-        <div style="display: flex; gap: 20px; justify-content: center; margin-top: 15px;">
-            <button onclick="document.getElementById('f_new').click()" style="padding: 15px; font-size: 14px;">📂 1. Upload Master Open</button>
-            <button onclick="document.getElementById('f_red').click()" style="padding: 15px; font-size: 14px; background: linear-gradient(135deg, #f44336, #b71c1c);">📂 2. Upload Arrears (Red)</button>
+        <h3 style="color: #81c784; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; font-size:16px;">Primary Sync (Arrears & Calls)</h3>
+        <div style="display: flex; gap: 30px; justify-content: center; margin-top: 20px;">
+            <button onclick="document.getElementById('f_new').click()" style="padding: 20px 20px; font-size: 16px;">📂 1. Upload Master Open</button>
+            <button onclick="document.getElementById('f_red').click()" style="padding: 20px 20px; font-size: 16px; background: linear-gradient(135deg, #f44336, #b71c1c);">📂 2. Upload Arrears (Red)</button>
         </div>
 
-        <h3 style="color: #ce93d8; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 8px; margin-top: 30px; font-size:15px;">💼 BM Issue Management Sync</h3>
-        <p style="color: #aaa; font-size: 12px; margin-top:5px;">*පළමුව Admin Report එක අප්ලෝඩ් කර ඉන්පසු Issue Balance එක අප්ලෝඩ් කරන්න.</p>
-        <div style="display: flex; gap: 20px; justify-content: center; margin-top: 15px;">
-            <button onclick="document.getElementById('f_admin').click()" style="padding: 15px; font-size: 14px; background: #673ab7;">📂 3. Upload Admin Report</button>
-            <button onclick="document.getElementById('f_bm').click()" style="padding: 15px; font-size: 14px; background: #9c27b0;">📂 4. Upload Issue Balance</button>
+        <h3 style="color: #ce93d8; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 40px; font-size:16px;">💼 BM Issue Management Sync</h3>
+        <p style="color: #aaa; font-size: 13px; margin-top:5px;">*පළමුව Admin Report එක අප්ලෝඩ් කර ඉන්පසු Issue Balance එක අප්ලෝඩ් කරන්න.</p>
+        <div style="display: flex; gap: 30px; justify-content: center; margin-top: 20px;">
+            <button onclick="document.getElementById('f_admin').click()" style="padding: 20px; font-size: 15px; background: #673ab7;">📂 3. Upload Admin Report</button>
+            <button onclick="document.getElementById('f_bm').click()" style="padding: 20px; font-size: 15px; background: #9c27b0;">📂 4. Upload Issue Balance</button>
         </div>
 
-        <div id="loadMsg" style="text-align: center; color: #ffeb3b; margin-top: 15px; display: none; font-weight: bold; font-size:14px;">⏳ BATCH PROCESSING... PLEASE WAIT...</div>
+        <div id="loadMsg" style="text-align: center; color: #ffeb3b; margin-top: 20px; display: none; font-weight: bold; font-size:16px;">⏳ BATCH PROCESSING... PLEASE WAIT...</div>
         
         <input type="file" id="f_new" style="display:none" onchange="window.uploadExcel(event, 'New')">
         <input type="file" id="f_red" style="display:none" onchange="window.uploadExcel(event, 'Red')">
@@ -342,24 +348,24 @@
 
     <div id="modalOverlay" onclick="window.closeModal()"></div>
     <div id="infoModal" class="glass-panel">
-        <h2 style="border-bottom: 2px solid #4caf50; padding-bottom: 8px;">MASTER INFO</h2>
+        <h2 style="border-bottom: 2px solid #4caf50; padding-bottom: 10px;">MASTER INFO</h2>
         <p><b>NIC:</b> <span id="m_nic" style="color:#ffeb3b;"></span></p>
         <p><b>Product:</b> <span id="m_prod" style="color:#81c784;"></span></p>
         <p><b>Address:</b> <span id="m_addr"></span></p>
         <p><b>Agree Date:</b> <span id="m_date"></span></p>
-        <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 15px;">Close Window</button>
+        <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 20px;">Close Window</button>
     </div>
 
     <div id="bmPaymentModal" class="glass-panel">
-        <h2 style="border-bottom: 2px solid #9c27b0; padding-bottom: 8px; color: #ce93d8;">UPDATE PAYMENT</h2>
+        <h2 style="border-bottom: 2px solid #9c27b0; padding-bottom: 10px; color: #ce93d8;">UPDATE PAYMENT</h2>
         <p>Account: <b id="payAcc" style="color: #ffeb3b;"></b></p>
         <p>Outstanding Balance: <b id="payBal" style="color: #ff9800;"></b></p>
         <input type="hidden" id="payDocId"><input type="hidden" id="payCurrentSettled"><input type="hidden" id="payCurrentIssued">
-        <div style="margin-top: 15px;">
+        <div style="margin-top: 20px;">
             <label>අලුතින් ලැබුණු මුදල (New Amount):</label>
-            <input type="number" id="payNewAmt" placeholder="Ex: 2500" style="font-size: 16px; font-weight: bold;">
+            <input type="number" id="payNewAmt" placeholder="Ex: 2500" style="font-size: 18px; font-weight: bold;">
         </div>
-        <button onclick="window.saveBMPayment()" style="width: 100%; background: #9c27b0; margin-top: 15px;">Save Payment</button>
+        <button onclick="window.saveBMPayment()" style="width: 100%; background: #9c27b0; margin-top: 20px;">Save Payment</button>
         <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 10px;">Cancel</button>
     </div>
 
@@ -379,17 +385,17 @@
         let tdObj = new Date(); let td = tdObj.getDate();
         let sysToday = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + String(tdObj.getDate()).padStart(2,'0');
 
-        // 🌟 Watermark Logic (Tamper-proof / Self-healing) 🌟
+        // 🌟 Watermark Logic (Bigger & Tamper-proof) 🌟
         setInterval(() => {
             let wm = document.getElementById('rbWatermarkX');
             if(!wm) {
                 wm = document.createElement('div');
                 wm.id = 'rbWatermarkX';
                 wm.innerHTML = 'Design by Mr.Ranbindu';
-                wm.style.cssText = 'position:fixed;bottom:5px;right:10px;color:rgba(255,255,255,0.15);font-size:11px;font-weight:bold;pointer-events:none;z-index:2147483647;letter-spacing:1px;font-family:sans-serif; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);';
+                wm.style.cssText = 'position:fixed;bottom:10px;right:20px;color:rgba(255,255,255,0.4);font-size:16px;font-weight:900;pointer-events:none;z-index:2147483647;letter-spacing:2px;font-family:sans-serif; text-shadow: 2px 2px 4px rgba(0,0,0,0.9);';
                 document.body.appendChild(wm);
             }
-        }, 3000);
+        }, 2000);
 
         const setupFilters = () => {
             let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("progressDaySelect"), document.getElementById("staffDaySelect")];
@@ -460,12 +466,11 @@
                 let safeNic = (d.nic || "N/A").replace(/'/g, "\\'"); let safeProd = (d.product || "N/A").replace(/'/g, "\\'"); let safeAddr = (d.address || "N/A").replace(/'/g, "\\'"); let safeDate = (d.agreeDate || "N/A").replace(/'/g, "\\'");
                 let badge = isForwarded ? `<span class="forward-badge">(පෙර දිනෙන්)</span>` : ``; let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
 
-                // 🌟 අලුත්: Phone Not Working Added 🌟
                 return `<tr class="${rowC} ${isForwarded ? 'row-forward' : ''}" id="row_${d.id}">
                     <td>${d.accountNo} ${typeBadge} ${badge}</td><td><b>${cName}</b></td>
-                    <td><input type="text" id="ph_${d.id}" value="${getPhone(d)}" style="width:95px; padding:6px; font-size:11px; text-align:center;"></td>
-                    <td><input type="number" id="att_${d.id}" value="${att}" min="0" style="width:40px; padding:6px; text-align:center;"></td>
-                    <td><select id="action_${d.id}" style="width: 130px; padding: 6px; font-size: 11px; text-align:center;">
+                    <td><input type="text" id="ph_${d.id}" value="${getPhone(d)}" style="width:105px; padding:6px; font-size:12px; text-align:center;"></td>
+                    <td><input type="number" id="att_${d.id}" value="${att}" min="0" style="width:45px; padding:6px; text-align:center;"></td>
+                    <td><select id="action_${d.id}" style="width: 140px; padding: 6px; font-size: 12px; text-align:center;">
                         <option value="">Select Action</option>
                         <option value="Call Not Answer" ${d.notes==='Call Not Answer'?'selected':''}>Call Not Answer</option>
                         <option value="Phone Not Working" ${d.notes==='Phone Not Working'?'selected':''}>Phone Not Working</option>
@@ -473,7 +478,7 @@
                         <option value="Customer Paid" ${d.notes==='Customer Paid'?'selected':''}>Customer Paid</option>
                         <option value="Bad Feedback" ${d.notes==='Bad Feedback'?'selected':''}>Bad Feedback</option>
                     </select></td>
-                    <td>${pSelect}</td><td><button onclick="window.saveData('${d.id}')" style="padding: 5px 10px; font-size:10px;">SAVE</button></td><td><button class="btn-info" onclick="window.showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}')">❗️</button></td></tr>`;
+                    <td>${pSelect}</td><td><button onclick="window.saveData('${d.id}')" style="padding: 6px 12px; font-size:11px;">SAVE</button></td><td><button class="btn-info" onclick="window.showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}')">❗️</button></td></tr>`;
             }
 
             window.renderManagerDashboard = () => {
@@ -482,7 +487,6 @@
 
                 masterData.forEach(d => {
                     let att = parseInt(d.callAttempts) || 0; 
-                    // 🌟 අලුත්: Phone Not Working is Risk 🌟
                     let isRisk = (att >= 3 || d.notes === "Bad Feedback" || d.notes === "Phone Not Working"); 
                     let isPaid = (d.notes === "Customer Paid");
                     let mPay = Number(d.monthlyPay) || 0;
@@ -490,14 +494,10 @@
                     t++; totalMonthlyPay += mPay;
 
                     if (d.listType === "Red") { 
-                        r++; 
-                        let amt = Number(d.arrearsAmount) || 0; 
-                        totalArrears += amt; 
-                        openArrVal += amt;
+                        r++; let amt = Number(d.arrearsAmount) || 0; totalArrears += amt; openArrVal += amt;
                         if (isPaid) collectedAmount += amt; 
                     } else if (isRisk) { 
-                        y++; 
-                        notRespVal += mPay;
+                        y++; notRespVal += mPay;
                     }
 
                     let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let isTargetToday = false;
@@ -509,15 +509,9 @@
                     if (isTargetToday || (isPaid && agreeDay === td)) { if (att > 0 || isPaid) todayCompleted++; }
                 });
 
-                document.getElementById('dashTotal').innerText = t; 
-                if(document.getElementById('dashTotalValue')) document.getElementById('dashTotalValue').innerText = "Rs. " + totalMonthlyPay.toLocaleString('en-US');
-                
-                document.getElementById('dashYellow').innerText = y; 
-                if(document.getElementById('dashYellowValue')) document.getElementById('dashYellowValue').innerText = "Rs. " + notRespVal.toLocaleString('en-US');
-                
-                document.getElementById('dashRed').innerText = r; 
-                if(document.getElementById('dashRedValue')) document.getElementById('dashRedValue').innerText = "Rs. " + openArrVal.toLocaleString('en-US');
-                
+                document.getElementById('dashTotal').innerText = t; if(document.getElementById('dashTotalValue')) document.getElementById('dashTotalValue').innerText = "Rs. " + totalMonthlyPay.toLocaleString('en-US');
+                document.getElementById('dashYellow').innerText = y; if(document.getElementById('dashYellowValue')) document.getElementById('dashYellowValue').innerText = "Rs. " + notRespVal.toLocaleString('en-US');
+                document.getElementById('dashRed').innerText = r; if(document.getElementById('dashRedValue')) document.getElementById('dashRedValue').innerText = "Rs. " + openArrVal.toLocaleString('en-US');
                 document.getElementById('pFieldCount').innerText = r;
 
                 document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US'); document.getElementById('dashToCollect').innerText = "Rs. " + (totalArrears - collectedAmount).toLocaleString('en-US'); document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
@@ -536,7 +530,7 @@
                 sortedList.forEach(d => {
                     let balNum = Number(d.balance) || 0; let settledNum = Number(d.settledAmount) || 0; let issuedNum = Number(d.issuedAmount) || 0; if(balNum <= 0) return; 
                     let agent = agentMapping[d.id] || "Unknown"; if(agentFilt !== "ALL" && agent !== agentFilt) return; if(search !== "" && !(String(d.accountNo).toLowerCase().includes(search))) return; if(statusFilt === "NOPAY" && settledNum > 0) return; if(statusFilt === "PAID" && settledNum === 0) return;
-                    html += `<tr class="row-purple"><td>${d.accountNo}</td><td>${d.customerName || "N/A"}</td><td>${agent}</td><td>Rs. ${issuedNum.toLocaleString('en-US')}</td><td style="color: #81c784;">Rs. ${settledNum.toLocaleString('en-US')}</td><td style="color: #ff9800; font-weight: bold;">Rs. ${balNum.toLocaleString('en-US')}</td><td><button onclick="window.openBMPayment('${d.id}', '${d.accountNo}', ${balNum}, ${settledNum}, ${issuedNum})" style="padding: 5px 8px; font-size: 10px; background: #ce93d8; color: #000;">+ Pay</button></td></tr>`;
+                    html += `<tr class="row-purple"><td>${d.accountNo}</td><td>${d.customerName || "N/A"}</td><td>${agent}</td><td>Rs. ${issuedNum.toLocaleString('en-US')}</td><td style="color: #81c784;">Rs. ${settledNum.toLocaleString('en-US')}</td><td style="color: #ff9800; font-weight: bold;">Rs. ${balNum.toLocaleString('en-US')}</td><td><button onclick="window.openBMPayment('${d.id}', '${d.accountNo}', ${balNum}, ${settledNum}, ${issuedNum})" style="padding: 6px 12px; font-size: 11px; background: #ce93d8; color: #000;">+ Pay</button></td></tr>`;
                 });
                 let tb = document.getElementById('bmIssueBody'); if(tb) tb.innerHTML = html || "<tr><td colspan='7'>No outstanding accounts found.</td></tr>";
             };
@@ -566,26 +560,16 @@
                     if (isTargetForSelectedDay || (isPaid && agreeDay === selectedDay)) { targetDay++; if(d.listType === "Red") redTarget++; else openTarget++; if (att > 0 || isPaid) doneDay++; }
                 });
                 document.getElementById('pRateDay').innerText = (targetDay > 0 ? Math.round((doneDay/targetDay)*100) : 0) + "%"; document.getElementById('pRateMonth').innerText = (targetMonth > 0 ? Math.round((doneMonth/targetMonth)*100) : 0) + "%";
-                document.getElementById('pTarget').innerHTML = `${targetDay} <div style="font-size:11px; margin-top:3px; opacity:0.8;">(Open: ${openTarget} | Issu: ${redTarget})</div>`; document.getElementById('pDone').innerText = doneDay;
+                document.getElementById('pTarget').innerHTML = `${targetDay} <div style="font-size:12px; margin-top:5px; opacity:0.8;">(Open: ${openTarget} | Issu: ${redTarget})</div>`; document.getElementById('pDone').innerText = doneDay;
                 if(document.getElementById('dashRate')) document.getElementById('dashRate').innerText = (targetMonth > 0 ? Math.round((doneMonth/targetMonth)*100) : 0) + "%";
             };
 
-            // 🌟 අලුත්: Agent & Detailed Status Filters 🌟
             window.syncManagerView = () => {
-                let filterDay = parseInt(document.getElementById('managerDayFilter').value); 
-                let filterStatus = document.getElementById('logStatusFilter').value; 
-                let agentFilt = document.getElementById('ccAgentFilter') ? document.getElementById('ccAgentFilter').value : "ALL";
-                let html = "", targetRed = 0, targetOpen = 0, called = 0;
-                
+                let filterDay = parseInt(document.getElementById('managerDayFilter').value); let filterStatus = document.getElementById('logStatusFilter').value; let agentFilt = document.getElementById('ccAgentFilter') ? document.getElementById('ccAgentFilter').value : "ALL"; let html = "", targetRed = 0, targetOpen = 0, called = 0;
                 let sortedData = [...masterData].sort((a,b) => { let aTop = (parseInt(a.promiseDate) === filterDay || extractDay(a.agreeDate) === filterDay) && a.listType !== "Red" ? 1 : 0; let bTop = (parseInt(b.promiseDate) === filterDay || extractDay(b.agreeDate) === filterDay) && b.listType !== "Red" ? 1 : 0; return bTop - aTop; });
                 sortedData.forEach(d => {
-                    let dAgent = d.fieldAgent || "Unknown";
-                    if (agentFilt !== "ALL" && dAgent !== agentFilt) return;
-
-                    let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let att = parseInt(d.callAttempts) || 0; 
-                    let isRisk = (att >= 3 || d.notes === "Bad Feedback" || d.notes === "Phone Not Working"); 
-                    let showOnDay = false;
-                    
+                    let dAgent = d.fieldAgent || "Unknown"; if (agentFilt !== "ALL" && dAgent !== agentFilt) return;
+                    let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let att = parseInt(d.callAttempts) || 0; let isRisk = (att >= 3 || d.notes === "Bad Feedback" || d.notes === "Phone Not Working"); let showOnDay = false;
                     if(filterDay === td) { if(d.listType === "Red") showOnDay = true; else if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true; else if(agreeDay > 0 && agreeDay < filterDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) showOnDay = true;
                     } else { if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true; else if(d.listType === "Red") showOnDay = true; }
 
@@ -593,28 +577,16 @@
                         let statusText = "Pending"; let rowC = "";
                         if(d.listType === "Red") rowC = "row-red"; else if (isRisk) rowC = "row-yellow"; else if (att > 0) rowC = "row-green";
                         if(d.notes === "Customer Paid") { statusText = "Paid"; rowC = "row-green"; } else if(att > 0) statusText = "Called";
-                        
-                        let show = true; 
-                        if (filterStatus === "CALLED" && statusText === "Pending") show = false; 
-                        if (filterStatus === "NOT_ANSWER" && d.notes !== "Call Not Answer") show = false; 
-                        if (filterStatus === "NOT_WORKING" && d.notes !== "Phone Not Working") show = false; 
-                        if (filterStatus === "BAD_FEEDBACK" && d.notes !== "Bad Feedback") show = false; 
-                        if (filterStatus === "PENDING" && (att > 0 || d.notes === "Customer Paid")) show = false; 
-                        if (filterStatus === "RISK" && !isRisk) show = false;
-                        
+                        let show = true; if (filterStatus === "CALLED" && statusText === "Pending") show = false; if (filterStatus === "NOT_ANSWER" && d.notes !== "Call Not Answer") show = false; if (filterStatus === "NOT_WORKING" && d.notes !== "Phone Not Working") show = false; if (filterStatus === "BAD_FEEDBACK" && d.notes !== "Bad Feedback") show = false; if (filterStatus === "PENDING" && (att > 0 || d.notes === "Customer Paid")) show = false; if (filterStatus === "RISK" && !isRisk) show = false;
                         if(show) { 
                             if(d.listType === "Red") targetRed++; else targetOpen++; if(att > 0 || d.notes === "Customer Paid") called++;
                             let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`; 
-                            let displayStatus = statusText;
-                            if(statusText === "Pending") {
-                                if(d.notes === "Call Not Answer") displayStatus = "Not Answer";
-                                else if(d.notes === "Phone Not Working") displayStatus = "Not Working";
-                            }
+                            let displayStatus = statusText; if(statusText === "Pending") { if(d.notes === "Call Not Answer") displayStatus = "Not Answer"; else if(d.notes === "Phone Not Working") displayStatus = "Not Working"; }
                             html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${dAgent}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${displayStatus}</b></td></tr>`; 
                         }
                     }
                 });
-                document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='8'>No records found for selected day/filter.</td></tr>"; document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:11px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`; document.getElementById('fCalled').innerText = called;
+                document.getElementById('managerCCBody').innerHTML = html || "<tr><td colspan='8'>No records found for selected day/filter.</td></tr>"; document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`; document.getElementById('fCalled').innerText = called;
             };
 
             window.renderFieldList = () => {
@@ -654,7 +626,7 @@
 
                     if (isTargetToday) { if(d.listType === "Red") targetRed++; else targetOpen++; html += generateRowHTML(d, rowC, isForwarded); }
                 });
-                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>තෝරාගත් දිනයට ඉලක්ක නොමැත! (No targets for selected day)</td></tr>"; document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
+                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>තෝරාගත් දිනයට ඉලක්ක නොමැත! (No targets for selected day)</td></tr>"; document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
             };
 
             window.searchGlobalStaffTable = () => {
