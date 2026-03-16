@@ -182,10 +182,11 @@
         <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
              <span>📅 <b>Select Day:</b></span><select id="managerDayFilter" onchange="window.syncManagerView()" style="width: 150px; margin: 0;"></select>
              <span>🔍 <b>Status Filter:</b></span>
-             <select id="logStatusFilter" onchange="window.syncManagerView()" style="width: 150px; margin: 0;">
+             <select id="logStatusFilter" onchange="window.syncManagerView()" style="width: 180px; margin: 0;">
                  <option value="ALL">All Accounts</option>
                  <option value="CALLED">Called / Paid</option>
-                 <option value="PENDING">Pending (No Answer)</option>
+                 <option value="NOT_ANSWER">Call Not Answer</option>
+                 <option value="PENDING">Pending (New)</option>
                  <option value="RISK">Risk (Yellow)</option>
              </select>
              <div style="margin-left: auto; text-align: right;">
@@ -398,8 +399,6 @@
             }
 
             window.forceRefreshData = () => { alert("Fetching latest live data..."); window.renderManagerDashboard(); }
-            
-            // 🌟 ප්‍රමුඛතාවය Phonebook එකට දෙනවා
             function getPhone(d) { return phoneDirectory[d.nic] ? phoneDirectory[d.nic].phone : (d.phone || 'N/A'); }
             
             function extractDay(s) { 
@@ -518,6 +517,7 @@
                 if(document.getElementById('dashRate')) document.getElementById('dashRate').innerText = (targetMonth > 0 ? Math.round((doneMonth/targetMonth)*100) : 0) + "%";
             };
 
+            // 🌟 2. අලුත් ෆිල්ටර් ලොජික් එක මෙතැනට ඇතුළත් කර ඇත 🌟
             window.syncManagerView = () => {
                 let filterDay = parseInt(document.getElementById('managerDayFilter').value);
                 let filterStatus = document.getElementById('logStatusFilter').value;
@@ -547,19 +547,22 @@
                         if(d.listType === "Red") targetRed++; else targetOpen++;
                         if(att > 0 || d.notes === "Customer Paid") called++;
                         let statusText = "Pending"; let rowC = "";
+                        
                         if(d.listType === "Red") rowC = "row-red"; else if (isRisk) rowC = "row-yellow"; else if (att > 0) rowC = "row-green";
                         if(d.notes === "Customer Paid") { statusText = "Paid"; rowC = "row-green"; } else if(att > 0) statusText = "Called";
 
                         let show = true;
-                        if(filterStatus === "CALLED" && statusText === "Pending") show = false;
-                        if(filterStatus === "PENDING" && statusText !== "Pending") show = false;
-                        if(filterStatus === "RISK" && !isRisk) show = false;
+                        if (filterStatus === "CALLED" && statusText === "Pending") show = false;
+                        if (filterStatus === "NOT_ANSWER" && d.notes !== "Call Not Answer") show = false;
+                        if (filterStatus === "PENDING" && (att > 0 || d.notes === "Customer Paid")) show = false;
+                        if (filterStatus === "RISK" && !isRisk) show = false;
 
                         if(show) {
                             let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-";
                             let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත";
                             let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
-                            html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${statusText}</b></td></tr>`;
+                            let displayStatus = (statusText === "Pending" && d.notes === "Call Not Answer") ? "Not Answer" : statusText;
+                            html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${displayStatus}</b></td></tr>`;
                         }
                     }
                 });
@@ -671,24 +674,13 @@
                 document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
             };
 
-            // 🌟 ළමයා නම්බර් එක Save කරනකොට Phonebook එක Update වීම
             window.saveData = async (docId) => {
-                let action = document.getElementById(`action_${docId}`).value; 
-                let phoneVal = document.getElementById(`ph_${docId}`).value.trim(); 
-                let pDate = document.getElementById(`pdt_${docId}`).value; 
-                let currentAtt = parseInt(document.getElementById(`att_${docId}`).value) || 0;
-                
+                let action = document.getElementById(`action_${docId}`).value; let phoneVal = document.getElementById(`ph_${docId}`).value.trim(); let pDate = document.getElementById(`pdt_${docId}`).value; let currentAtt = parseInt(document.getElementById(`att_${docId}`).value) || 0;
                 if(action === "") { alert("❌ Please select an action (Feedback)!"); return; }
                 if(action === "Promised to Pay" && pDate === "") { alert("❌ Please select a Promise Day (1-31)!"); return; }
 
                 let d = masterData.find(x => x.id === docId);
-                let currentPhone = getPhone(d);
-                
-                if(phoneVal !== currentPhone && phoneVal !== "") {
-                    await setDoc(doc(db, "phoneDirectory", d.nic), { phone: phoneVal, name: d.customerName });
-                    phoneDirectory[d.nic] = { phone: phoneVal, name: d.customerName }; 
-                }
-
+                if(phoneVal !== d.phone && phoneVal !== "") await setDoc(doc(db, "phoneDirectory", d.nic), { phone: phoneVal, name: d.customerName });
                 await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
                 
                 let btn = document.querySelector(`#row_${docId} button`); btn.innerText = "SAVED"; btn.style.background = "#4caf50";
@@ -714,7 +706,6 @@
             };
             window.closeModal = () => { document.getElementById('infoModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
             
-            // 🌟 අලුත් Cleanup Logic එකත් එක්ක Upload එක
             window.uploadExcel = async (ev, type) => {
                 const file = ev.target.files[0]; const reader = new FileReader();
                 if(!file) return;
@@ -729,54 +720,28 @@
                         const workbook = XLSX.read(e.target.result, {type:'array'});
                         const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
                         
-                        document.getElementById('loadMsg').innerText = "⏳ Comparing with current Database...";
-
-                        let excelIds = new Set();
-                        data.forEach(row => {
-                            let rawAcc = (type === "New") ? (row.ORIGINALACCTNO || row.ACCTNO || row.ACCNO || row.ACCOUNTNO) : (row.ACCNO || row.ACCOUNTNO || row.ACCTNO);
-                            if (rawAcc) {
-                                let docId = String(rawAcc).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-                                if (docId.length >= 4 && !docId.includes("TOTAL")) excelIds.add(docId);
-                            }
-                        });
-
-                        let downgradeIds = [];
-                        let deleteIds = [];
-                        masterData.forEach(d => {
-                            if (type === "Red") {
-                                if (d.listType === "Red" && !excelIds.has(d.id)) downgradeIds.push(d.id);
-                            } else if (type === "New") {
-                                if (!excelIds.has(d.id) && d.listType !== "Red") deleteIds.push(d.id);
-                            }
-                        });
-
-                        if (downgradeIds.length > 0 || deleteIds.length > 0) {
-                            document.getElementById('loadMsg').innerText = `🧹 Cleaning up old accounts...`;
-                            let cleanRes = await fetch(CLOUD_API_URL, { 
-                                method: 'POST', 
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                                body: JSON.stringify({ listType: "Cleanup", downgradeIds: downgradeIds, deleteIds: deleteIds }) 
-                            });
-                            let cleanData = await cleanRes.json();
-                            if (!cleanData.success) console.error("Cleanup Error", cleanData.error);
-                        }
+                        document.getElementById('loadMsg').innerText = "⏳ Connecting to Aura Secure Brain...";
 
                         let totalProcessed = 0;
                         for (let i = 0; i < data.length; i += 200) {
                             const chunk = data.slice(i, i + 200);
                             let res = await fetch(CLOUD_API_URL, { 
                                 method: 'POST', 
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}` 
+                                },
                                 body: JSON.stringify({ listType: type, data: chunk }) 
                             });
                             let resData = await res.json();
+                            
                             if(!resData.success) throw new Error(resData.error);
                             
                             totalProcessed += chunk.length;
-                            document.getElementById('loadMsg').innerText = `⏳ Saving New Data: ${totalProcessed} / ${data.length} ...`;
+                            document.getElementById('loadMsg').innerText = `⏳ Processing: ${totalProcessed} / ${data.length} ...`;
                         }
 
-                        alert("✅ Secure Upload & Sync Complete!"); 
+                        alert("✅ Aura Secure Upload Complete! Data is safely stored."); 
                         document.getElementById('loadMsg').style.display = 'none'; ev.target.value = '';
 
                     } catch(err) { 
