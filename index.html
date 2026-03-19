@@ -1652,7 +1652,7 @@
                 window.open(url, '_blank');
             };
 
-            // 🔥 මෙන්න CLOUD API එකෙන් SMS යවන අලුත් Code එක (IP අවුල් එන්නේ නෑ) 🔥
+            // 🌟 අලුත් Google Messages / PC Phone Link ක්‍රමය 🌟
             window.sendLocalSMS = async () => {
                 let phone = document.getElementById('infoModal').getAttribute('data-phone');
                 if(!phone || phone === "N/A" || phone.trim() === "") { 
@@ -1665,28 +1665,11 @@
                     formattedPhone = '+94' + formattedPhone.substring(1); 
                 }
                 
-                // ඔයාගේ ස්ක්‍රීන්ෂොට් එකේ තිබුණු Cloud Token එක
-                let cloudToken = "deWIv1c9QYmewxM4wDIRvE:APA91bEthqbQUH2csfTl6H1M0OcSY1wJWnTHerZEwE3WNWiq-NUETBobmlECo26kgWWA4KRQZUQkP8e-iwzZhBVQtqdFFL8aB57YN0U9Y0gqKHPBUod7nCU";
                 let msg = window.generateAlertMessage();
 
-                try {
-                    let response = await fetch("https://www.traccar.org/sms/", {
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': cloudToken 
-                        },
-                        body: JSON.stringify({ to: formattedPhone, message: msg })
-                    });
-                    
-                    if(response.ok) {
-                        alert("✅ SMS සන්දේශය සාර්ථකව යැවිණි! (SMS Sent Successfully)");
-                    } else {
-                        alert("❌ SMS යැවීම අසාර්ථකයි. කරුණාකර ෆෝන් එකේ ඇප් එක Open කර තිබේදැයි බලන්න.");
-                    }
-                } catch(e) {
-                    alert("❌ SMS යැවීමේ දෝෂයක්! Error: " + e.message);
-                }
+                // 'sms:' ලින්ක් එක හරහා කෙලින්ම PC එකේ තියෙන Google Messages Web හෝ Phone Link එක ඕපන් වෙනවා.
+                let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(msg)}`;
+                window.location.href = smsUrl;
             };
             
             window.uploadExcel = async (ev, type) => {
