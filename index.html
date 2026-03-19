@@ -255,7 +255,7 @@
             font-size: 14px; 
         }
 
-        #infoModal, #bmPaymentModal, #whatsappPromptModal { 
+        #infoModal, #bmPaymentModal, #messagingModal { 
             display: none; 
             position: fixed; 
             top: 50%; 
@@ -717,7 +717,26 @@
         <input type="file" id="f_bm" style="display:none" onchange="window.uploadExcel(event, 'IssueBalance')">
     </div>
 
-    <div id="modalOverlay" onclick="window.closeModal()"></div>
+    <div id="modalOverlay" onclick="window.closeMessagingModal()"></div>
+    
+    <div id="messagingModal" class="glass-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 450px; padding: 30px;">
+        <h2 id="msgHeader" style="border-bottom: 2px solid #2196f3; padding-bottom: 10px; color: #fff; margin-top: 0;">✉️ Send Reminder Message</h2>
+        <p style="font-size: 14px; margin-bottom: 5px;">Customer: <b id="msgDispName" style="color: #ffeb3b;"></b></p>
+        
+        <div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
+            <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 8px; font-weight: bold;">MESSAGE PREVIEW:</span>
+            <div id="msgPreviewText" style="font-size: 13px; color: #fff; white-space: pre-wrap; line-height: 1.5; font-style: italic;">Loading...</div>
+        </div>
+        
+        <input type="hidden" id="msgTargetPhone">
+        
+        <div style="display: flex; gap: 10px;">
+            <button onclick="window.sendActionMessage('WA')" style="background: #25D366; width: 50%; font-size: 12px; padding: 12px 10px;">💬 WhatsApp</button>
+            <button onclick="window.sendActionMessage('SMS')" style="background: #2196f3; width: 50%; font-size: 12px; padding: 12px 10px;">📱 Normal SMS</button>
+        </div>
+        <button onclick="window.closeMessagingModal()" style="background: #444; width: 100%; margin-top: 10px; font-size: 12px;">Cancel</button>
+    </div>
+
     <div id="infoModal" class="glass-panel">
         <h2 style="border-bottom: 2px solid #4caf50; padding-bottom: 10px;">MASTER INFO</h2>
         <p><b>NIC:</b> <span id="m_nic" style="color:#ffeb3b;"></span></p>
@@ -731,17 +750,6 @@
         </div>
 
         <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 20px;">Close Window</button>
-    </div>
-
-    <div id="whatsappPromptModal" class="glass-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 420px; padding: 30px;">
-        <h2 style="border-bottom: 2px solid #25D366; padding-bottom: 10px; color: #25D366;">📱 WhatsApp Reminder</h2>
-        <p style="font-size: 15px;">මෙම පාරිභෝගිකයා සම්බන්ධ කරගැනීමට නොහැකි වූ බැවින්, ස්වයංක්‍රීය WhatsApp පණිවිඩය යවන්නද?</p>
-        <p>Customer: <b id="waDispName" style="color: #ffeb3b;"></b></p>
-        <input type="hidden" id="waPromptPhone">
-        <input type="hidden" id="waPromptName">
-        <input type="hidden" id="waPromptProd">
-        <button onclick="window.confirmSendWA()" style="background: #25D366; width: 100%; margin-top: 15px; font-size: 14px;">Yes, Send WhatsApp Message</button>
-        <button onclick="window.closeWAModal()" style="background: #444; width: 100%; margin-top: 10px; font-size: 14px;">No, Cancel</button>
     </div>
 
     <div id="bmPaymentModal" class="glass-panel">
@@ -855,7 +863,6 @@
                     
                     let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
 
-                    // 🌟 පාස්වර්ඩ් එක හරි ගිය ගමන් ඩේටා එනකම් ඉන්නේ නැතුව ස්ක්‍රීන් එකට යනවා 🌟
                     window.navigate(isManager ? 'dashboardPage' : 'staffTargetPage');
 
                     onSnapshot(collection(db, "phoneDirectory"), (snap) => { 
@@ -908,7 +915,7 @@
                     }
                 }, (error) => {
                     console.error("Firestore Error:", error);
-                    alert("⚠️ Database Error: දත්ත ලබාගැනීමට නොහැක. කරුණාකර Firebase Security Rules පරීක්ෂා කරන්න.\n\nError: " + error.message);
+                    alert("⚠️ Database Error: දත්ත ලබාගැනීමට නොහැක.\nError: " + error.message);
                 });
             }
 
@@ -981,15 +988,8 @@
             }
 
             window.renderManagerDashboard = () => {
-                let t = 0; 
-                let y = 0; 
-                let r = 0;
-                let totalArrears = 0; 
-                let collectedAmount = 0; 
-                let todayCompleted = 0; 
-                let totalMonthlyPay = 0;
-                let notRespVal = 0; 
-                let openArrVal = 0;
+                let t = 0, y = 0, r = 0;
+                let totalArrears = 0, collectedAmount = 0, todayCompleted = 0, totalMonthlyPay = 0, notRespVal = 0, openArrVal = 0;
 
                 masterData.forEach(d => {
                     let att = parseInt(d.callAttempts) || 0; 
@@ -1005,9 +1005,7 @@
                         let amt = Number(d.arrearsAmount) || 0; 
                         totalArrears += amt; 
                         openArrVal += amt;
-                        if (isPaid) { 
-                            collectedAmount += amt; 
-                        }
+                        if (isPaid) collectedAmount += amt; 
                     } else if (isRisk) { 
                         y++; 
                         notRespVal += mPay;
@@ -1018,11 +1016,8 @@
                     let isTargetToday = false;
                     
                     if (d.listType === "Red") { 
-                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > td) { 
-                            isTargetToday = false; 
-                        } else if (!isPaid) { 
-                            isTargetToday = true; 
-                        }
+                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > td) isTargetToday = false; 
+                        else if (!isPaid) isTargetToday = true; 
                     } else if (!isNaN(promiseDay) && promiseDay === td) { 
                         isTargetToday = true;
                     } else if (agreeDay === td) { 
@@ -1032,26 +1027,18 @@
                     }
                     
                     if (isTargetToday || (isPaid && agreeDay === td)) { 
-                        if (att > 0 || isPaid) { 
-                            todayCompleted++; 
-                        }
+                        if (att > 0 || isPaid) todayCompleted++; 
                     }
                 });
 
                 document.getElementById('dashTotal').innerText = t; 
-                if(document.getElementById('dashTotalValue')) {
-                    document.getElementById('dashTotalValue').innerText = "Rs. " + totalMonthlyPay.toLocaleString('en-US');
-                }
+                if(document.getElementById('dashTotalValue')) document.getElementById('dashTotalValue').innerText = "Rs. " + totalMonthlyPay.toLocaleString('en-US');
                 
                 document.getElementById('dashYellow').innerText = y; 
-                if(document.getElementById('dashYellowValue')) {
-                    document.getElementById('dashYellowValue').innerText = "Rs. " + notRespVal.toLocaleString('en-US');
-                }
+                if(document.getElementById('dashYellowValue')) document.getElementById('dashYellowValue').innerText = "Rs. " + notRespVal.toLocaleString('en-US');
                 
                 document.getElementById('dashRed').innerText = r; 
-                if(document.getElementById('dashRedValue')) {
-                    document.getElementById('dashRedValue').innerText = "Rs. " + openArrVal.toLocaleString('en-US');
-                }
+                if(document.getElementById('dashRedValue')) document.getElementById('dashRedValue').innerText = "Rs. " + openArrVal.toLocaleString('en-US');
                 
                 document.getElementById('pFieldCount').innerText = r;
                 
@@ -1059,19 +1046,13 @@
                 document.getElementById('dashToCollect').innerText = "Rs. " + (totalArrears - collectedAmount).toLocaleString('en-US'); 
                 document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
                 
-                if(document.getElementById('dashTodayCompleted')) {
-                    document.getElementById('dashTodayCompleted').innerText = todayCompleted;
-                }
+                if(document.getElementById('dashTodayCompleted')) document.getElementById('dashTodayCompleted').innerText = todayCompleted;
                 
                 window.updateProgressSummary();
             };
 
             window.renderBMStats = () => {
-                let issued = 0; 
-                let collected = 0; 
-                let bal = 0; 
-                let accIssueCount = 0; 
-                let accOutCount = 0;
+                let issued = 0, collected = 0, bal = 0, accIssueCount = 0, accOutCount = 0;
                 
                 bmIssuesList.forEach(d => { 
                     let issuedNum = Number(d.issuedAmount) || 0; 
@@ -1082,29 +1063,15 @@
                     collected += settledNum; 
                     bal += balNum; 
                     
-                    if(issuedNum > 0) {
-                        accIssueCount++; 
-                    }
-                    if(balNum > 0) {
-                        accOutCount++; 
-                    }
+                    if(issuedNum > 0) accIssueCount++; 
+                    if(balNum > 0) accOutCount++; 
                 });
                 
-                if(document.getElementById('bmTotalIssued')) {
-                    document.getElementById('bmTotalIssued').innerText = "Rs. " + issued.toLocaleString('en-US'); 
-                }
-                if(document.getElementById('bmTotalCollected')) {
-                    document.getElementById('bmTotalCollected').innerText = "Rs. " + collected.toLocaleString('en-US'); 
-                }
-                if(document.getElementById('bmTotalBalance')) {
-                    document.getElementById('bmTotalBalance').innerText = "Rs. " + bal.toLocaleString('en-US'); 
-                }
-                if(document.getElementById('bmIssueCount')) {
-                    document.getElementById('bmIssueCount').innerText = accIssueCount; 
-                }
-                if(document.getElementById('bmOutCount')) {
-                    document.getElementById('bmOutCount').innerText = accOutCount;
-                }
+                if(document.getElementById('bmTotalIssued')) document.getElementById('bmTotalIssued').innerText = "Rs. " + issued.toLocaleString('en-US'); 
+                if(document.getElementById('bmTotalCollected')) document.getElementById('bmTotalCollected').innerText = "Rs. " + collected.toLocaleString('en-US'); 
+                if(document.getElementById('bmTotalBalance')) document.getElementById('bmTotalBalance').innerText = "Rs. " + bal.toLocaleString('en-US'); 
+                if(document.getElementById('bmIssueCount')) document.getElementById('bmIssueCount').innerText = accIssueCount; 
+                if(document.getElementById('bmOutCount')) document.getElementById('bmOutCount').innerText = accOutCount;
             };
 
             window.renderBMIssues = () => {
@@ -1139,9 +1106,7 @@
                 });
                 
                 let tb = document.getElementById('bmIssueBody'); 
-                if(tb) {
-                    tb.innerHTML = html || "<tr><td colspan='7'>No outstanding accounts found.</td></tr>";
-                }
+                if(tb) tb.innerHTML = html || "<tr><td colspan='7'>No outstanding accounts found.</td></tr>";
             };
 
             window.openBMPayment = (docId, accNo, bal, settled, issued) => { 
@@ -1169,10 +1134,7 @@
                 
                 let newSettled = curSet + newAmt; 
                 let newBal = curIss - newSettled; 
-                
-                if(newBal < 0) {
-                    newBal = 0; 
-                }
+                if(newBal < 0) newBal = 0; 
                 
                 try { 
                     await updateDoc(doc(db, "bm_issues", docId), { settledAmount: newSettled, balance: newBal }); 
@@ -1202,12 +1164,7 @@
                 let filterVal = document.getElementById('progressDaySelect').value; 
                 let selectedDay = filterVal === "today" ? td : parseInt(filterVal);
                 
-                let targetDay = 0; 
-                let doneDay = 0; 
-                let targetMonth = 0; 
-                let doneMonth = 0; 
-                let openTarget = 0; 
-                let redTarget = 0;
+                let targetDay = 0, doneDay = 0, targetMonth = 0, doneMonth = 0, openTarget = 0, redTarget = 0;
                 
                 masterData.forEach(d => {
                     let att = parseInt(d.callAttempts) || 0; 
@@ -1216,27 +1173,19 @@
                     let promiseDay = parseInt(d.promiseDate);
                     let isTargetOverall = false; 
                     
-                    if (d.listType === "Red") { 
-                        isTargetOverall = true; 
-                    } else if (agreeDay > 0 || promiseDay > 0) { 
-                        isTargetOverall = true; 
-                    }
+                    if (d.listType === "Red") isTargetOverall = true; 
+                    else if (agreeDay > 0 || promiseDay > 0) isTargetOverall = true; 
                     
                     if (isTargetOverall) { 
                         targetMonth++; 
-                        if (att > 0 || isPaid) { 
-                            doneMonth++; 
-                        }
+                        if (att > 0 || isPaid) doneMonth++; 
                     }
                     
                     let isTargetForSelectedDay = false;
                     
                     if (d.listType === "Red") { 
-                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedDay) { 
-                            isTargetForSelectedDay = false; 
-                        } else if (!isPaid) { 
-                            isTargetForSelectedDay = true; 
-                        }
+                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedDay) isTargetForSelectedDay = false; 
+                        else if (!isPaid) isTargetForSelectedDay = true; 
                     } else if (!isNaN(promiseDay) && promiseDay === selectedDay) { 
                         isTargetForSelectedDay = true; 
                     } else if (agreeDay === selectedDay) { 
@@ -1247,15 +1196,8 @@
                     
                     if (isTargetForSelectedDay || (isPaid && agreeDay === selectedDay)) { 
                         targetDay++; 
-                        if(d.listType === "Red") { 
-                            redTarget++; 
-                        } else { 
-                            openTarget++; 
-                        }
-                        
-                        if (att > 0 || isPaid) { 
-                            doneDay++; 
-                        }
+                        if(d.listType === "Red") redTarget++; else openTarget++; 
+                        if (att > 0 || isPaid) doneDay++; 
                     }
                 });
                 
@@ -1274,10 +1216,7 @@
                 let filterStatus = document.getElementById('logStatusFilter').value; 
                 let agentFilt = document.getElementById('ccAgentFilter') ? document.getElementById('ccAgentFilter').value : "ALL"; 
                 
-                let html = ""; 
-                let targetRed = 0; 
-                let targetOpen = 0; 
-                let called = 0;
+                let html = ""; let targetRed = 0, targetOpen = 0, called = 0;
                 
                 let sortedData = [...masterData].sort((a,b) => { 
                     let aTop = (parseInt(a.promiseDate) === filterDay || extractDay(a.agreeDate) === filterDay) && a.listType !== "Red" ? 1 : 0; 
@@ -1296,39 +1235,23 @@
                     let showOnDay = false;
                     
                     if(filterDay === td) { 
-                        if(d.listType === "Red") { 
-                            showOnDay = true; 
-                        } else if(promiseDay === filterDay || agreeDay === filterDay) { 
-                            showOnDay = true; 
-                        } else if(agreeDay > 0 && agreeDay < filterDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) { 
-                            showOnDay = true; 
-                        }
+                        if(d.listType === "Red") showOnDay = true; 
+                        else if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true; 
+                        else if(agreeDay > 0 && agreeDay < filterDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) showOnDay = true; 
                     } else { 
-                        if(promiseDay === filterDay || agreeDay === filterDay) { 
-                            showOnDay = true; 
-                        } else if(d.listType === "Red") { 
-                            showOnDay = true; 
-                        }
+                        if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true; 
+                        else if(d.listType === "Red") showOnDay = true; 
                     }
 
                     if(showOnDay) {
-                        let statusText = "Pending"; 
-                        let rowC = "";
+                        let statusText = "Pending"; let rowC = "";
                         
-                        if(d.listType === "Red") { 
-                            rowC = "row-red"; 
-                        } else if (isRisk) { 
-                            rowC = "row-yellow"; 
-                        } else if (att > 0) { 
-                            rowC = "row-green"; 
-                        }
+                        if(d.listType === "Red") rowC = "row-red"; 
+                        else if (isRisk) rowC = "row-yellow"; 
+                        else if (att > 0) rowC = "row-green"; 
                         
-                        if(d.notes === "Customer Paid") { 
-                            statusText = "Paid"; 
-                            rowC = "row-green"; 
-                        } else if(att > 0) { 
-                            statusText = "Called"; 
-                        }
+                        if(d.notes === "Customer Paid") { statusText = "Paid"; rowC = "row-green"; } 
+                        else if(att > 0) { statusText = "Called"; }
                         
                         let show = true; 
                         if (filterStatus === "CALLED" && statusText === "Pending") show = false; 
@@ -1339,15 +1262,8 @@
                         if (filterStatus === "RISK" && !isRisk) show = false;
                         
                         if(show) { 
-                            if(d.listType === "Red") { 
-                                targetRed++; 
-                            } else { 
-                                targetOpen++; 
-                            }
-                            
-                            if(att > 0 || d.notes === "Customer Paid") { 
-                                called++; 
-                            }
+                            if(d.listType === "Red") targetRed++; else targetOpen++; 
+                            if(att > 0 || d.notes === "Customer Paid") called++; 
                             
                             let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; 
                             let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; 
@@ -1355,11 +1271,8 @@
                             let displayStatus = statusText; 
                             
                             if(statusText === "Pending") { 
-                                if(d.notes === "Call Not Answer") { 
-                                    displayStatus = "Not Answer"; 
-                                } else if(d.notes === "Phone Not Working") { 
-                                    displayStatus = "Not Working"; 
-                                }
+                                if(d.notes === "Call Not Answer") displayStatus = "Not Answer"; 
+                                else if(d.notes === "Phone Not Working") displayStatus = "Not Working"; 
                             }
                             
                             html += `<tr class="${rowC}">
@@ -1462,23 +1375,17 @@
                     let aProm = parseInt(a.promiseDate) === selectedStaffDay ? 1 : 0; 
                     let bProm = parseInt(b.promiseDate) === selectedStaffDay ? 1 : 0; 
                     
-                    if(aProm !== bProm) { 
-                        return bProm - aProm; 
-                    }
+                    if(aProm !== bProm) return bProm - aProm; 
                     
                     let aOpenToday = (a.listType !== "Red" && extractDay(a.agreeDate) === selectedStaffDay) ? 1 : 0; 
                     let bOpenToday = (b.listType !== "Red" && extractDay(b.agreeDate) === selectedStaffDay) ? 1 : 0; 
                     
-                    if(aOpenToday !== bOpenToday) { 
-                        return bOpenToday - aOpenToday; 
-                    }
+                    if(aOpenToday !== bOpenToday) return bOpenToday - aOpenToday; 
                     
                     let aRed = a.listType === "Red" ? 1 : 0; 
                     let bRed = b.listType === "Red" ? 1 : 0; 
                     
-                    if(aRed !== bRed) { 
-                        return bRed - aRed; 
-                    }
+                    if(aRed !== bRed) return bRed - aRed; 
                     
                     return (Number(b.arrearsAmount)||0) - (Number(a.arrearsAmount)||0); 
                 });
@@ -1497,24 +1404,17 @@
                     let promiseDay = parseInt(d.promiseDate);
 
                     if (d.listType === "Red") { 
-                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedStaffDay) { 
-                            isTargetToday = false; 
-                        } else { 
-                            isTargetToday = true; 
-                        }
+                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedStaffDay) isTargetToday = false; 
+                        else isTargetToday = true; 
                     } else if (!isNaN(promiseDay) && promiseDay > 0) { 
                         if(promiseDay <= selectedStaffDay) { 
                             isTargetToday = true; 
-                            if(promiseDay < selectedStaffDay) { 
-                                isForwarded = true; 
-                            } 
+                            if(promiseDay < selectedStaffDay) isForwarded = true; 
                         }
                     } else if (agreeDay > 0) { 
                         if(agreeDay <= selectedStaffDay && att === 0) { 
                             isTargetToday = true; 
-                            if(agreeDay < selectedStaffDay) { 
-                                isForwarded = true; 
-                            } 
+                            if(agreeDay < selectedStaffDay) isForwarded = true; 
                         } 
                     } 
                     
@@ -1524,12 +1424,7 @@
                     }
 
                     if (isTargetToday) { 
-                        if(d.listType === "Red") { 
-                            targetRed++; 
-                        } else { 
-                            targetOpen++; 
-                        }
-                        
+                        if(d.listType === "Red") targetRed++; else targetOpen++; 
                         html += generateRowHTML(d, rowC, isForwarded); 
                     }
                 });
@@ -1545,15 +1440,13 @@
                     return; 
                 } 
                 
-                let html = ""; 
-                let searchCount = 0;
+                let html = ""; let searchCount = 0;
                 
                 masterData.forEach(d => { 
                     let safeAcc = String(d.accountNo || "").toLowerCase(); 
                     if(safeAcc.includes(f)) { 
                         let isRisk = (parseInt(d.callAttempts) >= 3 || d.notes === "Bad Feedback" || d.notes === "Phone Not Working"); 
                         let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : ""); 
-                        
                         html += generateRowHTML(d, rowC, false); 
                         searchCount++; 
                     } 
@@ -1563,6 +1456,25 @@
                 document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
             };
 
+            // 🌟 අලුත්: Cloudflare එකෙන් මැසේජ් එක ගන්න ෆන්ක්ෂන් එක (listType එක්කම) 🌟
+            window.generateAlertMessage = async (name, prod, listType) => {
+                try {
+                    let res = await fetch(CLOUD_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: "generateMessage", name: name, prod: prod, listType: listType })
+                    });
+                    let data = await res.json();
+                    if(data.success) {
+                        return data.message;
+                    }
+                } catch(e) {
+                    console.error("Message Blocked", e);
+                }
+                return "Error connecting to Aura Server.";
+            };
+
+            // 🌟 අලුත්: දත්ත Save කරන ක්‍රියාවලිය හා Preview එක පෙන්වීම 🌟
             window.saveData = async (docId) => {
                 let action = document.getElementById(`action_${docId}`).value; 
                 let phoneVal = document.getElementById(`ph_${docId}`).value.trim(); 
@@ -1581,18 +1493,26 @@
                 
                 let d = masterData.find(x => x.id === docId); 
                 
+                // ඇමතුම නොගත්තොත් හෝ වැඩ නැත්නම් මැසේජ් යැවීමේ Popup එක පෙන්වීම
                 if(action === "Call Not Answer" || action === "Phone Not Working") {
                     let safePhone = phoneVal || getPhone(d) || "N/A";
                     let safeName = d.customerName || "Customer";
                     let safeProd = d.product || "Item";
 
-                    document.getElementById('waPromptPhone').value = safePhone;
-                    document.getElementById('waPromptName').value = safeName;
-                    document.getElementById('waPromptProd').value = safeProd;
-                    document.getElementById('waDispName').innerText = safeName;
-
-                    document.getElementById('whatsappPromptModal').style.display = 'block';
+                    document.getElementById('msgTargetPhone').value = safePhone;
+                    document.getElementById('msgDispName').innerText = safeName;
+                    
+                    // Modal Header එක Red නම් රතු පාටින්, Open නම් කොළ පාටින් පෙන්වීම
+                    document.getElementById('msgHeader').innerText = (d.listType === "Red") ? "⚠️ Official Reminder (Issue)" : "✉️ Kind Reminder (Open)";
+                    document.getElementById('msgHeader').style.borderColor = (d.listType === "Red") ? "#f44336" : "#4caf50";
+                    
+                    document.getElementById('msgPreviewText').innerText = "⏳ මැසේජ් එක සකසමින් පවතී... (Loading preview...)";
+                    document.getElementById('messagingModal').style.display = 'block';
                     document.getElementById('modalOverlay').style.display = 'block';
+
+                    // Cloud එකෙන් Preview එක අරන් පෙන්නනවා
+                    let msg = await window.generateAlertMessage(safeName, safeProd, d.listType);
+                    document.getElementById('msgPreviewText').innerText = msg;
                 }
 
                 if(phoneVal !== d.phone && phoneVal !== "") { 
@@ -1607,13 +1527,55 @@
                 
                 setTimeout(() => { 
                     let row = document.getElementById(`row_${docId}`); 
-                    if(row) { 
-                        row.style.display = 'none'; 
-                    } 
+                    if(row) row.style.display = 'none'; 
                     if(document.getElementById('staffSearch').value.trim() === "") { 
                         window.renderStaffUI(); 
                     }
                 }, 800); 
+            };
+
+            // 🌟 අලුත්: Message එක යවන Function එක (WhatsApp හෝ SMS) 🌟
+            window.sendActionMessage = (type) => {
+                let phone = document.getElementById('msgTargetPhone').value;
+                let msg = document.getElementById('msgPreviewText').innerText;
+
+                if(!phone || phone === "N/A" || phone.trim() === "") { 
+                    alert("පාරිභෝගිකයාගේ දුරකථන අංකය සොයාගත නොහැක!"); 
+                    return; 
+                }
+                
+                let formattedPhone = phone.replace(/[^0-9]/g, '');
+                
+                if (type === 'WA') {
+                    if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1); 
+                    let url = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(msg)}`;
+                    window.open(url, '_blank');
+                } else if (type === 'SMS') {
+                    if(formattedPhone.startsWith('0')) formattedPhone = '+94' + formattedPhone.substring(1); 
+                    let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(msg)}`;
+                    window.location.href = smsUrl;
+                }
+                
+                window.closeMessagingModal();
+            };
+
+            // Master Info Modal එකෙන් යවන සාමාන්‍ය SMS එක
+            window.sendLocalSMS = async () => {
+                let phone = document.getElementById('infoModal').getAttribute('data-phone');
+                let name = document.getElementById('infoModal').getAttribute('data-name') || "Customer";
+                let prod = document.getElementById('infoModal').getAttribute('data-prod') || "Item";
+
+                if(!phone || phone === "N/A" || phone.trim() === "") { 
+                    alert("පාරිභෝගිකයාගේ දුරකථන අංකය සොයාගත නොහැක!"); 
+                    return; 
+                }
+                
+                let formattedPhone = phone.replace(/[^0-9]/g, '');
+                if(formattedPhone.startsWith('0')) formattedPhone = '+94' + formattedPhone.substring(1); 
+                
+                let msg = await window.generateAlertMessage(name, prod, "New");
+                let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(msg)}`;
+                window.location.href = smsUrl;
             };
 
             window.downloadPhoneDirectory = () => {
@@ -1648,79 +1610,12 @@
             window.closeModal = () => { 
                 document.getElementById('infoModal').style.display = 'none'; 
                 document.getElementById('bmPaymentModal').style.display = 'none'; 
-                if(document.getElementById('whatsappPromptModal')) {
-                    document.getElementById('whatsappPromptModal').style.display = 'none';
-                }
                 document.getElementById('modalOverlay').style.display = 'none'; 
             };
 
-            window.closeWAModal = () => {
-                document.getElementById('whatsappPromptModal').style.display = 'none';
+            window.closeMessagingModal = () => {
+                document.getElementById('messagingModal').style.display = 'none';
                 document.getElementById('modalOverlay').style.display = 'none';
-            };
-
-            // 🌟 Cloudflare එකෙන් මැසේජ් එක ගන්න ෆන්ක්ෂන් එක 🌟
-            window.generateAlertMessage = async (name, prod) => {
-                try {
-                    let res = await fetch(CLOUD_API_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: "generateMessage", name: name, prod: prod })
-                    });
-                    let data = await res.json();
-                    if(data.success) {
-                        return data.message;
-                    }
-                } catch(e) {
-                    console.error("Message Blocked", e);
-                }
-                return "Error connecting to Aura Server.";
-            };
-
-            window.sendLocalSMS = async () => {
-                let phone = document.getElementById('infoModal').getAttribute('data-phone');
-                let name = document.getElementById('infoModal').getAttribute('data-name') || "Customer";
-                let prod = document.getElementById('infoModal').getAttribute('data-prod') || "Item";
-
-                if(!phone || phone === "N/A" || phone.trim() === "") { 
-                    alert("පාරිභෝගිකයාගේ දුරකථන අංකය සොයාගත නොහැක!"); 
-                    return; 
-                }
-                
-                let formattedPhone = phone.replace(/[^0-9]/g, '');
-                if(formattedPhone.startsWith('0')) { 
-                    formattedPhone = '+94' + formattedPhone.substring(1); 
-                }
-                
-                // Cloudflare එකෙන් මැසේජ් එක එනකම් ඉන්නවා
-                let msg = await window.generateAlertMessage(name, prod);
-
-                let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(msg)}`;
-                window.location.href = smsUrl;
-            };
-
-            window.confirmSendWA = async () => {
-                let phone = document.getElementById('waPromptPhone').value;
-                let name = document.getElementById('waPromptName').value;
-                let prod = document.getElementById('waPromptProd').value;
-
-                if(!phone || phone === "N/A" || phone.trim() === "") { 
-                    alert("පාරිභෝගිකයාගේ දුරකථන අංකය සොයාගත නොහැක!"); 
-                    return; 
-                }
-                
-                let formattedPhone = phone.replace(/[^0-9]/g, '');
-                if(formattedPhone.startsWith('0')) { 
-                    formattedPhone = '94' + formattedPhone.substring(1); 
-                }
-                
-                // Cloudflare එකෙන් මැසේජ් එක එනකම් ඉන්නවා
-                let msg = await window.generateAlertMessage(name, prod);
-                
-                let url = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(msg)}`;
-                window.open(url, '_blank');
-                
-                window.closeWAModal();
             };
 
             window.uploadExcel = async (ev, type) => {
