@@ -1608,7 +1608,6 @@
                 document.body.removeChild(link);
             };
 
-            // 🌟 MODIFIED: Clean UI for Master Info (Removed Input Box) 🌟
             window.showMasterModal = (nic, prod, addr, date, phone, name) => { 
                 document.getElementById('m_nic').innerText = nic; 
                 document.getElementById('m_prod').innerText = prod; 
@@ -1653,7 +1652,7 @@
                 window.open(url, '_blank');
             };
 
-            // 🌟 MODIFIED: IP is Hardcoded directly into the code! 🌟
+            // 🔥 මෙන්න CLOUD API එකෙන් SMS යවන අලුත් Code එක (IP අවුල් එන්නේ නෑ) 🔥
             window.sendLocalSMS = async () => {
                 let phone = document.getElementById('infoModal').getAttribute('data-phone');
                 if(!phone || phone === "N/A" || phone.trim() === "") { 
@@ -1666,25 +1665,27 @@
                     formattedPhone = '+94' + formattedPhone.substring(1); 
                 }
                 
-                // 🔥 Here is your hardcoded IP from the Gateway App 🔥
-                let gatewayIp = "http://10.118.209.49:8082";
-                
+                // ඔයාගේ ස්ක්‍රීන්ෂොට් එකේ තිබුණු Cloud Token එක
+                let cloudToken = "deWIv1c9QYmewxM4wDIRvE:APA91bEthqbQUH2csfTl6H1M0OcSY1wJWnTHerZEwE3WNWiq-NUETBobmlECo26kgWWA4KRQZUQkP8e-iwzZhBVQtqdFFL8aB57YN0U9Y0gqKHPBUod7nCU";
                 let msg = window.generateAlertMessage();
 
                 try {
-                    let response = await fetch(gatewayIp, {
+                    let response = await fetch("https://www.traccar.org/sms/", {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': cloudToken 
+                        },
                         body: JSON.stringify({ to: formattedPhone, message: msg })
                     });
                     
                     if(response.ok) {
                         alert("✅ SMS සන්දේශය සාර්ථකව යැවිණි! (SMS Sent Successfully)");
                     } else {
-                        alert("❌ SMS යැවීම අසාර්ථකයි. ෆෝන් එක සහ PC එක එකම WiFi එකකදැයි පරීක්ෂා කරන්න.");
+                        alert("❌ SMS යැවීම අසාර්ථකයි. කරුණාකර ෆෝන් එකේ ඇප් එක Open කර තිබේදැයි බලන්න.");
                     }
                 } catch(e) {
-                    alert("❌ SMS Gateway එකට සම්බන්ධ වීමට නොහැක! ෆෝන් එකයි PC එකයි එකම WiFi එකකද සහ IP එක වෙනස් වී ඇත්දැයි බලන්න.\nError: " + e.message);
+                    alert("❌ SMS යැවීමේ දෝෂයක්! Error: " + e.message);
                 }
             };
             
