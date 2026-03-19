@@ -255,7 +255,6 @@
             font-size: 14px; 
         }
 
-        /* 🌟 WhatsApp Popup ekath meke thiyenawa 🌟 */
         #infoModal, #bmPaymentModal, #whatsappPromptModal { 
             display: none; 
             position: fixed; 
@@ -726,6 +725,11 @@
         <p><b>Address:</b> <span id="m_addr"></span></p>
         <p><b>Agree Date:</b> <span id="m_date"></span></p>
         
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.3);">
+            <h3 style="font-size: 14px; margin-bottom: 10px; color: #a5d6a7;">💬 සාමාන්‍ය පණිවිඩ යැවීම (No WhatsApp)</h3>
+            <button onclick="window.sendLocalSMS()" style="background: #2196F3; color: #fff; width: 100%; font-size: 13px; padding: 10px; border-radius: 8px;">📱 Send Normal SMS</button>
+        </div>
+
         <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 20px;">Close Window</button>
     </div>
 
@@ -968,7 +972,7 @@
                     </td>
                     <td>${pSelect}</td>
                     <td><button onclick="window.saveData('${d.id}')" style="padding: 6px 12px; font-size:11px;">SAVE</button></td>
-                    <td><button class="btn-info" onclick="window.showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}')">❗️</button></td>
+                    <td><button class="btn-info" onclick="window.showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}', '${getPhone(d)}', '${safeName}')">❗️</button></td>
                 </tr>`;
             }
 
@@ -1555,7 +1559,6 @@
                 document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
             };
 
-            // 🔥 ME THIYENNE ALUTH SAVE FUNCTION EKA (WhatsApp Popup enna hadapu eka) 🔥
             window.saveData = async (docId) => {
                 let action = document.getElementById(`action_${docId}`).value; 
                 let phoneVal = document.getElementById(`ph_${docId}`).value.trim(); 
@@ -1574,7 +1577,6 @@
                 
                 let d = masterData.find(x => x.id === docId); 
                 
-                // 🟢 SHOW POPUP IMMEDIATELY BEFORE FIREBASE SAVE 🟢
                 if(action === "Call Not Answer" || action === "Phone Not Working") {
                     let safePhone = phoneVal || getPhone(d) || "N/A";
                     let safeName = d.customerName || "Customer";
@@ -1625,11 +1627,15 @@
                 document.body.removeChild(link);
             };
 
-            window.showMasterModal = (nic, prod, addr, date) => { 
+            window.showMasterModal = (nic, prod, addr, date, phone, name) => { 
                 document.getElementById('m_nic').innerText = nic; 
                 document.getElementById('m_prod').innerText = prod; 
                 document.getElementById('m_addr').innerText = addr; 
                 document.getElementById('m_date').innerText = date; 
+                
+                document.getElementById('infoModal').setAttribute('data-phone', phone);
+                document.getElementById('infoModal').setAttribute('data-name', name);
+                document.getElementById('infoModal').setAttribute('data-prod', prod);
 
                 document.getElementById('infoModal').style.display = 'block'; 
                 document.getElementById('modalOverlay').style.display = 'block'; 
@@ -1649,8 +1655,49 @@
                 document.getElementById('modalOverlay').style.display = 'none';
             };
 
-            // 🟢 Popup eke YES ebuwama WhatsApp yana function eka 🟢
-            window.confirmSendWA = () => {
+            // 🌟 අලුත්: Cloudflare එකෙන් මැසේජ් එක ඉල්ලන (Fetch) කරන ෆන්ක්ෂන් එක 🌟
+            window.generateAlertMessage = async (name, prod) => {
+                try {
+                    let res = await fetch(CLOUD_API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: "generateMessage", name: name, prod: prod })
+                    });
+                    let data = await res.json();
+                    if(data.success) {
+                        return data.message;
+                    }
+                } catch(e) {
+                    console.error("Message Blocked by Server Security", e);
+                }
+                return "Error connecting to Aura Secure Message Server.";
+            };
+
+            // 🟢 Async කරලා අලුත් Cloudflare ෆන්ක්ෂන් එකට කනෙක්ට් කරලා තියෙන්නේ 🟢
+            window.sendLocalSMS = async () => {
+                let phone = document.getElementById('infoModal').getAttribute('data-phone');
+                let name = document.getElementById('infoModal').getAttribute('data-name') || "Customer";
+                let prod = document.getElementById('infoModal').getAttribute('data-prod') || "Item";
+
+                if(!phone || phone === "N/A" || phone.trim() === "") { 
+                    alert("පාරිභෝගිකයාගේ දුරකථන අංකය සොයාගත නොහැක!"); 
+                    return; 
+                }
+                
+                let formattedPhone = phone.replace(/[^0-9]/g, '');
+                if(formattedPhone.startsWith('0')) { 
+                    formattedPhone = '+94' + formattedPhone.substring(1); 
+                }
+                
+                // Cloudflare එකෙන් මැසේජ් එක එනකම් ඉන්නවා
+                let msg = await window.generateAlertMessage(name, prod);
+
+                let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(msg)}`;
+                window.location.href = smsUrl;
+            };
+
+            // 🟢 Async කරලා අලුත් Cloudflare ෆන්ක්ෂන් එකට කනෙක්ට් කරලා තියෙන්නේ 🟢
+            window.confirmSendWA = async () => {
                 let phone = document.getElementById('waPromptPhone').value;
                 let name = document.getElementById('waPromptName').value;
                 let prod = document.getElementById('waPromptProd').value;
@@ -1665,7 +1712,8 @@
                     formattedPhone = '94' + formattedPhone.substring(1); 
                 }
                 
-                let msg = `හිතවත් ${name},\nඔබ Singer ආයතනයෙන් ලබාගත් ${prod} භාණ්ඩය සඳහා අදාළ වාරික මුදල කරුණාකර ගෙවන්න.\n\nDear ${name},\nPlease note that the installment for your ${prod} is due. Kindly make the payment at your earliest convenience.\n\n- Singer Galenbindunuwewa`;
+                // Cloudflare එකෙන් මැසේජ් එක එනකම් ඉන්නවා
+                let msg = await window.generateAlertMessage(name, prod);
                 
                 let url = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(msg)}`;
                 window.open(url, '_blank');
