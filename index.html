@@ -88,6 +88,7 @@
                 <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
+
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50; display: flex; justify-content: space-around;">
                     <div><h3 style="font-size: 13px; color: #a5d6a7;">Monthly Success</h3><h1 style="color: #4caf50; margin: 0;" id="dashRate">0%</h1></div>
                     <div style="width: 1px; background: rgba(255,255,255,0.2);"></div>
@@ -98,11 +99,13 @@
                 <div class="stat-box"><div><span>Total Active (Open) Accounts</span><br><b style="color: #81c784;">Total Expect: <span id="dashTotalValue">Rs. 0</span></b></div><div class="stat-value" id="dashTotal">0</div></div>
                 <div class="stat-box" style="border-color: #ffc107;"><div><span style="color: #ffeb3b;">Not Responding Account (Risk)</span><br><b style="color: #ffe082;">Risk Amount: <span id="dashYellowValue">Rs. 0</span></b><br><button onclick="window.filterRiskAccounts()" style="padding: 4px 10px; font-size: 11px; margin-top:5px;">View</button></div><div class="stat-value" id="dashYellow">0</div></div>
                 <div class="stat-box" style="border-color: #f44336;"><div><span style="color: #ff8a80;">Current Arrears (Issu) Account</span><br><b style="color: #ffcdd2;">Arrears Value: <span id="dashRedValue">Rs. 0</span></b></div><div class="stat-value" id="dashRed">0</div></div>
+                
                 <div class="stat-box" style="border-color: #2196f3; display: block; padding: 20px;">
                     <div class="flex-between" style="margin-bottom: 15px;"><span style="color: #90caf9; font-weight: bold;">💰 Open Month Arrears (Total)</span><b id="dashTotalArrears" style="font-size: 1.3em;">Rs. 0</b></div>
                     <div class="flex-between" style="margin-bottom: 15px;"><span style="color: #ffeb3b; font-weight: bold;">⏳ To Collect (Remaining)</span><b id="dashToCollect" style="font-size: 1.4em; color: #ffeb3b;">Rs. 0</b></div>
                     <div class="flex-between" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;"><span style="color: #4caf50; font-weight: bold;">✅ Collected Amount</span><div class="stat-value" id="dashCollected" style="background: #4caf50; color: white;">Rs. 0</div></div>
                 </div>
+
                 <div class="stat-box" style="border-color: #9c27b0; display: block; padding: 20px; cursor: pointer; background: rgba(156, 39, 176, 0.1);" onclick="window.navigate('bmIssuePage')">
                     <h3 style="color: #ce93d8; margin-top: 0;">💼 Issue Management (BM Paid) &rarr;</h3>
                     <div class="flex-between" style="margin-bottom: 10px;"><span style="color: #e1bee7;">Total Issue Amount (<span id="bmIssueCount">0</span> Acc)</span><b id="bmTotalIssued">Rs. 0</b></div>
@@ -117,8 +120,10 @@
         <div class="flex-between mb-20"><h2 style="margin:0; color: #ce93d8;">💼 Issue Management (BM Wallet)</h2><button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button></div>
         <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
             <input type="text" id="bmSearch" onkeyup="window.renderBMIssues()" placeholder="🔍 Search Account No..." style="width: 250px; margin:0;">
-            <span><b>Field:</b></span><select id="bmAgentFilter" onchange="window.renderBMIssues()" style="width: 150px; margin: 0;"><option value="ALL">All Agents</option><option value="Group Sale">Group Sale</option><option value="Heenpahana">Heenpahana</option><option value="Rohan">Rohan</option><option value="Amila">Amila</option></select>
-            <span><b>Status:</b></span><select id="bmStatusFilter" onchange="window.renderBMIssues()" style="width: 200px; margin: 0;"><option value="ALL">All Accounts</option><option value="NOPAY">No Payments Yet</option><option value="PAID">Partially/Fully Paid</option></select>
+            <span><b>Field:</b></span>
+            <select id="bmAgentFilter" onchange="window.renderBMIssues()" style="width: 150px; margin: 0;"><option value="ALL">All Agents</option><option value="Group Sale">Group Sale</option><option value="Heenpahana">Heenpahana</option><option value="Rohan">Rohan</option><option value="Amila">Amila</option></select>
+            <span><b>Status:</b></span>
+            <select id="bmStatusFilter" onchange="window.renderBMIssues()" style="width: 200px; margin: 0;"><option value="ALL">All Accounts</option><option value="NOPAY">No Payments Yet</option><option value="PAID">Partially/Fully Paid</option></select>
         </div>
         <table id="bmTable">
             <thead><tr><th>Account No</th><th>Customer Name</th><th>Field Agent</th><th>Issued Amount</th><th>Collected</th><th>Balance</th><th>Action</th></tr></thead>
@@ -299,7 +304,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
@@ -352,12 +357,35 @@
             function initLiveSync(isManager) {
                 onSnapshot(collection(db, "customers"), (snap) => {
                     masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                    if(isManager) { window.renderManagerDashboard(); if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView(); if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList(); } 
+                    if(isManager) { 
+                        window.renderManagerDashboard(); 
+                        if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView(); 
+                        if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList(); 
+                    } 
                     else { if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); }
+                }, (error) => {
+                    console.error("Firestore Error:", error);
                 });
             }
 
-            window.forceRefreshData = () => { alert("Fetching latest live data..."); window.renderManagerDashboard(); }
+            window.forceRefreshData = async () => { 
+                let btn = document.querySelector('.btn-refresh');
+                let originalText = btn.innerText;
+                btn.innerText = "⏳ Syncing...";
+                try {
+                    const snap = await getDocs(collection(db, "customers"));
+                    masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                    window.renderManagerDashboard();
+                    if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView();
+                    if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList();
+                    btn.innerText = "✅ Updated!";
+                } catch(e) {
+                    console.error(e);
+                    btn.innerText = "❌ Failed";
+                }
+                setTimeout(() => { btn.innerText = originalText; }, 2000);
+            }
+
             function getPhone(d) { return phoneDirectory[d.id] ? phoneDirectory[d.id].phone : (d.phone || 'N/A'); }
             
             function extractDay(s) { 
@@ -393,10 +421,8 @@
 
                 let isStrictToday = (!isForwarded && d.listType !== "Red" && (extractDay(d.agreeDate) === td || parseInt(d.promiseDate) === td));
                 
-                // 🌟 අලුත්: Category තීරණය කිරීම (RED, TODAY, OVERDUE) 🌟
                 let msgCategory = "OVERDUE";
-                if (d.listType === "Red") msgCategory = "RED";
-                else if (isStrictToday) msgCategory = "TODAY";
+                if (d.listType === "Red") msgCategory = "RED"; else if (isStrictToday) msgCategory = "TODAY";
 
                 let msgButtons = `
                     <button class="msg-btn-wa" onclick="window.sendDirectWA('${d.id}', '${safePhone}', '${cName.replace(/'/g, "\\'")}', '${safeProd}', '${msgCategory}')">WA</button>
@@ -429,11 +455,11 @@
                     t++; totalMonthlyPay += mPay;
                     if (d.listType === "Red") { r++; let amt = Number(d.arrearsAmount) || 0; totalArrears += amt; openArrVal += amt; if (isPaid) collectedAmount += amt; } 
                     else if (isRisk) { y++; notRespVal += mPay; }
-                    let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let isTargetToday = false;
-                    if (d.listType === "Red") { if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > td) isTargetToday = false; else if (!isPaid) isTargetToday = true; } 
-                    else if (!isNaN(promiseDay) && promiseDay === td) { isTargetToday = true; } else if (agreeDay === td) { isTargetToday = true; } 
-                    else if (agreeDay > 0 && agreeDay < td && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) { isTargetToday = true; }
-                    if (isTargetToday || (isPaid && agreeDay === td)) { if (att > 0 || isPaid || d.notes === "WhatsApp Sent") todayCompleted++; }
+                    
+                    // 🌟 අලුත්: Live Count Logic එක 🌟
+                    if (d.lastCallDate === sysToday) {
+                        todayCompleted++;
+                    }
                 });
                 document.getElementById('dashTotal').innerText = t; if(document.getElementById('dashTotalValue')) document.getElementById('dashTotalValue').innerText = "Rs. " + totalMonthlyPay.toLocaleString('en-US');
                 document.getElementById('dashYellow').innerText = y; if(document.getElementById('dashYellowValue')) document.getElementById('dashYellowValue').innerText = "Rs. " + notRespVal.toLocaleString('en-US');
@@ -474,7 +500,7 @@
                 masterData.forEach(d => {
                     let att = parseInt(d.callAttempts) || 0; let isPaid = (d.notes === "Customer Paid"); let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let isTargetOverall = false; 
                     if (d.listType === "Red") isTargetOverall = true; else if (agreeDay > 0 || promiseDay > 0) isTargetOverall = true; 
-                    if (isTargetOverall) { targetMonth++; if (att > 0 || isPaid || d.notes === "WhatsApp Sent") doneMonth++; }
+                    if (isTargetOverall) { targetMonth++; if (d.lastCallDate === sysToday || isPaid) doneMonth++; }
                     
                     let isTargetForSelectedDay = false;
                     if (d.listType === "Red") { if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedDay) isTargetForSelectedDay = false; else if (!isPaid) isTargetForSelectedDay = true; } 
@@ -483,7 +509,7 @@
                     
                     if (isTargetForSelectedDay || (isPaid && agreeDay === selectedDay)) { 
                         targetDay++; if(d.listType === "Red") redTarget++; else openTarget++; 
-                        if (att > 0 || isPaid || d.notes === "WhatsApp Sent") doneDay++; 
+                        if (d.lastCallDate === sysToday || isPaid) doneDay++; 
                     }
                 });
                 
@@ -521,7 +547,7 @@
                         
                         if(show) { 
                             if(d.listType === "Red") targetRed++; else targetOpen++; 
-                            if(att > 0 || d.notes === "Customer Paid" || d.notes === "WhatsApp Sent") called++; 
+                            if(d.lastCallDate === sysToday || d.notes === "Customer Paid") called++; 
                             let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`; let displayStatus = statusText; 
                             if(statusText === "Pending") { if(d.notes === "Call Not Answer") displayStatus = "Not Answer"; else if(d.notes === "Phone Not Working") displayStatus = "Not Working"; }
                             html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${dAgent}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${displayStatus}</b></td></tr>`; 
@@ -607,7 +633,6 @@
                 document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='9'>ගිණුම් නොමැත (No accounts found).</td></tr>"; document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
             };
 
-            // 🌟 3. Action / WhatsApp Validation (No Skip for Reds & Missed calls) 🌟
             window.saveData = async (docId) => {
                 let action = document.getElementById(`action_${docId}`).value; 
                 let phoneVal = document.getElementById(`ph_${docId}`).value.trim(); 
@@ -628,7 +653,6 @@
                 
                 let d = masterData.find(x => x.id === docId); 
 
-                // 🌟 අලුත්: Modal එකට Category එක යැවීම 🌟
                 if(action === "Call Not Answer" || action === "Phone Not Working") {
                     let safePhone = phoneVal || getPhone(d) || "N/A"; let safeName = d.customerName || "Customer"; let safeProd = d.product || "Item";
                     
