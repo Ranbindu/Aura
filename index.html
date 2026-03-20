@@ -47,10 +47,14 @@
         .mb-20 { margin-bottom: 20px; }
         .login-box { max-width: 450px; margin: auto; padding: 50px; text-align: center; }
         .login-box input, .login-box button { padding: 15px; font-size: 15px; margin-top: 20px; width: 100%; }
+        .msg-btn-wa { padding: 4px 8px; font-size: 11px; background: #25D366; border-radius: 5px; cursor: pointer; border: none; color: white; font-weight: bold; margin-right: 5px; }
+        .msg-btn-sms { padding: 4px 8px; font-size: 11px; background: #2196f3; border-radius: 5px; cursor: pointer; border: none; color: white; font-weight: bold; }
     </style>
 </head>
 <body>
     <script>
+        window.waClickedRows = {}; // අලුත්: WhatsApp එබුවාද කියලා මතක තියාගන්න
+        
         window.navigate = function(pageId) {
             document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page'));
             document.getElementById(pageId).classList.add('active-page'); window.scrollTo(0,0);
@@ -147,7 +151,7 @@
                     <div style="text-align: center;"><h4 style="margin:0; opacity:0.8; font-size: 12px;">TOTAL MONTH RATE</h4><h1 id="pRateMonth" style="font-size: 3.5em; color: #2196f3; margin: 5px 0;">0%</h1></div>
                 </div>
                 <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;"><span>Selected Day Target:</span><span id="pTarget" style="font-weight: bold; font-size: 1.3em;">0</span></div>
-                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;"><span>Calls Completed:</span><span id="pDone" style="font-weight: bold; font-size: 1.3em;">0</span></div>
+                <div class="flex-between" style="padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px; margin-bottom: 10px;"><span>Calls/Messages Completed:</span><span id="pDone" style="font-weight: bold; font-size: 1.3em;">0</span></div>
                 <button onclick="window.navigateManagerCC()" style="margin-top: 15px; width: 100%;">View Detailed Logs</button>
             </div>
             <div class="progress-section" style="text-align: center;">
@@ -162,11 +166,11 @@
     <div id="callCenterDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
         <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
         <h2>Call Center Detailed Logs</h2>
-        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 14px;">
              <span>📅 <b>Day:</b></span><select id="managerDayFilter" onchange="window.syncManagerView()" style="width: 100px; margin: 0;"></select>
              <span><b>Field:</b></span><select id="ccAgentFilter" onchange="window.syncManagerView()" style="width: 150px; margin: 0;"><option value="ALL">All Agents</option><option value="Group Sale">Group Sale</option><option value="Heenpahana">Heenpahana</option><option value="Rohan">Rohan</option><option value="Amila">Amila</option></select>
              <span>🔍 <b>Filter:</b></span><select id="logStatusFilter" onchange="window.syncManagerView()" style="width: 180px; margin: 0;"><option value="ALL">All Accounts</option><option value="CALLED">Called / Paid</option><option value="PENDING">Pending (New)</option><option value="RISK">All Risk Accounts</option><option value="NOT_ANSWER">Call Not Answer</option><option value="NOT_WORKING">Phone Not Working</option><option value="BAD_FEEDBACK">Bad Feedback</option></select>
-             <div style="margin-left: auto; text-align: right;"><div style="margin-bottom: 5px;">Target: <b id="fTarget" style="color: #ffeb3b; font-size: 1.2em;">0</b></div><div>Called: <b id="fCalled" style="color: #4caf50; font-size: 1.2em;">0</b></div></div>
+             <div style="margin-left: auto; text-align: right;"><div style="margin-bottom: 5px;">Target: <b id="fTarget" style="color: #ffeb3b; font-size: 1.2em;">0</b></div><div>Completed: <b id="fCalled" style="color: #4caf50; font-size: 1.2em;">0</b></div></div>
         </div>
         <table id="ccReportTable">
             <thead><tr><th>Account No</th><th>Customer Name</th><th>Agent</th><th>Phone</th><th>Att.</th><th>Feedback</th><th>P. Date</th><th>Status</th></tr></thead>
@@ -226,7 +230,17 @@
             ⚠️ අවධානයට: ඔබ අද දිනය තෝරාගෙන නොමැත!
         </div>
         <table id="staffTable">
-            <thead><tr><th>Account</th><th>Customer Name</th><th>Mobile (Editable)</th><th>Att.</th><th>Action Taken</th><th>P. Date</th><th>Save</th><th>Info</th></tr></thead>
+            <thead><tr>
+                <th>Account</th>
+                <th>Customer Name</th>
+                <th>Mobile</th>
+                <th>Message (WA/SMS)</th>
+                <th>Att.</th>
+                <th>Action Taken</th>
+                <th>P. Date</th>
+                <th>Save</th>
+                <th>Info</th>
+            </tr></thead>
             <tbody id="staffTableBody"></tbody>
         </table>
     </div>
@@ -242,7 +256,6 @@
         </div>
 
         <h3 style="color: #ce93d8; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; margin-top: 40px;">💼 BM Issue Management Sync</h3>
-        <p style="color: #aaa; font-size: 13px;">*පළමුව Admin Report එක අප්ලෝඩ් කර ඉන්පසු Issue Balance එක අප්ලෝඩ් කරන්න.</p>
         <div style="display: flex; gap: 30px; justify-content: center; margin-top: 20px;">
             <button onclick="document.getElementById('f_admin').click()" style="padding: 20px; font-size: 15px; background: #673ab7;">📂 3. Upload Admin Report</button>
             <button onclick="document.getElementById('f_bm').click()" style="padding: 20px; font-size: 15px; background: #9c27b0;">📂 4. Upload Issue Balance</button>
@@ -256,31 +269,14 @@
         <input type="file" id="f_bm" style="display:none" onchange="window.uploadExcel(event, 'IssueBalance')">
     </div>
 
-    <div id="modalOverlay" onclick="window.closeMessagingModal()"></div>
-    <div id="messagingModal" class="glass-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 450px; padding: 30px;">
-        <h2 id="msgHeader" style="border-bottom: 2px solid #2196f3; padding-bottom: 10px; margin-top: 0;">✉️ Send Reminder Message</h2>
-        <p>Customer: <b id="msgDispName" style="color: #ffeb3b;"></b></p>
-        <div style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2);">
-            <span style="font-size: 11px; color: #aaa; display: block; margin-bottom: 8px;">MESSAGE PREVIEW:</span>
-            <div id="msgPreviewText" style="font-size: 13px; white-space: pre-wrap; line-height: 1.5; font-style: italic;">Loading...</div>
-        </div>
-        <input type="hidden" id="msgTargetPhone">
-        <div style="display: flex; gap: 10px;">
-            <button onclick="window.sendActionMessage('WA')" style="background: #25D366; width: 50%; font-size: 12px;">💬 WhatsApp</button>
-            <button onclick="window.sendActionMessage('SMS')" style="background: #2196f3; width: 50%; font-size: 12px;">📱 Normal SMS</button>
-        </div>
-        <button onclick="window.closeMessagingModal()" style="background: #444; width: 100%; margin-top: 10px;">Cancel</button>
-    </div>
-
+    <div id="modalOverlay" onclick="window.closeModal()"></div>
+    
     <div id="infoModal" class="glass-panel">
         <h2 style="border-bottom: 2px solid #4caf50; padding-bottom: 10px;">MASTER INFO</h2>
         <p><b>NIC:</b> <span id="m_nic" style="color:#ffeb3b;"></span></p>
         <p><b>Product:</b> <span id="m_prod" style="color:#81c784;"></span></p>
         <p><b>Address:</b> <span id="m_addr"></span></p>
         <p><b>Agree Date:</b> <span id="m_date"></span></p>
-        <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.3);">
-            <button onclick="window.sendLocalSMS()" style="background: #2196F3; width: 100%; padding: 10px;">📱 Send Normal SMS</button>
-        </div>
         <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 20px;">Close Window</button>
     </div>
 
@@ -305,11 +301,6 @@
         let app, auth, db, masterData = [], phoneDirectory = {}, agentMapping = {}, bmIssuesList = []; 
         let tdObj = new Date(); let td = tdObj.getDate();
         let sysToday = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + String(tdObj.getDate()).padStart(2,'0');
-
-        setInterval(() => {
-            let wm = document.getElementById('rbWatermarkX');
-            if(!wm) { wm = document.createElement('div'); wm.id = 'rbWatermarkX'; wm.innerHTML = 'Design by Mr.Ranbindu'; wm.style.cssText = 'position:fixed;bottom:10px;right:20px;color:rgba(255,255,255,0.4);font-size:16px;font-weight:900;pointer-events:none;z-index:2147483647;letter-spacing:2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.9);'; document.body.appendChild(wm); }
-        }, 2000);
 
         const setupFilters = () => {
             let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("progressDaySelect"), document.getElementById("staffDaySelect")];
@@ -338,7 +329,6 @@
                 const e = document.getElementById('username').value.trim().toLowerCase(); 
                 const p = document.getElementById('password').value;
                 const status = document.getElementById('loginStatus'); 
-                
                 status.innerText = "⏳ Authenticating...";
                 try {
                     await signInWithEmailAndPassword(auth, e, p);
@@ -346,11 +336,7 @@
                     let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
                     window.navigate(isManager ? 'dashboardPage' : 'staffTargetPage');
 
-                    // 🌟 අලුත්: Account Number Base Phone Directory (d.id වලින් Load වෙන්නේ) 🌟
-                    onSnapshot(collection(db, "phoneDirectory"), (snap) => { 
-                        snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); 
-                    }, (error) => console.log("Phone Dir Error: ", error));
-                    
+                    onSnapshot(collection(db, "phoneDirectory"), (snap) => { snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); });
                     onSnapshot(collection(db, "agent_mapping"), (snap) => { snap.forEach(d => { agentMapping[d.id] = d.data().fieldAgent; }); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
                     onSnapshot(collection(db, "bm_issues"), (snap) => { bmIssuesList = snap.docs.map(d => ({id: d.id, ...d.data()})); if(e.includes('manager') || e.includes('bm')) window.renderBMStats(); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
 
@@ -367,8 +353,6 @@
             }
 
             window.forceRefreshData = () => { alert("Fetching latest live data..."); window.renderManagerDashboard(); }
-            
-            // 🌟 අලුත්: Account No එකෙන් Phone එක ගන්නවා 🌟
             function getPhone(d) { return phoneDirectory[d.id] ? phoneDirectory[d.id].phone : (d.phone || 'N/A'); }
             
             function extractDay(s) { 
@@ -380,18 +364,43 @@
             
             function genDays(sel) { let h="<option value=''>Day</option>"; for(let i=1; i<=31; i++) { h += `<option value="${i}" ${sel == i ? 'selected' : ''}>${i}</option>`; } return h; }
 
+            // 🌟 1. අලුත් තීරුව සහ WA එබුවොත් විතරක් පසුව Save කරන්න දෙන Logic එක 🌟
+            window.sendDirectWA = async (docId, phone, name, prod, listType) => {
+                window.waClickedRows[docId] = true; // මේ රෝ එකට WA එබුවා කියලා සිස්ටම් එක මතක තියාගන්නවා
+                
+                try {
+                    let res = await fetch(CLOUD_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: "generateMessage", name: name, prod: prod, listType: listType }) });
+                    let data = await res.json();
+                    if(data.success) {
+                        let formattedPhone = phone.replace(/[^0-9]/g, '');
+                        if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1); 
+                        let url = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(data.message)}`;
+                        window.open(url, '_blank');
+                    }
+                } catch(e) { alert("Error generating message!"); }
+            };
+
             function generateRowHTML(d, rowC, isForwarded) {
                 let att = parseInt(d.callAttempts) || 0; 
                 let pSelect = `<select id="pdt_${d.id}" style="width: 80px; padding: 6px; border-radius: 8px; background: rgba(0,0,0,0.5); color: #fff;">${genDays(d.promiseDate)}</select>`;
                 let rawName = d.customerName || ""; let cName = (rawName !== "" && rawName !== "undefined") ? rawName : "නම නොමැත";
-                let safeNic = (d.nic || "N/A").replace(/'/g, "\\'"); let safeProd = (d.product || "N/A").replace(/'/g, "\\'"); let safeAddr = (d.address || "N/A").replace(/'/g, "\\'"); let safeDate = (d.agreeDate || "N/A").replace(/'/g, "\\'");
+                let safeNic = (d.nic || "N/A").replace(/'/g, "\\'"); let safeProd = (d.product || "N/A").replace(/'/g, "\\'"); let safeAddr = (d.address || "N/A").replace(/'/g, "\\'"); let safeDate = (d.agreeDate || "N/A").replace(/'/g, "\\'"); let safePhone = getPhone(d).replace(/'/g, "\\'");
                 let badge = isForwarded ? `<span class="forward-badge">(පෙර දිනෙන්)</span>` : ``; 
                 let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`;
+
+                // අද දවසට අදාළ අලුත් කෙනෙක්ද කියලා බලනවා (බයිපාස් කරන්න දෙන්න)
+                let isStrictToday = (!isForwarded && d.listType !== "Red" && (extractDay(d.agreeDate) === td || parseInt(d.promiseDate) === td));
+
+                let msgButtons = `
+                    <button class="msg-btn-wa" onclick="window.sendDirectWA('${d.id}', '${safePhone}', '${cName.replace(/'/g, "\\'")}', '${safeProd}', '${d.listType}')">WA</button>
+                    <button class="msg-btn-sms" onclick="alert('මෙම පහසුකම දැනට ලබාගත නොහැක!')">SMS</button>
+                `;
 
                 return `<tr class="${rowC} ${isForwarded ? 'row-forward' : ''}" id="row_${d.id}">
                     <td>${d.accountNo} ${typeBadge} ${badge}</td>
                     <td><b>${cName}</b></td>
-                    <td><input type="text" id="ph_${d.id}" value="${getPhone(d)}" style="width:105px; padding:6px; font-size:12px; text-align:center;"></td>
+                    <td><input type="text" id="ph_${d.id}" value="${safePhone}" style="width:105px; padding:6px; font-size:12px; text-align:center;"></td>
+                    <td>${msgButtons}</td>
                     <td><input type="number" id="att_${d.id}" value="${att}" min="0" style="width:45px; padding:6px; text-align:center;"></td>
                     <td>
                         <select id="action_${d.id}" style="width: 140px; padding: 6px; font-size: 12px; text-align:center;">
@@ -399,98 +408,54 @@
                         </select>
                     </td>
                     <td>${pSelect}</td>
-                    <td><button onclick="window.saveData('${d.id}')" style="padding: 6px 12px; font-size:11px;">SAVE</button></td>
-                    <td><button class="btn-info" onclick="window.showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}', '${getPhone(d)}', '${cName}')">❗️</button></td>
+                    <td><button id="btnSave_${d.id}" data-is-today="${isStrictToday}" onclick="window.saveData('${d.id}')" style="padding: 6px 12px; font-size:11px;">SAVE</button></td>
+                    <td><button class="btn-info" onclick="window.showMasterModal('${safeNic}', '${safeProd}', '${safeAddr}', '${safeDate}', '${safePhone}', '${cName}')">❗️</button></td>
                 </tr>`;
             }
 
+            // ... (Dashboard & BM Stats functions remain strictly unchanged) ...
             window.renderManagerDashboard = () => {
                 let t = 0, y = 0, r = 0, totalArrears = 0, collectedAmount = 0, todayCompleted = 0, totalMonthlyPay = 0, notRespVal = 0, openArrVal = 0;
                 masterData.forEach(d => {
                     let att = parseInt(d.callAttempts) || 0; 
-                    
-                    // 🌟 නිවැරදි කරපු Risk Logic එක 🌟
                     let isRisk = (att >= 3 || d.notes === "Bad Feedback" || ((d.notes === "Call Not Answer" || d.notes === "Phone Not Working") && att >= 2)); 
-                    let isPaid = (d.notes === "Customer Paid");
-                    let mPay = Number(d.monthlyPay) || 0;
-
+                    let isPaid = (d.notes === "Customer Paid"); let mPay = Number(d.monthlyPay) || 0;
                     t++; totalMonthlyPay += mPay;
-
-                    if (d.listType === "Red") { 
-                        r++; let amt = Number(d.arrearsAmount) || 0; totalArrears += amt; openArrVal += amt;
-                        if (isPaid) collectedAmount += amt; 
-                    } else if (isRisk) { 
-                        y++; notRespVal += mPay;
-                    }
-
+                    if (d.listType === "Red") { r++; let amt = Number(d.arrearsAmount) || 0; totalArrears += amt; openArrVal += amt; if (isPaid) collectedAmount += amt; } 
+                    else if (isRisk) { y++; notRespVal += mPay; }
                     let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let isTargetToday = false;
-                    
-                    if (d.listType === "Red") { 
-                        if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > td) isTargetToday = false; else if (!isPaid) isTargetToday = true; 
-                    } else if (!isNaN(promiseDay) && promiseDay === td) { isTargetToday = true; } else if (agreeDay === td) { isTargetToday = true; } 
+                    if (d.listType === "Red") { if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > td) isTargetToday = false; else if (!isPaid) isTargetToday = true; } 
+                    else if (!isNaN(promiseDay) && promiseDay === td) { isTargetToday = true; } else if (agreeDay === td) { isTargetToday = true; } 
                     else if (agreeDay > 0 && agreeDay < td && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) { isTargetToday = true; }
-                    
-                    if (isTargetToday || (isPaid && agreeDay === td)) { if (att > 0 || isPaid) todayCompleted++; }
+                    if (isTargetToday || (isPaid && agreeDay === td)) { if (att > 0 || isPaid || d.notes === "WhatsApp Sent") todayCompleted++; }
                 });
-
                 document.getElementById('dashTotal').innerText = t; if(document.getElementById('dashTotalValue')) document.getElementById('dashTotalValue').innerText = "Rs. " + totalMonthlyPay.toLocaleString('en-US');
                 document.getElementById('dashYellow').innerText = y; if(document.getElementById('dashYellowValue')) document.getElementById('dashYellowValue').innerText = "Rs. " + notRespVal.toLocaleString('en-US');
                 document.getElementById('dashRed').innerText = r; if(document.getElementById('dashRedValue')) document.getElementById('dashRedValue').innerText = "Rs. " + openArrVal.toLocaleString('en-US');
                 document.getElementById('pFieldCount').innerText = r;
-                document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US'); 
-                document.getElementById('dashToCollect').innerText = "Rs. " + (totalArrears - collectedAmount).toLocaleString('en-US'); 
-                document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
+                document.getElementById('dashTotalArrears').innerText = "Rs. " + totalArrears.toLocaleString('en-US'); document.getElementById('dashToCollect').innerText = "Rs. " + (totalArrears - collectedAmount).toLocaleString('en-US'); document.getElementById('dashCollected').innerText = "Rs. " + collectedAmount.toLocaleString('en-US');
                 if(document.getElementById('dashTodayCompleted')) document.getElementById('dashTodayCompleted').innerText = todayCompleted;
                 window.updateProgressSummary();
             };
 
             window.renderBMStats = () => {
                 let issued = 0, collected = 0, bal = 0, accIssueCount = 0, accOutCount = 0;
-                bmIssuesList.forEach(d => { 
-                    let issuedNum = Number(d.issuedAmount) || 0; let settledNum = Number(d.settledAmount) || 0; let balNum = Number(d.balance) || 0; 
-                    issued += issuedNum; collected += settledNum; bal += balNum; 
-                    if(issuedNum > 0) accIssueCount++; if(balNum > 0) accOutCount++; 
-                });
-                if(document.getElementById('bmTotalIssued')) document.getElementById('bmTotalIssued').innerText = "Rs. " + issued.toLocaleString('en-US'); 
-                if(document.getElementById('bmTotalCollected')) document.getElementById('bmTotalCollected').innerText = "Rs. " + collected.toLocaleString('en-US'); 
-                if(document.getElementById('bmTotalBalance')) document.getElementById('bmTotalBalance').innerText = "Rs. " + bal.toLocaleString('en-US'); 
-                if(document.getElementById('bmIssueCount')) document.getElementById('bmIssueCount').innerText = accIssueCount; 
-                if(document.getElementById('bmOutCount')) document.getElementById('bmOutCount').innerText = accOutCount;
+                bmIssuesList.forEach(d => { let issuedNum = Number(d.issuedAmount) || 0; let settledNum = Number(d.settledAmount) || 0; let balNum = Number(d.balance) || 0; issued += issuedNum; collected += settledNum; bal += balNum; if(issuedNum > 0) accIssueCount++; if(balNum > 0) accOutCount++; });
+                if(document.getElementById('bmTotalIssued')) document.getElementById('bmTotalIssued').innerText = "Rs. " + issued.toLocaleString('en-US'); if(document.getElementById('bmTotalCollected')) document.getElementById('bmTotalCollected').innerText = "Rs. " + collected.toLocaleString('en-US'); if(document.getElementById('bmTotalBalance')) document.getElementById('bmTotalBalance').innerText = "Rs. " + bal.toLocaleString('en-US'); if(document.getElementById('bmIssueCount')) document.getElementById('bmIssueCount').innerText = accIssueCount; if(document.getElementById('bmOutCount')) document.getElementById('bmOutCount').innerText = accOutCount;
             };
 
             window.renderBMIssues = () => {
-                let search = document.getElementById('bmSearch') ? document.getElementById('bmSearch').value.toLowerCase().trim() : ""; 
-                let agentFilt = document.getElementById('bmAgentFilter') ? document.getElementById('bmAgentFilter').value : "ALL"; 
-                let statusFilt = document.getElementById('bmStatusFilter') ? document.getElementById('bmStatusFilter').value : "ALL"; 
-                let html = ""; 
-                let sortedList = [...bmIssuesList].sort((a, b) => (Number(b.balance) || 0) - (Number(a.balance) || 0));
-                
+                let search = document.getElementById('bmSearch') ? document.getElementById('bmSearch').value.toLowerCase().trim() : ""; let agentFilt = document.getElementById('bmAgentFilter') ? document.getElementById('bmAgentFilter').value : "ALL"; let statusFilt = document.getElementById('bmStatusFilter') ? document.getElementById('bmStatusFilter').value : "ALL"; let html = ""; let sortedList = [...bmIssuesList].sort((a, b) => (Number(b.balance) || 0) - (Number(a.balance) || 0));
                 sortedList.forEach(d => {
-                    let balNum = Number(d.balance) || 0; let settledNum = Number(d.settledAmount) || 0; let issuedNum = Number(d.issuedAmount) || 0; 
-                    if(balNum <= 0) return; 
-                    let agent = agentMapping[d.id] || "Unknown"; 
-                    if(agentFilt !== "ALL" && agent !== agentFilt) return; 
-                    if(search !== "" && !(String(d.accountNo).toLowerCase().includes(search))) return; 
-                    if(statusFilt === "NOPAY" && settledNum > 0) return; if(statusFilt === "PAID" && settledNum === 0) return;
-                    
+                    let balNum = Number(d.balance) || 0; let settledNum = Number(d.settledAmount) || 0; let issuedNum = Number(d.issuedAmount) || 0; if(balNum <= 0) return; 
+                    let agent = agentMapping[d.id] || "Unknown"; if(agentFilt !== "ALL" && agent !== agentFilt) return; if(search !== "" && !(String(d.accountNo).toLowerCase().includes(search))) return; if(statusFilt === "NOPAY" && settledNum > 0) return; if(statusFilt === "PAID" && settledNum === 0) return;
                     html += `<tr class="row-purple"><td>${d.accountNo}</td><td>${d.customerName || "N/A"}</td><td>${agent}</td><td>Rs. ${issuedNum.toLocaleString('en-US')}</td><td style="color: #81c784;">Rs. ${settledNum.toLocaleString('en-US')}</td><td style="color: #ff9800; font-weight: bold;">Rs. ${balNum.toLocaleString('en-US')}</td><td><button onclick="window.openBMPayment('${d.id}', '${d.accountNo}', ${balNum}, ${settledNum}, ${issuedNum})" style="padding: 6px 12px; font-size: 11px; background: #ce93d8; color: #000;">+ Pay</button></td></tr>`;
                 });
                 let tb = document.getElementById('bmIssueBody'); if(tb) tb.innerHTML = html || "<tr><td colspan='7'>No outstanding accounts found.</td></tr>";
             };
 
-            window.openBMPayment = (docId, accNo, bal, settled, issued) => { 
-                document.getElementById('payAcc').innerText = accNo; document.getElementById('payBal').innerText = "Rs. " + bal.toLocaleString('en-US'); 
-                document.getElementById('payDocId').value = docId; document.getElementById('payCurrentSettled').value = settled; document.getElementById('payCurrentIssued').value = issued; 
-                document.getElementById('payNewAmt').value = ""; document.getElementById('bmPaymentModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block'; 
-            };
-            
-            window.saveBMPayment = async () => {
-                let docId = document.getElementById('payDocId').value; let newAmt = parseFloat(document.getElementById('payNewAmt').value); 
-                if(isNaN(newAmt) || newAmt <= 0) { alert("Please enter a valid amount!"); return; }
-                let curSet = parseFloat(document.getElementById('payCurrentSettled').value); let curIss = parseFloat(document.getElementById('payCurrentIssued').value); 
-                let newSettled = curSet + newAmt; let newBal = curIss - newSettled; if(newBal < 0) newBal = 0; 
-                try { await updateDoc(doc(db, "bm_issues", docId), { settledAmount: newSettled, balance: newBal }); window.closeModal(); alert("Payment Updated Successfully!"); } catch(e) { alert("Failed to update: " + e.message); }
-            };
+            window.openBMPayment = (docId, accNo, bal, settled, issued) => { document.getElementById('payAcc').innerText = accNo; document.getElementById('payBal').innerText = "Rs. " + bal.toLocaleString('en-US'); document.getElementById('payDocId').value = docId; document.getElementById('payCurrentSettled').value = settled; document.getElementById('payCurrentIssued').value = issued; document.getElementById('payNewAmt').value = ""; document.getElementById('bmPaymentModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block'; };
+            window.saveBMPayment = async () => { let docId = document.getElementById('payDocId').value; let newAmt = parseFloat(document.getElementById('payNewAmt').value); if(isNaN(newAmt) || newAmt <= 0) { alert("Please enter a valid amount!"); return; } let curSet = parseFloat(document.getElementById('payCurrentSettled').value); let curIss = parseFloat(document.getElementById('payCurrentIssued').value); let newSettled = curSet + newAmt; let newBal = curIss - newSettled; if(newBal < 0) newBal = 0; try { await updateDoc(doc(db, "bm_issues", docId), { settledAmount: newSettled, balance: newBal }); window.closeModal(); alert("Payment Updated Successfully!"); } catch(e) { alert("Failed to update: " + e.message); } };
 
             window.navigateProgress = () => { window.navigate('progressPage'); window.updateProgressSummary(); };
             window.navigateManagerCC = () => { window.navigate('callCenterDetailsPage'); window.syncManagerView(); };
@@ -503,16 +468,16 @@
                 masterData.forEach(d => {
                     let att = parseInt(d.callAttempts) || 0; let isPaid = (d.notes === "Customer Paid"); let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let isTargetOverall = false; 
                     if (d.listType === "Red") isTargetOverall = true; else if (agreeDay > 0 || promiseDay > 0) isTargetOverall = true; 
-                    if (isTargetOverall) { targetMonth++; if (att > 0 || isPaid) doneMonth++; }
+                    if (isTargetOverall) { targetMonth++; if (att > 0 || isPaid || d.notes === "WhatsApp Sent") doneMonth++; }
                     
                     let isTargetForSelectedDay = false;
                     if (d.listType === "Red") { if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedDay) isTargetForSelectedDay = false; else if (!isPaid) isTargetForSelectedDay = true; } 
                     else if (!isNaN(promiseDay) && promiseDay === selectedDay) { isTargetForSelectedDay = true; } else if (agreeDay === selectedDay) { isTargetForSelectedDay = true; } 
-                    else if (agreeDay > 0 && agreeDay < selectedDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working") && selectedDay === td) { isTargetForSelectedDay = true; }
+                    else if (agreeDay > 0 && agreeDay < selectedDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) { isTargetForSelectedDay = true; }
                     
                     if (isTargetForSelectedDay || (isPaid && agreeDay === selectedDay)) { 
                         targetDay++; if(d.listType === "Red") redTarget++; else openTarget++; 
-                        if (att > 0 || isPaid) doneDay++; 
+                        if (att > 0 || isPaid || d.notes === "WhatsApp Sent") doneDay++; 
                     }
                 });
                 
@@ -525,50 +490,34 @@
                 let filterDay = parseInt(document.getElementById('managerDayFilter').value); let filterStatus = document.getElementById('logStatusFilter').value; let agentFilt = document.getElementById('ccAgentFilter') ? document.getElementById('ccAgentFilter').value : "ALL"; 
                 let html = ""; let targetRed = 0, targetOpen = 0, called = 0;
                 
-                let sortedData = [...masterData].sort((a,b) => { 
-                    let aTop = (parseInt(a.promiseDate) === filterDay || extractDay(a.agreeDate) === filterDay) && a.listType !== "Red" ? 1 : 0; 
-                    let bTop = (parseInt(b.promiseDate) === filterDay || extractDay(b.agreeDate) === filterDay) && b.listType !== "Red" ? 1 : 0; 
-                    return bTop - aTop; 
-                });
+                let sortedData = [...masterData].sort((a,b) => { let aTop = (parseInt(a.promiseDate) === filterDay || extractDay(a.agreeDate) === filterDay) && a.listType !== "Red" ? 1 : 0; let bTop = (parseInt(b.promiseDate) === filterDay || extractDay(b.agreeDate) === filterDay) && b.listType !== "Red" ? 1 : 0; return bTop - aTop; });
                 
                 sortedData.forEach(d => {
                     let dAgent = d.fieldAgent || "Unknown"; if (agentFilt !== "ALL" && dAgent !== agentFilt) return;
                     let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let att = parseInt(d.callAttempts) || 0; 
-                    
-                    // 🌟 නිවැරදි කරපු Risk Logic එක 🌟
                     let isRisk = (att >= 3 || d.notes === "Bad Feedback" || ((d.notes === "Call Not Answer" || d.notes === "Phone Not Working") && att >= 2)); 
                     let showOnDay = false;
-                    
-                    if(filterDay === td) { 
-                        if(d.listType === "Red") showOnDay = true; else if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true; else if(agreeDay > 0 && agreeDay < filterDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) showOnDay = true; 
-                    } else { 
-                        if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true; else if(d.listType === "Red") showOnDay = true; 
-                    }
+                    if(filterDay === td) { if(d.listType === "Red") showOnDay = true; else if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true; else if(agreeDay > 0 && agreeDay < filterDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) showOnDay = true; } 
+                    else { if(promiseDay === filterDay || agreeDay === filterDay) showOnDay = true; else if(d.listType === "Red") showOnDay = true; }
 
                     if(showOnDay) {
                         let statusText = "Pending"; let rowC = "";
                         if(d.listType === "Red") rowC = "row-red"; else if (isRisk) rowC = "row-yellow"; else if (att > 0) rowC = "row-green"; 
-                        if(d.notes === "Customer Paid") { statusText = "Paid"; rowC = "row-green"; } else if(att > 0) { statusText = "Called"; }
+                        if(d.notes === "Customer Paid") { statusText = "Paid"; rowC = "row-green"; } else if(att > 0) { statusText = "Called"; } else if(d.notes === "WhatsApp Sent") { statusText = "WA Sent"; rowC = "row-green"; }
                         
                         let show = true; 
                         if (filterStatus === "CALLED" && statusText === "Pending") show = false; 
                         if (filterStatus === "NOT_ANSWER" && d.notes !== "Call Not Answer") show = false; 
                         if (filterStatus === "NOT_WORKING" && d.notes !== "Phone Not Working") show = false; 
                         if (filterStatus === "BAD_FEEDBACK" && d.notes !== "Bad Feedback") show = false; 
-                        if (filterStatus === "PENDING" && (att > 0 || d.notes === "Customer Paid")) show = false; 
+                        if (filterStatus === "PENDING" && (att > 0 || d.notes === "Customer Paid" || d.notes === "WhatsApp Sent")) show = false; 
                         if (filterStatus === "RISK" && !isRisk) show = false;
                         
                         if(show) { 
                             if(d.listType === "Red") targetRed++; else targetOpen++; 
-                            if(att > 0 || d.notes === "Customer Paid") called++; 
-                            
-                            let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; 
-                            let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; 
-                            let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`; 
-                            let displayStatus = statusText; 
-                            
+                            if(att > 0 || d.notes === "Customer Paid" || d.notes === "WhatsApp Sent") called++; 
+                            let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`; let displayStatus = statusText; 
                             if(statusText === "Pending") { if(d.notes === "Call Not Answer") displayStatus = "Not Answer"; else if(d.notes === "Phone Not Working") displayStatus = "Not Working"; }
-                            
                             html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${dAgent}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${displayStatus}</b></td></tr>`; 
                         }
                     }
@@ -578,37 +527,25 @@
             };
 
             window.renderFieldList = () => {
-                let filterAgent = document.getElementById('agentFilterDrop') ? document.getElementById('agentFilterDrop').value : "ALL"; 
-                let html = ""; 
+                let filterAgent = document.getElementById('agentFilterDrop') ? document.getElementById('agentFilterDrop').value : "ALL"; let html = ""; 
                 let stats = { "Group Sale": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Heenpahana": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Rohan": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Amila": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 } };
-                
                 masterData.forEach(d => {
                     if(d.listType === "Red") {
                         let amt = Number(d.arrearsAmount) || 0; let agent = d.fieldAgent || "Unknown"; let isPaid = (d.notes === "Customer Paid");
                         if(stats[agent]) { stats[agent].tAmt += amt; stats[agent].tAcc += 1; if(!isPaid) { stats[agent].cAmt += amt; stats[agent].cAcc += 1; } }
-                        
-                        if(filterAgent === "ALL" || filterAgent === agent) { 
-                            let rClass = isPaid ? "row-green" : "row-red"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; 
-                            html += `<tr class="${rClass}"><td>${d.accountNo}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${agent}</td><td>Rs. ${amt.toLocaleString('en-US')}</td></tr>`; 
-                        }
+                        if(filterAgent === "ALL" || filterAgent === agent) { let rClass = isPaid ? "row-green" : "row-red"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; html += `<tr class="${rClass}"><td>${d.accountNo}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${agent}</td><td>Rs. ${amt.toLocaleString('en-US')}</td></tr>`; }
                     }
                 });
-                
                 document.getElementById('fieldDetailsBody').innerHTML = html || "<tr><td colspan='5'>No accounts found.</td></tr>";
                 ["Group Sale", "Heenpahana", "Rohan", "Amila"].forEach((ag, idx) => {
-                    let code = ["G", "H", "R", "D"][idx]; 
-                    let tAmt = stats[ag].tAmt; let cAmt = stats[ag].cAmt; let amtRate = tAmt > 0 ? Math.round(((tAmt - cAmt) / tAmt) * 100) : 0; 
-                    let tAcc = stats[ag].tAcc; let cAcc = stats[ag].cAcc; let accRate = tAcc > 0 ? Math.round(((tAcc - cAcc) / tAcc) * 100) : 0; 
-                    
-                    document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`; document.getElementById(`fAcc_${code}`).innerText = tAcc; document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`; 
-                    document.getElementById(`cAcc_${code}`).innerText = cAcc; document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`; document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
+                    let code = ["G", "H", "R", "D"][idx]; let tAmt = stats[ag].tAmt; let cAmt = stats[ag].cAmt; let amtRate = tAmt > 0 ? Math.round(((tAmt - cAmt) / tAmt) * 100) : 0; let tAcc = stats[ag].tAcc; let cAcc = stats[ag].cAcc; let accRate = tAcc > 0 ? Math.round(((tAcc - cAcc) / tAcc) * 100) : 0; 
+                    document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`; document.getElementById(`fAcc_${code}`).innerText = tAcc; document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`; document.getElementById(`cAcc_${code}`).innerText = cAcc; document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`; document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
                 });
             };
 
             window.renderStaffUI = () => {
                 let selectedStaffDay = document.getElementById('staffDaySelect') ? parseInt(document.getElementById('staffDaySelect').value) : td;
                 let warningDiv = document.getElementById('staffDateWarning'); let titleH2 = document.getElementById('staffTargetTitle');
-                
                 if (selectedStaffDay !== td) { if(warningDiv) warningDiv.style.display = 'block'; if(titleH2) titleH2.innerHTML = `TARGET FOR DAY ${selectedStaffDay}: <span class="target-badge" id="staffTargetNum">0</span>`; } 
                 else { if(warningDiv) warningDiv.style.display = 'none'; if(titleH2) titleH2.innerHTML = `TODAY'S TARGET: <span class="target-badge" id="staffTargetNum">0</span>`; }
 
@@ -625,14 +562,12 @@
                 });
 
                 sortedData.forEach(d => {
-                    if (d.notes === "Customer Paid") return; 
+                    if (d.notes === "Customer Paid" || d.notes === "WhatsApp Sent") return; 
                     if (d.lastCallDate === sysToday) return; 
                     
                     let att = parseInt(d.callAttempts) || 0; 
-                    // 🌟 නිවැරදි කරපු Risk Logic එක 🌟
                     let isRisk = (att >= 3 || d.notes === "Bad Feedback" || ((d.notes === "Call Not Answer" || d.notes === "Phone Not Working") && att >= 2)); 
                     let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : "");
-                    
                     let isTargetToday = false; let isForwarded = false; let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
 
                     if (d.listType === "Red") { 
@@ -642,12 +577,11 @@
                     } else if (agreeDay > 0) { 
                         if(agreeDay <= selectedStaffDay && att === 0) { isTargetToday = true; if(agreeDay < selectedStaffDay) isForwarded = true; } 
                     } 
-                    
                     if (d.listType !== "Red" && (d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) { isTargetToday = true; isForwarded = true; }
 
                     if (isTargetToday) { if(d.listType === "Red") targetRed++; else targetOpen++; html += generateRowHTML(d, rowC, isForwarded); }
                 });
-                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>තෝරාගත් දිනයට ඉලක්ක නොමැත! (No targets for selected day)</td></tr>"; 
+                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='9'>තෝරාගත් දිනයට ඉලක්ක නොමැත! (No targets for selected day)</td></tr>"; 
                 document.getElementById('staffTargetNum').innerHTML = `${targetOpen + targetRed} <span style="font-size:14px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`;
             };
 
@@ -655,7 +589,6 @@
                 let f = document.getElementById('staffSearch').value.toLowerCase().trim(); 
                 if(f === "") { window.renderStaffUI(); return; } 
                 let html = ""; let searchCount = 0;
-                
                 masterData.forEach(d => { 
                     let safeAcc = String(d.accountNo || "").toLowerCase(); 
                     if(safeAcc.includes(f)) { 
@@ -665,84 +598,60 @@
                         html += generateRowHTML(d, rowC, false); searchCount++; 
                     } 
                 });
-                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='8'>ගිණුම් නොමැත (No accounts found).</td></tr>"; document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
+                document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='9'>ගිණුම් නොමැත (No accounts found).</td></tr>"; document.getElementById('staffTargetNum').innerText = searchCount + " (Searched)";
             };
 
-            window.generateAlertMessage = async (name, prod, listType) => {
-                try { let res = await fetch(CLOUD_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: "generateMessage", name: name, prod: prod, listType: listType }) }); let data = await res.json(); if(data.success) return data.message; } catch(e) { console.error("Message Blocked", e); }
-                return "Error connecting to Aura Server.";
-            };
-
+            // 🌟 2. දැඩි නීතිය (Strict Validation Rule) 🌟
             window.saveData = async (docId) => {
-                let action = document.getElementById(`action_${docId}`).value; let phoneVal = document.getElementById(`ph_${docId}`).value.trim(); let pDate = document.getElementById(`pdt_${docId}`).value; let currentAtt = parseInt(document.getElementById(`att_${docId}`).value) || 0;
-                if(action === "") { alert("❌ Please select an action (Feedback)!"); return; } 
-                if(action === "Promised to Pay" && pDate === "") { alert("❌ Please select a Promise Day (1-31)!"); return; }
+                let action = document.getElementById(`action_${docId}`).value; 
+                let phoneVal = document.getElementById(`ph_${docId}`).value.trim(); 
+                let pDate = document.getElementById(`pdt_${docId}`).value; 
+                let currentAtt = parseInt(document.getElementById(`att_${docId}`).value) || 0;
                 
-                let d = masterData.find(x => x.id === docId); 
-                
-                if(action === "Call Not Answer" || action === "Phone Not Working") {
-                    let safePhone = phoneVal || getPhone(d) || "N/A"; let safeName = d.customerName || "Customer"; let safeProd = d.product || "Item";
-                    document.getElementById('msgTargetPhone').value = safePhone; document.getElementById('msgDispName').innerText = safeName;
-                    document.getElementById('msgHeader').innerText = (d.listType === "Red") ? "⚠️ Official Reminder (Issue)" : "✉️ Kind Reminder (Open)";
-                    document.getElementById('msgHeader').style.borderColor = (d.listType === "Red") ? "#f44336" : "#4caf50";
-                    document.getElementById('msgPreviewText').innerText = "⏳ මැසේජ් එක සකසමින් පවතී... (Loading preview...)";
-                    document.getElementById('messagingModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
-                    let msg = await window.generateAlertMessage(safeName, safeProd, d.listType); document.getElementById('msgPreviewText').innerText = msg;
+                let btnSave = document.getElementById(`btnSave_${docId}`);
+                let isStrictTodayAccount = btnSave ? btnSave.getAttribute('data-is-today') === "true" : false;
+
+                // අද දවසේ අලුත් කෙනෙක්ට විතරයි WA යවලා skip කරන්න දෙන්නේ
+                if (isStrictTodayAccount && window.waClickedRows[docId]) {
+                    if (action === "") action = "WhatsApp Sent";
+                } else {
+                    // පරණ අයටයි, ඊයේ ඉඳන් Forward වුණු අයටයි, රතු අයටයි කොහොමවත් Skip බෑ!
+                    if (action === "") { alert("❌ කරුණාකර Action (Feedback) එකක් තෝරන්න!"); return; } 
+                    if (currentAtt === 0 && action !== "Promised to Pay" && action !== "Customer Paid") { alert("❌ කරුණාකර Call Attempts ගණන ඇතුළත් කරන්න!"); return; }
                 }
 
-                // 🌟 අලුත්: Account No එකෙන් Phone එක සේව් කිරීම 🌟
+                if(action === "Promised to Pay" && pDate === "") { alert("❌ කරුණාකර Promise Day (1-31) තෝරන්න!"); return; }
+                
+                let d = masterData.find(x => x.id === docId); 
                 if(phoneVal !== d.phone && phoneVal !== "") { await setDoc(doc(db, "phoneDirectory", docId), { phone: phoneVal, name: d.customerName }); }
                 
                 await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
-                let btn = document.querySelector(`#row_${docId} button`); btn.innerText = "SAVED"; btn.style.background = "#4caf50"; 
+                
+                if(btnSave) { btnSave.innerText = "SAVED"; btnSave.style.background = "#4caf50"; }
                 setTimeout(() => { let row = document.getElementById(`row_${docId}`); if(row) row.style.display = 'none'; if(document.getElementById('staffSearch').value.trim() === "") { window.renderStaffUI(); } }, 800); 
             };
 
-            window.sendActionMessage = (type) => {
-                let phone = document.getElementById('msgTargetPhone').value; let msg = document.getElementById('msgPreviewText').innerText;
-                if(!phone || phone === "N/A" || phone.trim() === "") { alert("පාරිභෝගිකයාගේ දුරකථන අංකය සොයාගත නොහැක!"); return; }
-                let formattedPhone = phone.replace(/[^0-9]/g, '');
-                if (type === 'WA') { if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1); let url = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(msg)}`; window.open(url, '_blank'); } 
-                else if (type === 'SMS') { if(formattedPhone.startsWith('0')) formattedPhone = '+94' + formattedPhone.substring(1); let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(msg)}`; window.location.href = smsUrl; }
-                window.closeMessagingModal();
-            };
-
-            window.sendLocalSMS = async () => {
-                let phone = document.getElementById('infoModal').getAttribute('data-phone'); let name = document.getElementById('infoModal').getAttribute('data-name') || "Customer"; let prod = document.getElementById('infoModal').getAttribute('data-prod') || "Item";
-                if(!phone || phone === "N/A" || phone.trim() === "") { alert("පාරිභෝගිකයාගේ දුරකථන අංකය සොයාගත නොහැක!"); return; }
-                let formattedPhone = phone.replace(/[^0-9]/g, ''); if(formattedPhone.startsWith('0')) formattedPhone = '+94' + formattedPhone.substring(1); 
-                let msg = await window.generateAlertMessage(name, prod, "New"); let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(msg)}`; window.location.href = smsUrl;
-            };
-
             window.downloadPhoneDirectory = () => {
-                // 🌟 අලුත්: Download එකේ Account Number එක පෙන්වීම 🌟
                 let csvContent = "data:text/csv;charset=utf-8,Account Number,Customer Name,Phone Number\n";
-                for (const [acc, data] of Object.entries(phoneDirectory)) { 
-                    let cleanName = (data.name || 'N/A').replace(/,/g, ''); 
-                    csvContent += `${acc},"${cleanName}",${data.phone}\n`; 
-                }
+                for (const [acc, data] of Object.entries(phoneDirectory)) { let cleanName = (data.name || 'N/A').replace(/,/g, ''); csvContent += `${acc},"${cleanName}",${data.phone}\n`; }
                 var encodedUri = encodeURI(csvContent); var link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Phonebook.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
             };
 
             window.showMasterModal = (nic, prod, addr, date, phone, name) => { 
                 document.getElementById('m_nic').innerText = nic; document.getElementById('m_prod').innerText = prod; document.getElementById('m_addr').innerText = addr; document.getElementById('m_date').innerText = date; 
-                document.getElementById('infoModal').setAttribute('data-phone', phone); document.getElementById('infoModal').setAttribute('data-name', name); document.getElementById('infoModal').setAttribute('data-prod', prod);
                 document.getElementById('infoModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block'; 
             };
             
             window.closeModal = () => { document.getElementById('infoModal').style.display = 'none'; document.getElementById('bmPaymentModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
-            window.closeMessagingModal = () => { document.getElementById('messagingModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
 
             window.uploadExcel = async (ev, type) => {
                 const file = ev.target.files[0]; const reader = new FileReader(); if(!file) return; 
                 document.getElementById('loadMsg').style.display = 'block';
-                
                 reader.onload = async (e) => {
                     try {
                         const user = auth.currentUser; if (!user) throw new Error("You must be logged in to upload files!"); 
                         const token = await user.getIdToken(); const workbook = XLSX.read(e.target.result, {type:'array'}); const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
                         document.getElementById('loadMsg').innerText = "⏳ Connecting to Aura Secure Brain..."; let totalProcessed = 0;
-                        
                         for (let i = 0; i < data.length; i += 200) {
                             const chunk = data.slice(i, i + 200);
                             let res = await fetch(CLOUD_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ listType: type, data: chunk }) });
