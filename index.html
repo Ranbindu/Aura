@@ -193,10 +193,22 @@
                     <td style="padding:15px;">To Collect: <b style="color:#ffeb3b;" id="cAmt_D">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_D" style="color:#fff;">0</b></span></td>
                 </tr>
                 <tr>
-                    <td style="padding: 20px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_G">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_G">0%</b> Reduce</div></td>
-                    <td style="padding: 20px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_H">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_H">0%</b> Reduce</div></td>
-                    <td style="padding: 20px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_R">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_R">0%</b> Reduce</div></td>
-                    <td style="padding: 20px 10px;"><div class="reduce-box">Amount: <b id="rRateAmt_D">0%</b> Reduce</div><div class="reduce-box-acc">Accounts: <b id="rRateAcc_D">0%</b> Reduce</div></td>
+                    <td style="padding: 20px 10px;">
+                        <div class="reduce-box">Reduced: <b id="rRateAmt_G" style="font-size:15px;">Rs. 0 (0%)</b></div>
+                        <div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_G" style="font-size:15px;">0 (0%)</b></div>
+                    </td>
+                    <td style="padding: 20px 10px;">
+                        <div class="reduce-box">Reduced: <b id="rRateAmt_H" style="font-size:15px;">Rs. 0 (0%)</b></div>
+                        <div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_H" style="font-size:15px;">0 (0%)</b></div>
+                    </td>
+                    <td style="padding: 20px 10px;">
+                        <div class="reduce-box">Reduced: <b id="rRateAmt_R" style="font-size:15px;">Rs. 0 (0%)</b></div>
+                        <div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_R" style="font-size:15px;">0 (0%)</b></div>
+                    </td>
+                    <td style="padding: 20px 10px;">
+                        <div class="reduce-box">Reduced: <b id="rRateAmt_D" style="font-size:15px;">Rs. 0 (0%)</b></div>
+                        <div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_D" style="font-size:15px;">0 (0%)</b></div>
+                    </td>
                 </tr>
             </tbody>
         </table>
@@ -205,7 +217,7 @@
             <select id="agentFilterDrop" onchange="window.renderFieldList()" style="width: 250px; margin:0;"><option value="ALL">All Agents</option><option value="Group Sale">Group Sale (G)</option><option value="Heenpahana">Heenpahana (H)</option><option value="Rohan">Rohan (R)</option><option value="Amila">Amila (D)</option></select>
         </div>
         <table id="fieldListTable">
-            <thead><tr><th>Account No</th><th>Customer Name</th><th>Mobile No</th><th>Agent Code</th><th>Arrears (Rs)</th></tr></thead>
+            <thead><tr><th>Account No</th><th>Customer Name</th><th>Mobile No</th><th>Agent Code</th><th>Arrears (Rs)</th><th>Status</th></tr></thead>
             <tbody id="fieldDetailsBody"></tbody>
         </table>
     </div>
@@ -306,6 +318,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // 🌟 ඔරිජිනල් AURA CLOUD API & FIREBASE (කිසිවක් වෙනස් කර නැත) 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db, masterData = [], phoneDirectory = {}, agentMapping = {}, bmIssuesList = []; 
@@ -456,7 +469,6 @@
                     if (d.listType === "Red") { r++; let amt = Number(d.arrearsAmount) || 0; totalArrears += amt; openArrVal += amt; if (isPaid) collectedAmount += amt; } 
                     else if (isRisk) { y++; notRespVal += mPay; }
                     
-                    // 🌟 අලුත්: Live Count Logic එක 🌟
                     if (d.lastCallDate === sysToday) {
                         todayCompleted++;
                     }
@@ -558,20 +570,55 @@
                 document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`; document.getElementById('fCalled').innerText = called;
             };
 
+            // 🌟 අලුත්: Field List Render කරන ලොජික් එක (Status සහ Reduce Values එක්ක) 🌟
             window.renderFieldList = () => {
-                let filterAgent = document.getElementById('agentFilterDrop') ? document.getElementById('agentFilterDrop').value : "ALL"; let html = ""; 
+                let filterAgent = document.getElementById('agentFilterDrop') ? document.getElementById('agentFilterDrop').value : "ALL"; 
+                let html = ""; 
                 let stats = { "Group Sale": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Heenpahana": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Rohan": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 }, "Amila": { tAmt: 0, cAmt: 0, tAcc: 0, cAcc: 0 } };
+                
                 masterData.forEach(d => {
                     if(d.listType === "Red") {
-                        let amt = Number(d.arrearsAmount) || 0; let agent = d.fieldAgent || "Unknown"; let isPaid = (d.notes === "Customer Paid");
-                        if(stats[agent]) { stats[agent].tAmt += amt; stats[agent].tAcc += 1; if(!isPaid) { stats[agent].cAmt += amt; stats[agent].cAcc += 1; } }
-                        if(filterAgent === "ALL" || filterAgent === agent) { let rClass = isPaid ? "row-green" : "row-red"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; html += `<tr class="${rClass}"><td>${d.accountNo}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${agent}</td><td>Rs. ${amt.toLocaleString('en-US')}</td></tr>`; }
+                        let amt = Number(d.arrearsAmount) || 0; 
+                        let agent = d.fieldAgent || "Unknown"; 
+                        let isPaid = (d.notes === "Customer Paid");
+                        
+                        if(stats[agent]) { 
+                            stats[agent].tAmt += amt; 
+                            stats[agent].tAcc += 1; 
+                            if(!isPaid) { stats[agent].cAmt += amt; stats[agent].cAcc += 1; } 
+                        }
+                        
+                        if(filterAgent === "ALL" || filterAgent === agent) { 
+                            let rClass = isPaid ? "row-green" : "row-red"; 
+                            let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; 
+                            let statusLabel = isPaid ? "<span style='color:#4caf50; font-weight:bold;'>✅ PAID</span>" : "<span style='color:#ff8a80;'>⏳ PENDING</span>";
+                            html += `<tr class="${rClass}"><td>${d.accountNo}</td><td>${cName}</td><td>${getPhone(d)}</td><td>${agent}</td><td>Rs. ${amt.toLocaleString('en-US')}</td><td>${statusLabel}</td></tr>`; 
+                        }
                     }
                 });
-                document.getElementById('fieldDetailsBody').innerHTML = html || "<tr><td colspan='5'>No accounts found.</td></tr>";
+                
+                document.getElementById('fieldDetailsBody').innerHTML = html || "<tr><td colspan='6'>No accounts found.</td></tr>";
+                
                 ["Group Sale", "Heenpahana", "Rohan", "Amila"].forEach((ag, idx) => {
-                    let code = ["G", "H", "R", "D"][idx]; let tAmt = stats[ag].tAmt; let cAmt = stats[ag].cAmt; let amtRate = tAmt > 0 ? Math.round(((tAmt - cAmt) / tAmt) * 100) : 0; let tAcc = stats[ag].tAcc; let cAcc = stats[ag].cAcc; let accRate = tAcc > 0 ? Math.round(((tAcc - cAcc) / tAcc) * 100) : 0; 
-                    document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`; document.getElementById(`fAcc_${code}`).innerText = tAcc; document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`; document.getElementById(`cAcc_${code}`).innerText = cAcc; document.getElementById(`rRateAmt_${code}`).innerText = `${amtRate}%`; document.getElementById(`rRateAcc_${code}`).innerText = `${accRate}%`;
+                    let code = ["G", "H", "R", "D"][idx]; 
+                    
+                    let tAmt = stats[ag].tAmt; 
+                    let cAmt = stats[ag].cAmt; 
+                    let collectedAmt = tAmt - cAmt; 
+                    let amtRate = tAmt > 0 ? Math.round((collectedAmt / tAmt) * 100) : 0; 
+                    
+                    let tAcc = stats[ag].tAcc; 
+                    let cAcc = stats[ag].cAcc; 
+                    let collectedAcc = tAcc - cAcc; 
+                    let accRate = tAcc > 0 ? Math.round((collectedAcc / tAcc) * 100) : 0; 
+                    
+                    document.getElementById(`fAmt_${code}`).innerText = `Rs. ${tAmt.toLocaleString('en-US')}`; 
+                    document.getElementById(`fAcc_${code}`).innerText = tAcc; 
+                    document.getElementById(`cAmt_${code}`).innerText = `Rs. ${cAmt.toLocaleString('en-US')}`; 
+                    document.getElementById(`cAcc_${code}`).innerText = cAcc; 
+                    
+                    document.getElementById(`rRateAmt_${code}`).innerHTML = `Rs. ${collectedAmt.toLocaleString('en-US')} <span style="font-size:12px; color:#ddd;">(${amtRate}%)</span>`; 
+                    document.getElementById(`rRateAcc_${code}`).innerHTML = `${collectedAcc} <span style="font-size:12px; color:#ddd;">(${accRate}%)</span>`;
                 });
             };
 
