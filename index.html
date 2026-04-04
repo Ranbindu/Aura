@@ -318,6 +318,7 @@
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // 🌟 ඔරිජිනල් AURA CLOUD API & FIREBASE (කිසිවක් වෙනස් කර නැත) 🌟
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db, masterData = [], phoneDirectory = {}, agentMapping = {}, bmIssuesList = []; 
@@ -765,6 +766,36 @@
                     try {
                         const user = auth.currentUser; if (!user) throw new Error("You must be logged in to upload files!"); 
                         const token = await user.getIdToken(); const workbook = XLSX.read(e.target.result, {type:'array'}); const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
+                        
+                        // 🌟 අලුත්: CLEANUP PROTOCOL එක 🌟
+                        document.getElementById('loadMsg').innerText = "⏳ Analyzing data for cleanup...";
+                        let excelIds = data.map(rawRow => {
+                            let rawAcc = "";
+                            for (let k in rawRow) {
+                                let cleanK = String(k).toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                if (['ORIGINALACCTNO', 'ACCTNO', 'ACCNO', 'ACCOUNTNO', 'RESULTKEY'].includes(cleanK)) { rawAcc = rawRow[k]; break; }
+                            }
+                            if(!rawAcc) {
+                                for (let k in rawRow) { let valStr = String(rawRow[k]).trim(); if (valStr.includes("-") && valStr.length >= 6 && valStr.length <= 15 && !valStr.includes(" ")) { rawAcc = valStr; break; } }
+                            }
+                            return String(rawAcc).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        }).filter(id => id.length >= 4);
+
+                        if (type === "New" || type === "Red") {
+                            let cleanupIds = [];
+                            if (type === 'New') { cleanupIds = masterData.filter(d => !excelIds.includes(d.id)).map(d => d.id); } 
+                            else if (type === 'Red') { cleanupIds = masterData.filter(d => d.listType === "Red" && !excelIds.includes(d.id)).map(d => d.id); }
+                            
+                            if (cleanupIds.length > 0) {
+                                document.getElementById('loadMsg').innerText = `⏳ Cleaning up ${cleanupIds.length} old records...`;
+                                for (let i = 0; i < cleanupIds.length; i += 400) {
+                                    let chunk = cleanupIds.slice(i, i + 400);
+                                    await fetch(CLOUD_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ action: "cleanup", type: type, ids: chunk }) });
+                                }
+                            }
+                        }
+                        // 🌟 CLEANUP PROTOCOL එක අවසන් 🌟
+
                         document.getElementById('loadMsg').innerText = "⏳ Connecting to Aura Secure Brain..."; let totalProcessed = 0;
                         for (let i = 0; i < data.length; i += 200) {
                             const chunk = data.slice(i, i + 200);
