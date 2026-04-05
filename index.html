@@ -19,8 +19,8 @@
         .btn-danger { background: linear-gradient(135deg, #f44336 0%, #b71c1c 100%); }
         .btn-refresh { background: linear-gradient(135deg, #ff9800 0%, #e65100 100%); }
         .btn-download { background: linear-gradient(135deg, #00bcd4 0%, #01579b 100%); width: 100%; margin-top: 15px; }
-        input, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; background: rgba(0, 0, 0, 0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 14px; box-sizing: border-box; }
-        input:focus, select:focus { border-color: #4caf50; outline: none; background: rgba(0,0,0,0.8); }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; background: rgba(0, 0, 0, 0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 14px; box-sizing: border-box; }
+        input:focus, select:focus, textarea:focus { border-color: #4caf50; outline: none; background: rgba(0,0,0,0.8); }
         select option { background: #1a1a1a; color: #fff; }
         .dashboard-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
         .stat-box { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; margin-bottom: 15px; border-left: 6px solid #4caf50; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
@@ -87,6 +87,7 @@
                 <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
                 <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
+                <button onclick="window.navigate('promoCenterPage'); window.renderPromoList();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #ff9800, #e65100); color: white; border: none;">📢 PROMOTION CENTER</button>
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50; display: flex; justify-content: space-around;">
@@ -111,6 +112,39 @@
                     <div class="flex-between" style="margin-bottom: 10px;"><span style="color: #e1bee7;">Total Issue Amount (<span id="bmIssueCount">0</span> Acc)</span><b id="bmTotalIssued">Rs. 0</b></div>
                     <div class="flex-between" style="margin-bottom: 10px;"><span style="color: #4caf50;">Total Collected Amount</span><b id="bmTotalCollected" style="color: #4caf50;">Rs. 0</b></div>
                     <div class="flex-between" style="border-top: 1px dashed rgba(255,255,255,0.3); padding-top: 10px;"><span style="color: #ff9800; font-weight: bold;">Outstanding Balance (<span id="bmOutCount">0</span> Acc)</span><b id="bmTotalBalance" style="color: #ff9800; font-size: 1.3em;">Rs. 0</b></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="promoCenterPage" class="page-container glass-panel" style="max-width: 1400px;">
+        <div class="flex-between mb-20">
+            <h2 style="margin:0; color: #ffeb3b;">📢 Promotion Center (Bulk Messaging)</h2>
+            <button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="color: #4caf50; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">1. Create Promo Message</h3>
+                <p style="font-size: 13px; color: #ccc; line-height: 1.6;">
+                    <b>ඉඟිය:</b> ඔබ මෙහි ටයිප් කරන පණිවිඩයට පාරිභෝගිකයාගේ නම සහ සිංගර් නාමය ස්වයංක්‍රීයව පද්ධතිය මගින් එකතු කරනු ඇත. (වරහන් හෝ කෝඩ් දැමීමට අවශ්‍ය නැත).
+                </p>
+                <textarea id="promoMessageTemplate" rows="6" style="width: 100%; padding: 15px; border-radius: 8px; background: rgba(0,0,0,0.6); color: white; border: 1px solid #ffeb3b; font-size: 14px;" placeholder="ඔබගේ පණිවිඩය මෙහි ටයිප් කරන්න...&#10;(උදා: නව අවුරුදු සමය වෙනුවෙන් අපගේ සියලුම භාණ්ඩ සඳහා විශේෂ දීමනා අදම ලබාගන්න.)"></textarea>
+                
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button onclick="window.downloadPhoneDirectory()" style="margin:0; width: 50%; background: linear-gradient(135deg, #00bcd4, #01579b);">📥 Download Excel DB</button>
+                    <button onclick="window.copyAllNumbers()" style="background: linear-gradient(135deg, #9c27b0, #4a148c); margin:0; width: 50%;">📋 Copy Phone Numbers</button>
+                </div>
+            </div>
+            
+            <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="color: #2196f3; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">2. Customer Phonebook (<span id="promoTotalCount">0</span> Contacts)</h3>
+                <input type="text" id="promoSearch" onkeyup="window.renderPromoList()" placeholder="🔍 Search Name or Phone Number..." style="width: 100%; margin-bottom: 15px;">
+                <div style="max-height: 300px; overflow-y: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                    <table style="margin: 0; border-radius: 0;">
+                        <thead><tr><th>Customer Name</th><th>Phone No</th><th>Send Promo</th></tr></thead>
+                        <tbody id="promoTableBody"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -358,7 +392,7 @@
                     let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
                     window.navigate(isManager ? 'dashboardPage' : 'staffTargetPage');
 
-                    onSnapshot(collection(db, "phoneDirectory"), (snap) => { snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); });
+                    onSnapshot(collection(db, "phoneDirectory"), (snap) => { snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); if(document.getElementById('promoCenterPage').classList.contains('active-page')) window.renderPromoList(); });
                     onSnapshot(collection(db, "agent_mapping"), (snap) => { snap.forEach(d => { agentMapping[d.id] = d.data().fieldAgent; }); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
                     onSnapshot(collection(db, "bm_issues"), (snap) => { bmIssuesList = snap.docs.map(d => ({id: d.id, ...d.data()})); if(e.includes('manager') || e.includes('bm')) window.renderBMStats(); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
 
@@ -398,7 +432,11 @@
                 setTimeout(() => { btn.innerText = originalText; }, 2000);
             }
 
-            function getPhone(d) { return phoneDirectory[d.id] ? phoneDirectory[d.id].phone : (d.phone || 'N/A'); }
+            function getPhone(d) { 
+                let cusNic = (d.nic || "").replace(/[^A-Z0-9]/ig, '');
+                let lookupKey = cusNic !== "" ? cusNic : d.id;
+                return phoneDirectory[lookupKey] ? phoneDirectory[lookupKey].phone : (d.phone || 'N/A'); 
+            }
             
             function extractDay(s) { 
                 if(!s || s==="undefined" || s.trim()==="") return -1; let d = String(s).trim().split(" ")[0]; let day = -1;
@@ -409,6 +447,62 @@
             
             function genDays(sel) { let h="<option value=''>Day</option>"; for(let i=1; i<=31; i++) { h += `<option value="${i}" ${sel == i ? 'selected' : ''}>${i}</option>`; } return h; }
 
+            // 🌟 අලුත්: PROMOTION CENTER (AUTO-POLISH ලොජික්) 🌟
+            window.renderPromoList = () => {
+                let search = document.getElementById('promoSearch') ? document.getElementById('promoSearch').value.toLowerCase().trim() : "";
+                let html = ""; let count = 0;
+                for (const [nic, data] of Object.entries(phoneDirectory)) {
+                    let safeName = data.name || "Customer";
+                    let safePhone = data.phone || "";
+                    if (search !== "" && !safeName.toLowerCase().includes(search) && !safePhone.includes(search)) continue;
+                    if (!safePhone || safePhone.length < 9) continue; 
+                    count++;
+                    html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <td style="text-align:left;">${safeName}</td>
+                        <td>${safePhone}</td>
+                        <td>
+                            <button onclick="window.sendPromoWA('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #25D366; margin-right: 5px; color: black; font-weight: bold;">WA</button>
+                            <button onclick="window.sendPromoSMS('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #2196f3;">SMS</button>
+                        </td>
+                    </tr>`;
+                }
+                document.getElementById('promoTableBody').innerHTML = html || "<tr><td colspan='3'>No contacts found.</td></tr>";
+                if(document.getElementById('promoTotalCount')) document.getElementById('promoTotalCount').innerText = count;
+            };
+
+            window.sendPromoWA = (phone, name) => {
+                let rawMsg = document.getElementById('promoMessageTemplate').value;
+                let polishedMsg = `හිතවත් ${name},\n\n${rawMsg}\n\n- සිංගර් ගලෙන්බිඳුනුවැව`;
+                let formattedPhone = phone.replace(/[^0-9]/g, '');
+                if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1); 
+                let url = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(polishedMsg)}`;
+                window.open(url, '_blank');
+            };
+
+            window.sendPromoSMS = (phone, name) => {
+                let rawMsg = document.getElementById('promoMessageTemplate').value;
+                let polishedMsg = `හිතවත් ${name},\n\n${rawMsg}\n\n- සිංගර් ගලෙන්බිඳුනුවැව`;
+                let formattedPhone = phone.replace(/[^0-9]/g, '');
+                if(formattedPhone.startsWith('0')) formattedPhone = '+94' + formattedPhone.substring(1); 
+                let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(polishedMsg)}`;
+                window.location.href = smsUrl;
+            };
+
+            window.copyAllNumbers = () => {
+                let numbers = [];
+                for (const [nic, data] of Object.entries(phoneDirectory)) {
+                    if (data.phone && data.phone.length >= 9) {
+                        let formattedPhone = data.phone.replace(/[^0-9]/g, '');
+                        if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1);
+                        numbers.push(formattedPhone);
+                    }
+                }
+                navigator.clipboard.writeText(numbers.join(', ')).then(() => {
+                    alert(`✅ Copied ${numbers.length} numbers to clipboard successfully! Paste them in your Bulk SMS provider.`);
+                }).catch(err => { alert("❌ Failed to copy numbers."); });
+            };
+
+            // අනිත් සාමාන්‍ය Functions ටික
             window.sendDirectWA = async (docId, phone, name, prod, msgCategory) => {
                 window.waClickedRows[docId] = true; 
                 try {
@@ -714,7 +808,10 @@
                     document.getElementById('msgPreviewText').innerText = msg;
                 }
 
-                if(phoneVal !== d.phone && phoneVal !== "") { await setDoc(doc(db, "phoneDirectory", docId), { phone: phoneVal, name: d.customerName }); }
+                // 🌟 ID එකෙන් Phone Book එක Update කිරීම 🌟
+                let cusNic = (d.nic || "").replace(/[^A-Z0-9]/ig, '');
+                let phoneKey = cusNic !== "" ? cusNic : docId;
+                if(phoneVal !== d.phone && phoneVal !== "") { await setDoc(doc(db, "phoneDirectory", phoneKey), { phone: phoneVal, name: d.customerName }); }
                 
                 await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
                 
@@ -744,9 +841,9 @@
             };
 
             window.downloadPhoneDirectory = () => {
-                let csvContent = "data:text/csv;charset=utf-8,Account Number,Customer Name,Phone Number\n";
+                let csvContent = "data:text/csv;charset=utf-8,ID/Account Number,Customer Name,Phone Number\n";
                 for (const [acc, data] of Object.entries(phoneDirectory)) { let cleanName = (data.name || 'N/A').replace(/,/g, ''); csvContent += `${acc},"${cleanName}",${data.phone}\n`; }
-                var encodedUri = encodeURI(csvContent); var link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Phonebook.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                var encodedUri = encodeURI(csvContent); var link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Phonebook_Full.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
             };
 
             window.showMasterModal = (nic, prod, addr, date, phone, name) => { 
@@ -766,7 +863,6 @@
                         const user = auth.currentUser; if (!user) throw new Error("You must be logged in to upload files!"); 
                         const token = await user.getIdToken(); const workbook = XLSX.read(e.target.result, {type:'array'}); const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
                         
-                        // 🌟 අලුත්: CLEANUP PROTOCOL එක 🌟
                         document.getElementById('loadMsg').innerText = "⏳ Analyzing data for cleanup...";
                         let excelIds = data.map(rawRow => {
                             let rawAcc = "";
@@ -793,7 +889,6 @@
                                 }
                             }
                         }
-                        // 🌟 CLEANUP PROTOCOL එක අවසන් 🌟
 
                         document.getElementById('loadMsg').innerText = "⏳ Connecting to Aura Secure Brain..."; let totalProcessed = 0;
                         for (let i = 0; i < data.length; i += 200) {
