@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Recovery Management System</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4caf50">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1055/1055661.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Aura Service Worker Registered'));
+        }
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -503,13 +514,12 @@
         }
 
         function attachSystemFunctions() {
-            // 🌟 100% BUG FIX FOR LOGOUT 🌟
             window.logout = async () => { 
                 try {
                     await signOut(auth);
                     localStorage.clear();
                     sessionStorage.clear();
-                    window.location.reload(); // Force full reload to completely wipe session cache
+                    window.location.reload();
                 } catch(e) {
                     window.location.reload();
                 }
