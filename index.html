@@ -54,7 +54,7 @@
         .msg-btn-wa { padding: 4px 8px; font-size: 11px; background: #25D366; border-radius: 5px; cursor: pointer; border: none; color: white; font-weight: bold; margin-right: 5px; }
         .msg-btn-sms { padding: 4px 8px; font-size: 11px; background: #2196f3; border-radius: 5px; cursor: pointer; border: none; color: white; font-weight: bold; }
 
-        /* Mobile Field Officer Styles */
+        /* Field Officer Mobile UI Styles */
         .mobile-container { max-width: 500px; margin: 0 auto; padding: 15px; }
         .mobile-header { background: linear-gradient(135deg, #1b5e20, #4caf50); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .mobile-stat-row { display: flex; justify-content: space-between; margin-top: 15px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; }
@@ -123,7 +123,6 @@
             <input type="text" id="offSearchInput" placeholder="Enter Account Number..." style="margin:0;">
             <button onclick="window.officerSearchAccount()" style="margin:0; padding: 12px;">Search</button>
         </div>
-        
         <div id="offSearchResult" style="display: none;"></div>
     </div>
 
@@ -169,10 +168,9 @@
                 <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
                 <button onclick="window.navigate('promoCenterPage'); window.renderPromoList();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #ff9800, #e65100); color: white; border: none;">📢 PROMOTION CENTER</button>
+                <button onclick="window.downloadPhoneDirectory()" class="btn-download" style="margin-bottom: 10px;">📥 Download Phonebook DB</button>
                 
-                <button onclick="window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #1b5e20, #4caf50); color: white; border: none;">📍 FIELD TRACKING (LIVE)</button>
-                
-                <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
+                <button onclick="window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #1b5e20, #4caf50); color: white; border: none;">📍 FIELD TRACKING</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50; display: flex; justify-content: space-around;">
                     <div><h3 style="font-size: 13px; color: #a5d6a7;">Monthly Success</h3><h1 style="color: #4caf50; margin: 0;" id="dashRate">0%</h1></div>
@@ -206,29 +204,21 @@
             <h2 style="margin:0; color: #ffeb3b;">📢 Promotion Center (Bulk Messaging)</h2>
             <button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button>
         </div>
-        
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
                 <h3 style="color: #4caf50; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">1. Create Promo Message</h3>
-                <p style="font-size: 13px; color: #ccc; line-height: 1.6;">
-                    <b>ඉඟිය:</b> ඔබ මෙහි ටයිප් කරන පණිවිඩයට පාරිභෝගිකයාගේ නම සහ සිංගර් නාමය ස්වයංක්‍රීයව පද්ධතිය මගින් එකතු කරනු ඇත. (වරහන් හෝ කෝඩ් දැමීමට අවශ්‍ය නැත).
-                </p>
+                <p style="font-size: 13px; color: #ccc; line-height: 1.6;"><b>ඉඟිය:</b> ඔබ මෙහි ටයිප් කරන පණිවිඩයට පාරිභෝගිකයාගේ නම සහ සිංගර් නාමය ස්වයංක්‍රීයව පද්ධතිය මගින් එකතු කරනු ඇත. (වරහන් හෝ කෝඩ් දැමීමට අවශ්‍ය නැත).</p>
                 <textarea id="promoMessageTemplate" rows="6" style="width: 100%; padding: 15px; border-radius: 8px; background: rgba(0,0,0,0.6); color: white; border: 1px solid #ffeb3b; font-size: 14px;" placeholder="ඔබගේ පණිවිඩය මෙහි ටයිප් කරන්න...&#10;(උදා: නව අවුරුදු සමය වෙනුවෙන් අපගේ සියලුම භාණ්ඩ සඳහා විශේෂ දීමනා අදම ලබාගන්න.)"></textarea>
-                
                 <div style="display: flex; gap: 15px; margin-top: 20px;">
                     <button onclick="window.downloadPhoneDirectory()" style="margin:0; width: 50%; background: linear-gradient(135deg, #00bcd4, #01579b);">📥 Download Excel DB</button>
                     <button onclick="window.copyAllNumbers()" style="background: linear-gradient(135deg, #9c27b0, #4a148c); margin:0; width: 50%;">📋 Copy Phone Numbers</button>
                 </div>
             </div>
-            
             <div style="background: rgba(0,0,0,0.5); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
                 <h3 style="color: #2196f3; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">2. Customer Phonebook (<span id="promoTotalCount">0</span> Contacts)</h3>
                 <input type="text" id="promoSearch" onkeyup="window.renderPromoList()" placeholder="🔍 Search Name or Phone Number..." style="width: 100%; margin-bottom: 15px;">
                 <div style="max-height: 300px; overflow-y: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                    <table style="margin: 0; border-radius: 0;">
-                        <thead><tr><th>Customer Name</th><th>Phone No</th><th>Send Promo</th></tr></thead>
-                        <tbody id="promoTableBody"></tbody>
-                    </table>
+                    <table style="margin: 0; border-radius: 0;"><thead><tr><th>Customer Name</th><th>Phone No</th><th>Send Promo</th></tr></thead><tbody id="promoTableBody"></tbody></table>
                 </div>
             </div>
         </div>
@@ -238,15 +228,10 @@
         <div class="flex-between mb-20"><h2 style="margin:0; color: #ce93d8;">💼 Issue Management (BM Wallet)</h2><button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button></div>
         <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
             <input type="text" id="bmSearch" onkeyup="window.renderBMIssues()" placeholder="🔍 Search Account No..." style="width: 250px; margin:0;">
-            <span><b>Field:</b></span>
-            <select id="bmAgentFilter" onchange="window.renderBMIssues()" style="width: 150px; margin: 0;"><option value="ALL">All Agents</option><option value="Group Sale">Group Sale</option><option value="Heenpahana">Heenpahana</option><option value="Rohan">Rohan</option><option value="Amila">Amila</option></select>
-            <span><b>Status:</b></span>
-            <select id="bmStatusFilter" onchange="window.renderBMIssues()" style="width: 200px; margin: 0;"><option value="ALL">All Accounts</option><option value="NOPAY">No Payments Yet</option><option value="PAID">Partially/Fully Paid</option></select>
+            <span><b>Field:</b></span><select id="bmAgentFilter" onchange="window.renderBMIssues()" style="width: 150px; margin: 0;"><option value="ALL">All Agents</option><option value="Group Sale">Group Sale</option><option value="Heenpahana">Heenpahana</option><option value="Rohan">Rohan</option><option value="Amila">Amila</option></select>
+            <span><b>Status:</b></span><select id="bmStatusFilter" onchange="window.renderBMIssues()" style="width: 200px; margin: 0;"><option value="ALL">All Accounts</option><option value="NOPAY">No Payments Yet</option><option value="PAID">Partially/Fully Paid</option></select>
         </div>
-        <table id="bmTable">
-            <thead><tr><th>Account No</th><th>Customer Name</th><th>Field Agent</th><th>Issued Amount</th><th>Collected</th><th>Balance</th><th>Action</th></tr></thead>
-            <tbody id="bmIssueBody"></tbody>
-        </table>
+        <table id="bmTable"><thead><tr><th>Account No</th><th>Customer Name</th><th>Field Agent</th><th>Issued Amount</th><th>Collected</th><th>Balance</th><th>Action</th></tr></thead><tbody id="bmIssueBody"></tbody></table>
     </div>
 
     <div id="progressPage" class="page-container glass-panel">
@@ -286,10 +271,7 @@
              <span>🔍 <b>Filter:</b></span><select id="logStatusFilter" onchange="window.syncManagerView()" style="width: 180px; margin: 0;"><option value="ALL">All Accounts</option><option value="CALLED">Called / Paid</option><option value="PENDING">Pending (New)</option><option value="RISK">All Risk Accounts</option><option value="NOT_ANSWER">Call Not Answer</option><option value="NOT_WORKING">Phone Not Working</option><option value="BAD_FEEDBACK">Bad Feedback</option></select>
              <div style="margin-left: auto; text-align: right;"><div style="margin-bottom: 5px;">Target: <b id="fTarget" style="color: #ffeb3b; font-size: 1.2em;">0</b></div><div>Completed: <b id="fCalled" style="color: #4caf50; font-size: 1.2em;">0</b></div></div>
         </div>
-        <table id="ccReportTable">
-            <thead><tr><th>Account No</th><th>Customer Name</th><th>Agent</th><th>Phone</th><th>Att.</th><th>Feedback</th><th>P. Date</th><th>Status</th></tr></thead>
-            <tbody id="managerCCBody"></tbody>
-        </table>
+        <table id="ccReportTable"><thead><tr><th>Account No</th><th>Customer Name</th><th>Agent</th><th>Phone</th><th>Att.</th><th>Feedback</th><th>P. Date</th><th>Status</th></tr></thead><tbody id="managerCCBody"></tbody></table>
     </div>
 
     <div id="fieldDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
@@ -311,36 +293,16 @@
                     <td style="padding:15px;">To Collect: <b style="color:#ffeb3b;" id="cAmt_D">Rs. 0</b><br><span style="color:#aaa; font-size:12px;">Pending Acc: <b id="cAcc_D" style="color:#fff;">0</b></span></td>
                 </tr>
                 <tr>
-                    <td style="padding: 20px 10px;">
-                        <div class="reduce-box">Reduced: <b id="rRateAmt_G" style="font-size:15px;">Rs. 0 (0%)</b></div>
-                        <div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_G" style="font-size:15px;">0 (0%)</b></div>
-                    </td>
-                    <td style="padding: 20px 10px;">
-                        <div class="reduce-box">Reduced: <b id="rRateAmt_H" style="font-size:15px;">Rs. 0 (0%)</b></div>
-                        <div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_H" style="font-size:15px;">0 (0%)</b></div>
-                    </td>
-                    <td style="padding: 20px 10px;">
-                        <div class="reduce-box">Reduced: <b id="rRateAmt_R" style="font-size:15px;">Rs. 0 (0%)</b></div>
-                        <div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_R" style="font-size:15px;">0 (0%)</b></div>
-                    </td>
-                    <td style="padding: 20px 10px;">
-                        <div class="reduce-box">Reduced: <b id="rRateAmt_D" style="font-size:15px;">Rs. 0 (0%)</b></div>
-                        <div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_D" style="font-size:15px;">0 (0%)</b></div>
-                    </td>
+                    <td style="padding: 20px 10px;"><div class="reduce-box">Reduced: <b id="rRateAmt_G" style="font-size:15px;">Rs. 0 (0%)</b></div><div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_G" style="font-size:15px;">0 (0%)</b></div></td>
+                    <td style="padding: 20px 10px;"><div class="reduce-box">Reduced: <b id="rRateAmt_H" style="font-size:15px;">Rs. 0 (0%)</b></div><div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_H" style="font-size:15px;">0 (0%)</b></div></td>
+                    <td style="padding: 20px 10px;"><div class="reduce-box">Reduced: <b id="rRateAmt_R" style="font-size:15px;">Rs. 0 (0%)</b></div><div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_R" style="font-size:15px;">0 (0%)</b></div></td>
+                    <td style="padding: 20px 10px;"><div class="reduce-box">Reduced: <b id="rRateAmt_D" style="font-size:15px;">Rs. 0 (0%)</b></div><div class="reduce-box-acc">Reduced Acc: <b id="rRateAcc_D" style="font-size:15px;">0 (0%)</b></div></td>
                 </tr>
                 <tr>
-                    <td style="padding: 10px;">
-                        <button onclick="document.getElementById('trackAgentSelect').value='Group Sale'; window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="font-size: 11px; padding: 8px; width: 100%; background: linear-gradient(135deg, #1b5e20, #4caf50);">📍 View Map</button>
-                    </td>
-                    <td style="padding: 10px;">
-                        <button onclick="document.getElementById('trackAgentSelect').value='Heenpahana'; window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="font-size: 11px; padding: 8px; width: 100%; background: linear-gradient(135deg, #1b5e20, #4caf50);">📍 View Map</button>
-                    </td>
-                    <td style="padding: 10px;">
-                        <button onclick="document.getElementById('trackAgentSelect').value='Rohan'; window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="font-size: 11px; padding: 8px; width: 100%; background: linear-gradient(135deg, #1b5e20, #4caf50);">📍 View Map</button>
-                    </td>
-                    <td style="padding: 10px;">
-                        <button onclick="document.getElementById('trackAgentSelect').value='Amila'; window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="font-size: 11px; padding: 8px; width: 100%; background: linear-gradient(135deg, #1b5e20, #4caf50);">📍 View Map</button>
-                    </td>
+                    <td style="padding: 10px;"><button onclick="document.getElementById('trackAgentSelect').value='Group Sale'; window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="font-size: 11px; padding: 8px; width: 100%; background: linear-gradient(135deg, #1b5e20, #4caf50);">📍 View Map</button></td>
+                    <td style="padding: 10px;"><button onclick="document.getElementById('trackAgentSelect').value='Heenpahana'; window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="font-size: 11px; padding: 8px; width: 100%; background: linear-gradient(135deg, #1b5e20, #4caf50);">📍 View Map</button></td>
+                    <td style="padding: 10px;"><button onclick="document.getElementById('trackAgentSelect').value='Rohan'; window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="font-size: 11px; padding: 8px; width: 100%; background: linear-gradient(135deg, #1b5e20, #4caf50);">📍 View Map</button></td>
+                    <td style="padding: 10px;"><button onclick="document.getElementById('trackAgentSelect').value='Amila'; window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="font-size: 11px; padding: 8px; width: 100%; background: linear-gradient(135deg, #1b5e20, #4caf50);">📍 View Map</button></td>
                 </tr>
             </tbody>
         </table>
@@ -348,10 +310,7 @@
             <h3 style="color:#ff8a80; margin:0; font-size:16px;">Arrears Accounts Breakdown</h3>
             <select id="agentFilterDrop" onchange="window.renderFieldList()" style="width: 250px; margin:0;"><option value="ALL">All Agents</option><option value="Group Sale">Group Sale (G)</option><option value="Heenpahana">Heenpahana (H)</option><option value="Rohan">Rohan (R)</option><option value="Amila">Amila (D)</option></select>
         </div>
-        <table id="fieldListTable">
-            <thead><tr><th>Account No</th><th>Customer Name</th><th>Mobile No</th><th>Agent Code</th><th>Arrears (Rs)</th><th>Status</th></tr></thead>
-            <tbody id="fieldDetailsBody"></tbody>
-        </table>
+        <table id="fieldListTable"><thead><tr><th>Account No</th><th>Customer Name</th><th>Mobile No</th><th>Agent Code</th><th>Arrears (Rs)</th><th>Status</th></tr></thead><tbody id="fieldDetailsBody"></tbody></table>
     </div>
 
     <div id="staffTargetPage" class="page-container glass-panel" style="max-width: 1450px;">
@@ -370,17 +329,7 @@
             ⚠️ අවධානයට: ඔබ අද දිනය තෝරාගෙන නොමැත!
         </div>
         <table id="staffTable">
-            <thead><tr>
-                <th>Account</th>
-                <th>Customer Name</th>
-                <th>Mobile</th>
-                <th>Message (WA/SMS)</th>
-                <th>Att.</th>
-                <th>Action Taken</th>
-                <th>P. Date</th>
-                <th>Save</th>
-                <th>Info</th>
-            </tr></thead>
+            <thead><tr><th>Account</th><th>Customer Name</th><th>Mobile</th><th>Message (WA/SMS)</th><th>Att.</th><th>Action Taken</th><th>P. Date</th><th>Save</th><th>Info</th></tr></thead>
             <tbody id="staffTableBody"></tbody>
         </table>
     </div>
@@ -505,43 +454,40 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         let e = user.email.toLowerCase();
-                        determineRoleAndNavigate(e);
-                        loadInitialData(e);
+                        
+                        let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
+                        let isOfficer = false;
+                        
+                        if(e === 'amila@gmail.com') { isOfficer = true; currentOfficerName = "Amila"; }
+                        else if(e === 'rohan@gmail.com') { isOfficer = true; currentOfficerName = "Rohan"; }
+                        else if(e === 'heen@gmail.com') { isOfficer = true; currentOfficerName = "Heenpahana"; }
+                        else if(e === 'group@gmail.com') { isOfficer = true; currentOfficerName = "Group Sale"; }
+
+                        if (isOfficer) { 
+                            document.getElementById('offNameDisplay').innerText = currentOfficerName;
+                            document.getElementById('offDateDisplay').innerText = sysToday;
+                            window.navigate('officerDashboardPage'); 
+                        } else if (isManager) { 
+                            window.navigate('dashboardPage'); 
+                        } else { 
+                            window.navigate('staffTargetPage'); 
+                        }
+                        
+                        attachSystemFunctions();
+                        loadInitialData(isManager, isOfficer);
                     } else {
                         document.getElementById('loadStatusMsg').innerText = "System Ready...";
                         setTimeout(() => window.navigate('loginPage'), 1000);
+                        attachSystemFunctions();
                     }
                 });
             } catch (err) { document.getElementById('loadStatusMsg').innerText = "Failed to connect."; }
         }
 
-        function determineRoleAndNavigate(e) {
-            let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
-            let isOfficer = false;
-            
-            if(e === 'amila@gmail.com') { isOfficer = true; currentOfficerName = "Amila"; }
-            else if(e === 'rohan@gmail.com') { isOfficer = true; currentOfficerName = "Rohan"; }
-            else if(e === 'heen@gmail.com') { isOfficer = true; currentOfficerName = "Heenpahana"; }
-            else if(e === 'group@gmail.com') { isOfficer = true; currentOfficerName = "Group Sale"; }
-
-            if(isOfficer) {
-                document.getElementById('offNameDisplay').innerText = currentOfficerName;
-                document.getElementById('offDateDisplay').innerText = sysToday;
-                window.navigate('officerDashboardPage');
-            } else if (isManager) {
-                window.navigate('dashboardPage');
-            } else {
-                window.navigate('staffTargetPage'); 
-            }
-            return { isManager, isOfficer };
-        }
-
-        function loadInitialData(email) {
-            let { isManager, isOfficer } = determineRoleAndNavigate(email);
-            
-            onSnapshot(collection(db, "phoneDirectory"), (snap) => { snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); });
-            onSnapshot(collection(db, "agent_mapping"), (snap) => { snap.forEach(d => { agentMapping[d.id] = d.data().fieldAgent; }); });
-            onSnapshot(collection(db, "bm_issues"), (snap) => { bmIssuesList = snap.docs.map(d => ({id: d.id, ...d.data()})); });
+        function loadInitialData(isManager, isOfficer) {
+            onSnapshot(collection(db, "phoneDirectory"), (snap) => { snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); if(document.getElementById('promoCenterPage').classList.contains('active-page')) window.renderPromoList(); });
+            onSnapshot(collection(db, "agent_mapping"), (snap) => { snap.forEach(d => { agentMapping[d.id] = d.data().fieldAgent; }); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
+            onSnapshot(collection(db, "bm_issues"), (snap) => { bmIssuesList = snap.docs.map(d => ({id: d.id, ...d.data()})); if(isManager) window.renderBMStats(); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
             
             onSnapshot(collection(db, "field_visits"), (snap) => { 
                 fieldVisitsData = snap.docs.map(d => ({id: d.id, ...d.data()})); 
@@ -551,15 +497,23 @@
             onSnapshot(collection(db, "customers"), (snap) => {
                 masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
                 if(isOfficer) { window.renderOfficerDashboard(); }
-                else if(isManager) { window.renderManagerDashboard(); } 
+                else if(isManager) { window.renderManagerDashboard(); if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView(); if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList(); } 
                 else { if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); }
-            }, (error) => {
-                console.error("Firestore Error:", error);
             });
         }
 
         function attachSystemFunctions() {
-            window.logout = () => { signOut(auth).then(() => { window.navigate('loginPage'); }); };
+            // 🌟 100% BUG FIX FOR LOGOUT 🌟
+            window.logout = async () => { 
+                try {
+                    await signOut(auth);
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.reload(); // Force full reload to completely wipe session cache
+                } catch(e) {
+                    window.location.reload();
+                }
+            };
 
             window.login = async () => {
                 const e = document.getElementById('username').value.trim().toLowerCase(); 
@@ -570,8 +524,6 @@
                 } catch (err) { document.getElementById('loginStatus').innerText = "❌ Access Denied!"; }
             };
 
-            // 🌟🌟🌟 MOBILE OFFICER DASHBOARD - BUG FIXED 🌟🌟🌟
-            // දැන් මෙහි Target එකට එකතු වෙන්නේ RED (Arrears) ගිණුම් වල හිඟ මුදල් පමණි. (අර වගුවේ විදිහටම)
             window.renderOfficerDashboard = () => {
                 if(!currentOfficerName) return;
                 let targetAmt = 0, collectedAmt = 0, promiseHtml = "", pCount = 0;
@@ -580,14 +532,12 @@
                     let agent = d.fieldAgent || agentMapping[d.id] || "Unknown";
                     if(agent !== currentOfficerName) return;
 
-                    // 🌟 මේක තමයි Fix එක: "Red" ලිස්ට් එකේ ඒවා විතරක් ටාගට් එකට ගන්නවා 🌟
                     if (d.listType === "Red") {
                         let amt = Number(d.arrearsAmount) || 0;
                         targetAmt += amt;
                         if(d.notes === "Customer Paid") collectedAmt += amt;
                     }
 
-                    // අදට සල්ලි දෙනවා කිව්ව අය (Promises) පෙන්වන එක
                     if(parseInt(d.promiseDate) === td && d.notes !== "Customer Paid") {
                         pCount++;
                         let safeName = d.customerName || "No Name";
