@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Recovery Management System</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; background: url('https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1920&auto=format&fit=crop') no-repeat center fixed; background-size: cover; color: #fff; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
         .glass-panel { background: rgba(15, 25, 20, 0.85); border-radius: 20px; box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.8); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.15); }
@@ -41,7 +45,7 @@
         .type-badge-issu { background: #f44336; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 8px; color: white; }
         .reduce-box { background: rgba(76,175,80,0.3); border: 1px solid #4caf50; padding: 6px; border-radius: 5px; margin-bottom: 6px; font-size: 14px; }
         .reduce-box-acc { background: rgba(33,150,243,0.3); border: 1px solid #2196f3; padding: 6px; border-radius: 5px; font-size: 14px; }
-        #infoModal, #bmPaymentModal, #messagingModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 420px; padding: 30px; }
+        #infoModal, #bmPaymentModal, #messagingModal, #officerActionModal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 420px; padding: 30px; }
         #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
         .flex-between { display: flex; justify-content: space-between; align-items: center; }
         .mb-20 { margin-bottom: 20px; }
@@ -49,12 +53,31 @@
         .login-box input, .login-box button { padding: 15px; font-size: 15px; margin-top: 20px; width: 100%; }
         .msg-btn-wa { padding: 4px 8px; font-size: 11px; background: #25D366; border-radius: 5px; cursor: pointer; border: none; color: white; font-weight: bold; margin-right: 5px; }
         .msg-btn-sms { padding: 4px 8px; font-size: 11px; background: #2196f3; border-radius: 5px; cursor: pointer; border: none; color: white; font-weight: bold; }
+
+        /* Mobile Field Officer Styles */
+        .mobile-container { max-width: 500px; margin: 0 auto; padding: 15px; }
+        .mobile-header { background: linear-gradient(135deg, #1b5e20, #4caf50); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .mobile-stat-row { display: flex; justify-content: space-between; margin-top: 15px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; }
+        .mobile-stat { text-align: center; width: 30%; }
+        .mobile-search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        .mobile-card { background: rgba(0,0,0,0.7); border: 1px solid #4caf50; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .mobile-promise-list { background: rgba(255,152,0,0.2); border: 1px solid #ff9800; padding: 15px; border-radius: 15px; margin-bottom: 20px; }
+        #map { height: 450px; width: 100%; border-radius: 15px; margin-top: 20px; border: 2px solid #4caf50; z-index: 1;}
+        .leaflet-popup-content-wrapper { background: rgba(15, 25, 20, 0.95); color: white; border: 1px solid #4caf50; border-radius: 10px; }
+        .leaflet-popup-tip { background: rgba(15, 25, 20, 0.95); }
+        @media (max-width: 600px) { #officerActionModal { width: 90%; padding: 20px; } }
     </style>
 </head>
 <body>
     <script>
         window.waClickedRows = {}; 
-        window.navigate = function(pageId) { document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page')); document.getElementById(pageId).classList.add('active-page'); window.scrollTo(0,0); };
+        window.navigate = function(pageId) { 
+            document.querySelectorAll('.page-container').forEach(p => p.classList.remove('active-page')); 
+            document.getElementById(pageId).classList.add('active-page'); 
+            window.scrollTo(0,0); 
+            // Fix map size bug when navigating to map page
+            if(pageId === 'managerTrackingPage') { setTimeout(() => { if(window.visitMap) window.visitMap.invalidateSize(); }, 300); }
+        };
     </script>
 
     <div id="welcomePage" class="page-container active-page glass-panel" style="text-align: center; margin-top: 15vh;">
@@ -77,6 +100,65 @@
         </div>
     </div>
 
+    <div id="officerDashboardPage" class="page-container glass-panel mobile-container">
+        <div class="mobile-header">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0; font-size: 1.5em; text-align: left;">Welcome, <br><span id="offNameDisplay" style="color: #ffeb3b;">Officer</span></h2>
+                <button onclick="window.logout()" class="btn-danger" style="padding: 8px 15px; font-size: 12px; margin: 0;">Logout</button>
+            </div>
+            <p style="margin: 5px 0 0 0; color: #a5d6a7; text-align: left;" id="offDateDisplay">Date</p>
+            <div class="mobile-stat-row">
+                <div class="mobile-stat"><div style="font-size: 11px; color: #aaa;">Target</div><b id="offTotalTarget" style="color: #ff9800; font-size: 15px;">Rs. 0</b></div>
+                <div class="mobile-stat" style="border-left: 1px solid rgba(255,255,255,0.2); border-right: 1px solid rgba(255,255,255,0.2);"><div style="font-size: 11px; color: #aaa;">Collected</div><b id="offCollected" style="color: #4caf50; font-size: 15px;">Rs. 0</b></div>
+                <div class="mobile-stat"><div style="font-size: 11px; color: #aaa;">Success</div><b id="offRate" style="color: #2196f3; font-size: 15px;">0%</b></div>
+            </div>
+        </div>
+
+        <div class="mobile-promise-list">
+            <h3 style="margin-top: 0; margin-bottom: 10px; color: #ffeb3b; font-size: 16px; text-align: left;">📅 Today's Promises (<span id="offPromiseCount">0</span>)</h3>
+            <div id="offPromiseBody" style="max-height: 150px; overflow-y: auto; font-size: 13px;"></div>
+        </div>
+
+        <h3 style="text-align: left; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;">Visit Account</h3>
+        <div class="mobile-search-box">
+            <input type="text" id="offSearchInput" placeholder="Enter Account Number..." style="margin:0;">
+            <button onclick="window.officerSearchAccount()" style="margin:0; padding: 12px;">Search</button>
+        </div>
+        
+        <div id="offSearchResult" style="display: none;"></div>
+    </div>
+
+    <div id="managerTrackingPage" class="page-container glass-panel" style="max-width: 1400px;">
+        <div class="flex-between mb-20">
+            <h2 style="margin:0; color: #4caf50;">📍 Field Officer Live Tracking</h2>
+            <button onclick="window.navigate('dashboardPage')">&larr; Back to Dashboard</button>
+        </div>
+        <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+            <span><b>Select Officer:</b></span>
+            <select id="trackAgentSelect" onchange="window.renderManagerTracking()" style="width: 200px; margin: 0;">
+                <option value="Amila">Amila</option><option value="Rohan">Rohan</option><option value="Heenpahana">Heenpahana</option><option value="Group Sale">Group Sale</option>
+            </select>
+            <span style="margin-left: 20px;"><b>Date:</b></span>
+            <select id="trackDaySelect" onchange="window.renderManagerTracking()" style="width: 150px; margin: 0;"></select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <h3 style="text-align: left; color: #ff9800;">🗺️ GPS Route Map</h3>
+                <div id="map"></div>
+            </div>
+            <div>
+                <h3 style="text-align: left; color: #2196f3;">📋 Visit Logs</h3>
+                <div style="max-height: 450px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; background: rgba(0,0,0,0.4);">
+                    <table style="margin: 0; border-radius: 0;">
+                        <thead><tr><th>Time</th><th>Account</th><th>Status/Feedback</th></tr></thead>
+                        <tbody id="trackTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="dashboardPage" class="page-container glass-panel">
         <div class="flex-between mb-20">
             <h2 class="branch-name">MANAGER DASHBOARD</h2>
@@ -88,6 +170,7 @@
                 <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
                 <button onclick="window.navigate('promoCenterPage'); window.renderPromoList();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #ff9800, #e65100); color: white; border: none;">📢 PROMOTION CENTER</button>
+                <button onclick="window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #1b5e20, #4caf50); color: white; border: none;">📍 FIELD TRACKING (LIVE)</button>
                 <button onclick="window.downloadPhoneDirectory()" class="btn-download">📥 Download Phonebook DB</button>
 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50; display: flex; justify-content: space-around;">
@@ -308,6 +391,24 @@
     </div>
 
     <div id="modalOverlay" onclick="window.closeModal()"></div>
+
+    <div id="officerActionModal" class="glass-panel">
+        <h2 style="border-bottom: 2px solid #4caf50; padding-bottom: 10px; margin-top:0;">Update Visit</h2>
+        <div id="offModalContent" style="font-size: 14px; margin-bottom: 15px; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 8px;"></div>
+        <input type="hidden" id="offModalAccNo">
+        <label style="font-size: 12px; color: #aaa;">Select Feedback / Action:</label>
+        <select id="offModalAction">
+            <option value="">-- Select Status --</option>
+            <option value="Customer Paid">Customer Paid</option>
+            <option value="Promised to Pay">Promised to Pay</option>
+            <option value="Not at Home">Not at Home</option>
+            <option value="Bad Feedback">Bad Feedback</option>
+        </select>
+        <label style="font-size: 12px; color: #aaa; margin-top: 10px; display:block;">Promise Date (If given):</label>
+        <select id="offModalDate"></select>
+        <button onclick="window.saveOfficerData()" style="width: 100%; background: #4caf50; margin-top: 20px;">💾 Save & Update GPS</button>
+        <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 10px;">Cancel</button>
+    </div>
     
     <div id="messagingModal" class="glass-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 450px; padding: 30px;">
         <h2 id="msgHeader" style="border-bottom: 2px solid #2196f3; padding-bottom: 10px; margin-top: 0;">✉️ Send Reminder Message</h2>
@@ -350,19 +451,30 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const CLOUD_API_URL = "https://aura.ranbindua.workers.dev/"; 
 
         let app, auth, db, masterData = [], phoneDirectory = {}, agentMapping = {}, bmIssuesList = []; 
+        let fieldVisitsData = []; let currentOfficerName = ""; // 🌟 අලුත් variables 🌟
+        
         let tdObj = new Date(); let td = tdObj.getDate();
         let sysToday = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + String(tdObj.getDate()).padStart(2,'0');
 
+        // 🌟 Map Variables 🌟
+        window.visitMap = null;
+        window.mapMarkers = [];
+
         const setupFilters = () => {
-            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("progressDaySelect"), document.getElementById("staffDaySelect")];
+            let dayFilters = [document.getElementById("managerDayFilter"), document.getElementById("progressDaySelect"), document.getElementById("staffDaySelect"), document.getElementById("trackDaySelect"), document.getElementById("offModalDate")];
             dayFilters.forEach(sel => {
                 if(!sel) return;
-                for(let i = 1; i <= 31; i++) { let opt = document.createElement("option"); opt.value = i; opt.text = i + " වෙනිදා"; if(i === td && sel.id !== "progressDaySelect") opt.selected = true; sel.appendChild(opt); }
+                if(sel.id === "trackDaySelect" || sel.id === "offModalDate") sel.innerHTML = "<option value=''>Day</option>";
+                for(let i = 1; i <= 31; i++) { 
+                    let opt = document.createElement("option"); opt.value = i; opt.text = i + " වෙනිදා"; 
+                    if(i === td && sel.id !== "progressDaySelect" && sel.id !== "offModalDate") opt.selected = true; 
+                    sel.appendChild(opt); 
+                }
             });
         };
         setupFilters();
@@ -389,30 +501,259 @@
                 try {
                     await signInWithEmailAndPassword(auth, e, p);
                     status.innerText = "✅ Loading Data...";
+                    
                     let isManager = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
-                    window.navigate(isManager ? 'dashboardPage' : 'staffTargetPage');
+                    let isOfficer = false;
+                    
+                    // 🌟 අලුත්: Officer Login අඳුරගැනීම 🌟
+                    if(e === 'amila@gmail.com') { isOfficer = true; currentOfficerName = "Amila"; }
+                    else if(e === 'rohan@gmail.com') { isOfficer = true; currentOfficerName = "Rohan"; }
+                    else if(e === 'heen@gmail.com') { isOfficer = true; currentOfficerName = "Heenpahana"; }
+                    else if(e === 'group@gmail.com') { isOfficer = true; currentOfficerName = "Group Sale"; }
+
+                    if (isOfficer) { 
+                        document.getElementById('offNameDisplay').innerText = currentOfficerName;
+                        document.getElementById('offDateDisplay').innerText = sysToday;
+                        window.navigate('officerDashboardPage'); 
+                    } else if (isManager) { 
+                        window.navigate('dashboardPage'); 
+                    } else { 
+                        window.navigate('staffTargetPage'); 
+                    }
 
                     onSnapshot(collection(db, "phoneDirectory"), (snap) => { snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); if(document.getElementById('promoCenterPage').classList.contains('active-page')) window.renderPromoList(); });
                     onSnapshot(collection(db, "agent_mapping"), (snap) => { snap.forEach(d => { agentMapping[d.id] = d.data().fieldAgent; }); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
                     onSnapshot(collection(db, "bm_issues"), (snap) => { bmIssuesList = snap.docs.map(d => ({id: d.id, ...d.data()})); if(e.includes('manager') || e.includes('bm')) window.renderBMStats(); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
 
-                    initLiveSync(isManager);
+                    // 🌟 අලුත්: Field Visits ඇදගැනීම 🌟
+                    onSnapshot(collection(db, "field_visits"), (snap) => { 
+                        fieldVisitsData = snap.docs.map(d => ({id: d.id, ...d.data()})); 
+                        if(document.getElementById('managerTrackingPage').classList.contains('active-page')) window.renderManagerTracking();
+                    });
+
+                    initLiveSync(isManager, isOfficer);
                 } catch (err) { status.innerText = "❌ Access Denied! Check credentials."; }
             };
 
-            function initLiveSync(isManager) {
+            function initLiveSync(isManager, isOfficer) {
                 onSnapshot(collection(db, "customers"), (snap) => {
                     masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                    if(isManager) { 
+                    
+                    if(isOfficer) { 
+                        window.renderOfficerDashboard(); 
+                    } else if(isManager) { 
                         window.renderManagerDashboard(); 
                         if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView(); 
                         if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList(); 
-                    } 
-                    else { if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); }
+                    } else { 
+                        if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); 
+                    }
                 }, (error) => {
                     console.error("Firestore Error:", error);
                 });
             }
+
+            // 🌟🌟🌟 අලුත්: FIELD OFFICER LOGIC (START) 🌟🌟🌟
+            window.renderOfficerDashboard = () => {
+                if(!currentOfficerName) return;
+                let targetAmt = 0, collectedAmt = 0, promiseHtml = "", pCount = 0;
+
+                masterData.forEach(d => {
+                    let agent = d.fieldAgent || agentMapping[d.id] || "Unknown";
+                    if(agent !== currentOfficerName) return;
+
+                    let amt = Number(d.arrearsAmount) || 0;
+                    if(d.listType !== "Red") amt = Number(d.monthlyPay) || 0; 
+                    
+                    targetAmt += amt;
+                    if(d.notes === "Customer Paid") collectedAmt += amt;
+
+                    if(parseInt(d.promiseDate) === td && d.notes !== "Customer Paid") {
+                        pCount++;
+                        let safeName = d.customerName || "No Name";
+                        promiseHtml += `<div style="background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; margin-bottom:8px; border-left:4px solid #ff9800;">
+                            <b style="color:#4caf50;">${d.accountNo}</b> - ${safeName}<br>
+                            <span style="font-size:12px; color:#aaa;">Amount: Rs. ${amt} | Prev: ${d.notes || 'None'}</span>
+                        </div>`;
+                    }
+                });
+
+                document.getElementById('offTotalTarget').innerText = `Rs. ${targetAmt.toLocaleString('en-US')}`;
+                document.getElementById('offCollected').innerText = `Rs. ${collectedAmt.toLocaleString('en-US')}`;
+                let rate = targetAmt > 0 ? Math.round((collectedAmt/targetAmt)*100) : 0;
+                document.getElementById('offRate').innerText = `${rate}%`;
+
+                document.getElementById('offPromiseCount').innerText = pCount;
+                document.getElementById('offPromiseBody').innerHTML = promiseHtml || "<div style='color:#ccc;'>No promises for today.</div>";
+            };
+
+            window.officerSearchAccount = () => {
+                let accNo = document.getElementById('offSearchInput').value.trim().toUpperCase();
+                if(accNo === "") return;
+                
+                let found = masterData.find(d => d.accountNo.toUpperCase().includes(accNo) || d.id.includes(accNo));
+                if(!found) {
+                    document.getElementById('offSearchResult').innerHTML = "<p style='color:#f44336; text-align:center;'>❌ Account not found in your database.</p>";
+                    document.getElementById('offSearchResult').style.display = "block";
+                    return;
+                }
+
+                let safeName = found.customerName || "Unknown";
+                let safeProd = found.product || "Unknown";
+                let amt = found.listType === "Red" ? found.arrearsAmount : found.monthlyPay;
+
+                let html = `<div class="mobile-card">
+                    <h3 style="margin-top:0; color:#4caf50;">${found.accountNo} <span class="${found.listType==='Red'?'type-badge-issu':'type-badge-open'}">${found.listType.toUpperCase()}</span></h3>
+                    <p><b>Name:</b> ${safeName}</p>
+                    <p><b>Product:</b> ${safeProd}</p>
+                    <p><b>Amount:</b> Rs. ${amt}</p>
+                    <p style="color:#ff9800;"><b>Last Note:</b> ${found.notes || "None"}</p>
+                    <button onclick="window.openOfficerModal('${found.id}', '${found.accountNo}', '${safeName.replace(/'/g, "\\'")}', '${found.notes}')" style="width:100%; margin-top:10px;">Update Visit Details</button>
+                </div>`;
+                
+                document.getElementById('offSearchResult').innerHTML = html;
+                document.getElementById('offSearchResult').style.display = "block";
+            };
+
+            window.openOfficerModal = (docId, accNo, name, lastNote) => {
+                document.getElementById('offModalAccNo').value = docId;
+                document.getElementById('offModalContent').innerHTML = `<b style="color:#4caf50; font-size:16px;">${accNo}</b><br>${name}<br><span style='font-size:11px; color:#aaa;'>Prev: ${lastNote}</span>`;
+                document.getElementById('offModalAction').value = "";
+                document.getElementById('offModalDate').value = "";
+                document.getElementById('officerActionModal').style.display = 'block';
+                document.getElementById('modalOverlay').style.display = 'block';
+            };
+
+            window.saveOfficerData = async () => {
+                let docId = document.getElementById('offModalAccNo').value;
+                let action = document.getElementById('offModalAction').value;
+                let pDate = document.getElementById('offModalDate').value;
+                
+                if(action === "") { alert("❌ කරුණාකර Status එකක් තෝරන්න!"); return; }
+                if(action === "Promised to Pay" && pDate === "") { alert("❌ කරුණාකර Promise Date එකක් තෝරන්න!"); return; }
+
+                // 5-Minute Lock
+                let lastSaveStr = localStorage.getItem('lastVisitSaveTime');
+                if(lastSaveStr) {
+                    let lastSave = parseInt(lastSaveStr);
+                    let now = new Date().getTime();
+                    let diffMinutes = Math.floor((now - lastSave) / 60000);
+                    if(diffMinutes < 5) {
+                        alert(`⚠️ ආරක්ෂිත පද්ධතිය: ඊළඟ ගිණුම Update කිරීමට තව විනාඩි ${5 - diffMinutes} ක් රැඳී සිටින්න. (ඔබට එකම තැනක සිට ගිණුම් කිහිපයක් Update කළ නොහැක).`);
+                        return;
+                    }
+                }
+
+                document.getElementById('officerActionModal').style.display = 'none';
+                document.getElementById('loadStatusMsg').innerText = "📍 Getting GPS Location... Please wait...";
+                document.getElementById('welcomePage').style.display = 'block';
+
+                if (!navigator.geolocation) {
+                    alert("❌ GPS Tracking is not supported by your browser!");
+                    document.getElementById('welcomePage').style.display = 'none';
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    let lat = position.coords.latitude;
+                    let lng = position.coords.longitude;
+
+                    try {
+                        let d = masterData.find(x => x.id === docId);
+                        
+                        // 1. Update Customers DB
+                        await updateDoc(doc(db, "customers", docId), { notes: action, promiseDate: pDate, lastCallDate: sysToday });
+
+                        // 2. Add to field_visits Tracking DB
+                        let visitLog = {
+                            officer: currentOfficerName,
+                            accountNo: d.accountNo,
+                            customerName: d.customerName,
+                            action: action,
+                            promiseDate: pDate,
+                            lat: lat,
+                            lng: lng,
+                            timestamp: new Date().getTime(),
+                            dateStr: sysToday,
+                            timeStr: new Date().toLocaleTimeString()
+                        };
+                        await addDoc(collection(db, "field_visits"), visitLog);
+
+                        // Set Lock Time
+                        localStorage.setItem('lastVisitSaveTime', new Date().getTime().toString());
+
+                        alert("✅ Visit details & GPS location saved successfully!");
+                        window.closeModal();
+                        document.getElementById('offSearchInput').value = "";
+                        document.getElementById('offSearchResult').style.display = "none";
+                    } catch(e) {
+                        alert("❌ Error saving data: " + e.message);
+                    } finally {
+                        document.getElementById('welcomePage').style.display = 'none';
+                    }
+
+                }, (error) => {
+                    alert("❌ GPS Location Required! Please turn on your Phone's Location to save.");
+                    document.getElementById('welcomePage').style.display = 'none';
+                }, { enableHighAccuracy: true, timeout: 10000 });
+            };
+
+            // 🌟 4. MANAGER MAP TRACKING LOGIC 🌟
+            window.renderManagerTracking = () => {
+                let selectedAgent = document.getElementById('trackAgentSelect').value;
+                let selectedDay = document.getElementById('trackDaySelect').value;
+                let dayStr = selectedDay ? String(selectedDay).padStart(2, '0') : String(td).padStart(2, '0');
+                let filterDateStr = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + dayStr;
+
+                let logs = fieldVisitsData.filter(v => v.officer === selectedAgent && v.dateStr === filterDateStr);
+                logs.sort((a,b) => b.timestamp - a.timestamp); 
+
+                let html = "";
+                logs.forEach(v => {
+                    html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="color:#aaa; font-size:11px;">${v.timeStr}</td>
+                        <td><b>${v.accountNo}</b></td>
+                        <td style="color:#4caf50; font-size:11px;">${v.action} ${v.promiseDate ? '<br>(Day '+v.promiseDate+')' : ''}</td>
+                    </tr>`;
+                });
+                document.getElementById('trackTableBody').innerHTML = html || "<tr><td colspan='3'>No visits logged for this date.</td></tr>";
+
+                window.initMap();
+                window.mapMarkers.forEach(m => window.visitMap.removeLayer(m));
+                window.mapMarkers = [];
+
+                if(logs.length > 0) {
+                    let bounds = [];
+                    logs.forEach(v => {
+                        let popupContent = `
+                            <div style="font-size:13px; min-width:150px;">
+                                <h3 style="color:#4caf50; margin:0 0 5px 0; font-size:15px; border-bottom:1px solid #4caf50; padding-bottom:5px;">${v.accountNo}</h3>
+                                <b>Name:</b> ${v.customerName || 'N/A'}<br>
+                                <b>Status:</b> <span style="color:#ffeb3b;">${v.action}</span><br>
+                                <b>Promise:</b> ${v.promiseDate ? v.promiseDate + ' වෙනිදා' : '-'}<br>
+                                <span style="color:#aaa; font-size:11px; display:block; margin-top:8px;">🕒 Time: ${v.timeStr}</span>
+                            </div>
+                        `;
+                        let marker = L.marker([v.lat, v.lng]).addTo(window.visitMap).bindPopup(popupContent);
+                        window.mapMarkers.push(marker);
+                        bounds.push([v.lat, v.lng]);
+                    });
+                    window.visitMap.fitBounds(bounds, { padding: [50, 50] });
+                } else {
+                    window.visitMap.setView([8.1, 80.6], 10);
+                }
+            };
+
+            window.initMap = () => {
+                if(!window.visitMap) {
+                    window.visitMap = L.map('map').setView([8.1, 80.6], 10); 
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors | Aura ERP'
+                    }).addTo(window.visitMap);
+                }
+            };
+            // 🌟🌟🌟 අලුත්: FIELD OFFICER LOGIC (END) 🌟🌟🌟
+
 
             window.forceRefreshData = async () => { 
                 let btn = document.querySelector('.btn-refresh');
@@ -447,7 +788,6 @@
             
             function genDays(sel) { let h="<option value=''>Day</option>"; for(let i=1; i<=31; i++) { h += `<option value="${i}" ${sel == i ? 'selected' : ''}>${i}</option>`; } return h; }
 
-            // 🌟 අලුත්: PROMOTION CENTER (AUTO-POLISH ලොජික්) 🌟
             window.renderPromoList = () => {
                 let search = document.getElementById('promoSearch') ? document.getElementById('promoSearch').value.toLowerCase().trim() : "";
                 let html = ""; let count = 0;
@@ -502,7 +842,6 @@
                 }).catch(err => { alert("❌ Failed to copy numbers."); });
             };
 
-            // අනිත් සාමාන්‍ය Functions ටික
             window.sendDirectWA = async (docId, phone, name, prod, msgCategory) => {
                 window.waClickedRows[docId] = true; 
                 try {
@@ -808,7 +1147,6 @@
                     document.getElementById('msgPreviewText').innerText = msg;
                 }
 
-                // 🌟 ID එකෙන් Phone Book එක Update කිරීම 🌟
                 let cusNic = (d.nic || "").replace(/[^A-Z0-9]/ig, '');
                 let phoneKey = cusNic !== "" ? cusNic : docId;
                 if(phoneVal !== d.phone && phoneVal !== "") { await setDoc(doc(db, "phoneDirectory", phoneKey), { phone: phoneVal, name: d.customerName }); }
@@ -852,8 +1190,13 @@
                 document.getElementById('infoModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block'; 
             };
             
-            window.closeModal = () => { document.getElementById('infoModal').style.display = 'none'; document.getElementById('bmPaymentModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
-            window.closeMessagingModal = () => { document.getElementById('messagingModal').style.display = 'none'; document.getElementById('modalOverlay').style.display = 'none'; };
+            window.closeModal = () => { 
+                document.getElementById('infoModal').style.display = 'none'; 
+                document.getElementById('bmPaymentModal').style.display = 'none'; 
+                document.getElementById('messagingModal').style.display = 'none'; 
+                document.getElementById('officerActionModal').style.display = 'none'; 
+                document.getElementById('modalOverlay').style.display = 'none'; 
+            };
 
             window.uploadExcel = async (ev, type) => {
                 const file = ev.target.files[0]; const reader = new FileReader(); if(!file) return; 
