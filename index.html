@@ -274,7 +274,10 @@
     </div>
 
     <div id="callCenterDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
-        <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
+        <div class="flex-between mb-20">
+            <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
+            <button onclick="window.exportTargetListToExcel()" style="background: linear-gradient(135deg, #00bcd4, #01579b); margin-top: 0; width: auto; padding: 10px 20px;">📥 Export Target List</button>
+        </div>
         <h2>Call Center Detailed Logs</h2>
         <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 14px;">
              <span>📅 <b>Day:</b></span><select id="managerDayFilter" onchange="window.syncManagerView()" style="width: 100px; margin: 0;"></select>
@@ -532,6 +535,48 @@
                 try {
                     await signInWithEmailAndPassword(auth, e, p);
                 } catch (err) { document.getElementById('loginStatus').innerText = "❌ Access Denied!"; }
+            };
+
+            // 🌟 අලුත්: Target Excel Export Function එක 🌟
+            window.exportTargetListToExcel = () => {
+                let exportData = [];
+                // managerCCBody එකේ ඒ වෙලාවේ පේන්න තියෙන ටික විතරක් ගන්නවා
+                let rows = document.querySelectorAll('#managerCCBody tr');
+                
+                rows.forEach(row => {
+                    // display none නැති ඒවා විතරයි ගන්නේ
+                    if(row.style.display !== 'none') {
+                        let cells = row.querySelectorAll('td');
+                        if(cells.length > 0 && cells[0].innerText !== 'No records found for selected day/filter.') {
+                            // Account Number එකෙන් OPEN / ISSU කෑලි අයින් කරලා පිරිසිදු කරනවා
+                            let accNoRaw = cells[0].innerText.replace('OPEN', '').replace('ISSU', '').replace('(පෙර දිනෙන්)', '').trim();
+                            
+                            // masterData එකෙන් අදාළ කස්ටමර්ව හොයාගන්නවා
+                            let d = masterData.find(x => x.accountNo.includes(accNoRaw) || accNoRaw.includes(x.accountNo));
+                            
+                            if(d) {
+                                exportData.push({
+                                    "Account No": d.accountNo,
+                                    "Name": d.customerName || "N/A",
+                                    "Phone Number": getPhone(d),
+                                    "Arrears Amount": d.listType === 'Red' ? (d.arrearsAmount || 0) : (d.monthlyPay || 0),
+                                    "Address": d.address || "N/A"
+                                });
+                            }
+                        }
+                    }
+                });
+
+                if(exportData.length === 0) { 
+                    alert("No data to export! Please adjust your filters to show targets."); 
+                    return; 
+                }
+
+                // SheetJS හරහා Excel එක හදලා Download කරනවා
+                let ws = XLSX.utils.json_to_sheet(exportData);
+                let wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Target_List");
+                XLSX.writeFile(wb, "Aura_Target_List_" + sysToday + ".xlsx");
             };
 
             window.renderOfficerDashboard = () => {
@@ -968,7 +1013,8 @@
                             if(d.lastCallDate === sysToday || d.notes === "Customer Paid") called++; 
                             let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`; let displayStatus = statusText; 
                             if(statusText === "Pending") { if(d.notes === "Call Not Answer") displayStatus = "Not Answer"; else if(d.notes === "Phone Not Working") displayStatus = "Not Working"; }
-                            html += `<tr class="${rowC}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${dAgent}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${displayStatus}</b></td></tr>`; 
+                            
+                            html += `<tr class="${rowC}" id="ccrow_${d.id}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${dAgent}</td><td>${getPhone(d)}</td><td>${att}</td><td>${d.notes || '-'}</td><td>${pText}</td><td><b>${displayStatus}</b></td></tr>`; 
                         }
                     }
                 });
