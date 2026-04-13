@@ -33,7 +33,7 @@
         .btn-info { padding: 6px 12px; border-radius: 10px; background: #2196f3; border:none; font-size: 16px; margin: 0; }
         .btn-danger { background: linear-gradient(135deg, #f44336 0%, #b71c1c 100%); }
         .btn-refresh { background: linear-gradient(135deg, #ff9800 0%, #e65100 100%); }
-        .btn-download { background: linear-gradient(135deg, #00bcd4 0%, #01579b 100%); width: 100%; margin-top: 15px; }
+        .btn-download { background: linear-gradient(135deg, #00bcd4 0%, #01579b 100%); padding: 10px 15px; font-size: 12px; margin: 0; }
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; background: rgba(0, 0, 0, 0.6); color: #fff; border: 1px solid rgba(255,255,255,0.2); font-size: 14px; box-sizing: border-box; }
         input:focus, select:focus, textarea:focus { border-color: #4caf50; outline: none; background: rgba(0,0,0,0.8); }
         select option { background: #1a1a1a; color: #fff; }
@@ -184,7 +184,7 @@
                 <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Detailed Logs</button>
                 <button onclick="window.navigate('promoCenterPage'); window.renderPromoList();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #ff9800, #e65100); color: white; border: none;">📢 PROMOTION CENTER</button>
-                <button onclick="window.downloadPhoneDirectory()" class="btn-download" style="margin-bottom: 10px;">📥 Download Phonebook DB</button>
+                <button onclick="window.downloadPhoneDirectory()" class="btn-download" style="width: 100%; margin-bottom: 10px;">📥 Download Phonebook DB</button>
                 
                 <button onclick="window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #1b5e20, #4caf50); color: white; border: none;">📍 FIELD TRACKING</button>
 
@@ -290,7 +290,7 @@
     <div id="callCenterDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
         <div class="flex-between mb-20">
             <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
-            <button onclick="window.exportTargetListToExcel()" style="background: linear-gradient(135deg, #00bcd4, #01579b); margin-top: 0; width: auto; padding: 10px 20px;">📥 Export Target List</button>
+            <button class="btn-download" onclick="window.exportTargetListToExcel()" style="margin-top: 0; width: auto;">📥 Export Target List</button>
         </div>
         <h2>Call Center Detailed Logs</h2>
         <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; font-size: 14px;">
@@ -303,7 +303,10 @@
     </div>
 
     <div id="fieldDetailsPage" class="page-container glass-panel" style="max-width: 1400px;">
-        <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
+        <div class="flex-between mb-20">
+            <button onclick="window.navigate('progressPage')" class="mb-20">&larr; Back</button>
+            <button class="btn-download" onclick="window.exportFieldListToExcel()" style="margin-top: 0; width: auto;">📥 Export Field List</button>
+        </div>
         <h2>Field Agent Performance (Issu Accounts)</h2>
         <table style="margin-bottom: 40px; background: rgba(0,0,0,0.6);">
             <thead><tr><th>Group Sale (G)</th><th>Heenpahana (H)</th><th>Rohan (R)</th><th>Amila (D)</th></tr></thead>
@@ -345,7 +348,7 @@
         <div class="flex-between mb-20">
             <h2 id="staffTargetTitle" style="margin:0;">TODAY'S TARGET: <span class="target-badge" id="staffTargetNum">0</span></h2>
             <div style="display: flex; gap: 10px; align-items: center;">
-                <button onclick="window.exportStaffListToExcel()" style="background: linear-gradient(135deg, #00bcd4, #01579b); margin:0; padding: 10px 15px;">📥 Export List</button>
+                <button class="btn-download" onclick="window.exportStaffListToExcel()" style="margin:0;">📥 Export List</button>
                 <input type="text" id="staffSearch" onkeyup="window.searchGlobalStaffTable()" placeholder="🔍 Search Account No Only..." style="width: 350px; margin:0;">
                 <button onclick="window.logout()" class="btn-danger" style="margin:0;">Logout</button>
             </div>
@@ -389,10 +392,12 @@
         <h2 style="border-bottom: 2px solid #ffeb3b; padding-bottom: 10px; color: #ffeb3b;">📢 SPECIAL PROMO TASK</h2>
         <div id="activeTaskMsg" style="background: rgba(0,0,0,0.5); padding: 15px; margin-bottom: 15px; border-radius: 8px; font-style: italic; white-space: pre-wrap;"></div>
         <input type="text" id="ccPromoSearch" onkeyup="window.renderCCTaskList()" placeholder="🔍 Search Name or Phone..." style="width: 100%; margin-bottom: 15px;">
-        <table style="width:100%;">
-            <thead><tr><th>Customer Name</th><th>Phone No</th><th>Action</th></tr></thead>
-            <tbody id="ccTaskTableBody"></tbody>
-        </table>
+        <div style="max-height: 400px; overflow-y: auto;">
+            <table style="width:100%;">
+                <thead><tr><th>Customer Name</th><th>Phone No</th><th>Action</th></tr></thead>
+                <tbody id="ccTaskTableBody"></tbody>
+            </table>
+        </div>
         <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 20px;">Close Task Window</button>
     </div>
 
@@ -462,6 +467,7 @@
         let app, auth, db, masterData = [], phoneDirectory = {}, agentMapping = {}, bmIssuesList = []; 
         let fieldVisitsData = []; let currentOfficerName = ""; 
         window.currentActiveTask = null;
+        let renderTimeout = null; // Debounce timer for slowness fix
         
         let tdObj = new Date(); let td = tdObj.getDate();
         let sysToday = tdObj.getFullYear() + "-" + String(tdObj.getMonth()+1).padStart(2,'0') + "-" + String(tdObj.getDate()).padStart(2,'0');
@@ -536,7 +542,11 @@
         }
 
         function loadInitialData(isManager, isOfficer) {
-            onSnapshot(collection(db, "phoneDirectory"), (snap) => { snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); if(document.getElementById('promoCenterPage').classList.contains('active-page')) window.renderPromoList(); });
+            onSnapshot(collection(db, "phoneDirectory"), (snap) => { 
+                phoneDirectory = {}; // Clear old data for deduplication rendering
+                snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); 
+                if(document.getElementById('promoCenterPage').classList.contains('active-page')) window.renderPromoList(); 
+            });
             onSnapshot(collection(db, "agent_mapping"), (snap) => { snap.forEach(d => { agentMapping[d.id] = d.data().fieldAgent; }); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
             onSnapshot(collection(db, "bm_issues"), (snap) => { bmIssuesList = snap.docs.map(d => ({id: d.id, ...d.data()})); if(isManager) window.renderBMStats(); if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); });
             
@@ -562,9 +572,18 @@
 
             onSnapshot(collection(db, "customers"), (snap) => {
                 masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                if(isOfficer) { window.renderOfficerDashboard(); }
-                else if(isManager) { window.renderManagerDashboard(); if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView(); if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList(); } 
-                else { if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); }
+                
+                // DEBOUNCE - Fix for Slowness (Issue 5)
+                clearTimeout(renderTimeout);
+                renderTimeout = setTimeout(() => {
+                    if(isOfficer) { window.renderOfficerDashboard(); }
+                    else if(isManager) { 
+                        window.renderManagerDashboard(); 
+                        if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView(); 
+                        if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList(); 
+                    } 
+                    else { if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); }
+                }, 400); // Wait 400ms after data updates stop firing
             });
         }
 
@@ -605,7 +624,7 @@
                                     "Account No": d.accountNo,
                                     "Name": d.customerName || "N/A",
                                     "Phone Number": getPhone(d),
-                                    "Arrears Amount": d.listType === 'Red' ? (d.arrearsAmount || 0) : (d.monthlyPay || 0),
+                                    "Amount": d.listType === 'Red' ? (d.arrearsAmount || 0) : (d.monthlyPay || 0),
                                     "Address": d.address || "N/A"
                                 });
                             }
@@ -631,7 +650,7 @@
                                     "Account No": d.accountNo,
                                     "Name": d.customerName || "N/A",
                                     "Phone Number": getPhone(d),
-                                    "Arrears Amount": d.listType === 'Red' ? (d.arrearsAmount || 0) : (d.monthlyPay || 0),
+                                    "Amount": d.listType === 'Red' ? (d.arrearsAmount || 0) : (d.monthlyPay || 0),
                                     "Address": d.address || "N/A"
                                 });
                             }
@@ -640,6 +659,29 @@
                 });
                 if(exportData.length === 0) { alert("No data to export!"); return; }
                 let ws = XLSX.utils.json_to_sheet(exportData); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "My_Target_List"); XLSX.writeFile(wb, "Aura_My_Targets_" + sysToday + ".xlsx");
+            };
+
+            // Field List Export (For Managers)
+            window.exportFieldListToExcel = () => {
+                let exportData = [];
+                let rows = document.querySelectorAll('#fieldDetailsBody tr');
+                rows.forEach(row => {
+                    if(row.style.display !== 'none' && !row.innerText.includes('No accounts found')) {
+                        let cells = row.querySelectorAll('td');
+                        if(cells.length >= 6) {
+                            exportData.push({
+                                "Account No": cells[0].innerText.trim(),
+                                "Name": cells[1].innerText.trim(),
+                                "Phone Number": cells[2].innerText.trim(),
+                                "Field Agent": cells[3].innerText.trim(),
+                                "Arrears Amount": cells[4].innerText.replace('Rs.', '').trim(),
+                                "Status": cells[5].innerText.trim()
+                            });
+                        }
+                    }
+                });
+                if(exportData.length === 0) { alert("No data to export!"); return; }
+                let ws = XLSX.utils.json_to_sheet(exportData); let wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Field_Arrears_List"); XLSX.writeFile(wb, "Aura_Field_List_" + sysToday + ".xlsx");
             };
 
             window.renderOfficerDashboard = () => {
@@ -857,7 +899,9 @@
             function getPhone(d) { 
                 let cusNic = (d.nic || "").replace(/[^A-Z0-9]/ig, '');
                 let lookupKey = cusNic !== "" ? cusNic : d.id;
-                return phoneDirectory[lookupKey] ? phoneDirectory[lookupKey].phone : (d.phone || 'N/A'); 
+                // Phonebook Duplicate Fix - Always check direct phone field first
+                if (d.phone && d.phone.length > 8) return d.phone;
+                return phoneDirectory[lookupKey] ? phoneDirectory[lookupKey].phone : 'N/A'; 
             }
             
             function extractDay(s) { 
@@ -891,9 +935,9 @@
             window.renderCCTaskList = () => {
                 let search = document.getElementById('ccPromoSearch').value.toLowerCase().trim();
                 let html = "";
-                for (const [nic, data] of Object.entries(phoneDirectory)) {
+                for (const [phoneKey, data] of Object.entries(phoneDirectory)) {
                     let safeName = data.name || "Customer";
-                    let safePhone = data.phone || "";
+                    let safePhone = data.phone || phoneKey;
                     if (search !== "" && !safeName.toLowerCase().includes(search) && !safePhone.includes(search)) continue;
                     if (!safePhone || safePhone.length < 9) continue; 
                     html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
@@ -905,7 +949,7 @@
                         </td>
                     </tr>`;
                 }
-                document.getElementById('ccTaskTableBody').innerHTML = html;
+                document.getElementById('ccTaskTableBody').innerHTML = html || "<tr><td colspan='3'>No contacts found.</td></tr>";
             };
 
             window.sendTaskWA = async (phone, name, taskId) => {
@@ -926,6 +970,63 @@
                 let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(polishedMsg)}`;
                 window.location.href = smsUrl;
                 try { await updateDoc(doc(db, "promo_tasks", taskId), { sentSMS: increment(1) }); } catch(e){}
+            };
+
+            window.renderPromoList = () => {
+                let search = document.getElementById('promoSearch') ? document.getElementById('promoSearch').value.toLowerCase().trim() : "";
+                let html = ""; let count = 0;
+                for (const [phoneKey, data] of Object.entries(phoneDirectory)) {
+                    let safeName = data.name || "Customer";
+                    let safePhone = data.phone || phoneKey;
+                    if (search !== "" && !safeName.toLowerCase().includes(search) && !safePhone.includes(search)) continue;
+                    if (!safePhone || safePhone.length < 9) continue; 
+                    count++;
+                    html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <td style="text-align:left;">${safeName}</td>
+                        <td>${safePhone}</td>
+                        <td>
+                            <button onclick="window.sendPromoWA('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #25D366; margin-right: 5px; color: black; font-weight: bold;">WA</button>
+                            <button onclick="window.sendPromoSMS('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #2196f3;">SMS</button>
+                        </td>
+                    </tr>`;
+                }
+                document.getElementById('promoTableBody').innerHTML = html || "<tr><td colspan='3'>No contacts found.</td></tr>";
+                if(document.getElementById('promoTotalCount')) document.getElementById('promoTotalCount').innerText = count;
+            };
+
+            window.sendPromoWA = (phone, name) => {
+                let rawMsg = document.getElementById('promoMessageTemplate').value;
+                if(!rawMsg) { alert("Type a message first!"); return; }
+                let polishedMsg = `හිතවත් ${name},\n\n${rawMsg}\n\n- සිංගර් ගලෙන්බිඳුනුවැව`;
+                let formattedPhone = phone.replace(/[^0-9]/g, '');
+                if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1); 
+                let url = `https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(polishedMsg)}`;
+                window.open(url, '_blank');
+            };
+
+            window.sendPromoSMS = (phone, name) => {
+                let rawMsg = document.getElementById('promoMessageTemplate').value;
+                if(!rawMsg) { alert("Type a message first!"); return; }
+                let polishedMsg = `හිතවත් ${name},\n\n${rawMsg}\n\n- සිංගර් ගලෙන්බිඳුනුවැව`;
+                let formattedPhone = phone.replace(/[^0-9]/g, '');
+                if(formattedPhone.startsWith('0')) formattedPhone = '+94' + formattedPhone.substring(1); 
+                let smsUrl = `sms:${formattedPhone}?body=${encodeURIComponent(polishedMsg)}`;
+                window.location.href = smsUrl;
+            };
+
+            window.copyAllNumbers = () => {
+                let numbers = [];
+                for (const [phoneKey, data] of Object.entries(phoneDirectory)) {
+                    let safePhone = data.phone || phoneKey;
+                    if (safePhone && safePhone.length >= 9) {
+                        let formattedPhone = safePhone.replace(/[^0-9]/g, '');
+                        if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1);
+                        numbers.push(formattedPhone);
+                    }
+                }
+                navigator.clipboard.writeText(numbers.join(', ')).then(() => {
+                    alert(`✅ Copied ${numbers.length} numbers to clipboard successfully! Paste them in your Bulk SMS provider.`);
+                }).catch(err => { alert("❌ Failed to copy numbers."); });
             };
 
             window.sendDirectWA = async (docId, phone, name, prod, msgCategory) => {
@@ -1234,11 +1335,13 @@
                     document.getElementById('msgPreviewText').innerText = msg;
                 }
 
-                let cusNic = (d.nic || "").replace(/[^A-Z0-9]/ig, '');
-                let phoneKey = cusNic !== "" ? cusNic : docId;
-                if(phoneVal !== d.phone && phoneVal !== "") { await setDoc(doc(db, "phoneDirectory", phoneKey), { phone: phoneVal, name: d.customerName }); }
+                if(phoneVal !== d.phone && phoneVal !== "" && phoneVal.length > 8) {
+                    let formattedPhoneKey = phoneVal.replace(/[^0-9]/g, '');
+                    if(formattedPhoneKey.startsWith('0')) formattedPhoneKey = '94' + formattedPhoneKey.substring(1);
+                    await setDoc(doc(db, "phoneDirectory", formattedPhoneKey), { phone: phoneVal, name: d.customerName }); 
+                }
                 
-                await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
+                await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday, phone: phoneVal });
                 
                 if(btnSave) { btnSave.innerText = "SAVED"; btnSave.style.background = "#4caf50"; }
                 setTimeout(() => { let row = document.getElementById(`row_${docId}`); if(row) row.style.display = 'none'; if(document.getElementById('staffSearch').value.trim() === "") { window.renderStaffUI(); } }, 800); 
@@ -1266,8 +1369,8 @@
             };
 
             window.downloadPhoneDirectory = () => {
-                let csvContent = "data:text/csv;charset=utf-8,ID/Account Number,Customer Name,Phone Number\n";
-                for (const [acc, data] of Object.entries(phoneDirectory)) { let cleanName = (data.name || 'N/A').replace(/,/g, ''); csvContent += `${acc},"${cleanName}",${data.phone}\n`; }
+                let csvContent = "data:text/csv;charset=utf-8,Phone Number,Customer Name\n";
+                for (const [phoneKey, data] of Object.entries(phoneDirectory)) { let cleanName = (data.name || 'N/A').replace(/,/g, ''); csvContent += `${data.phone},"${cleanName}"\n`; }
                 var encodedUri = encodeURI(csvContent); var link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Phonebook_Full.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
             };
 
