@@ -132,7 +132,7 @@
                 <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Logs</button>
                 <button onclick="window.navigate('promoCenterPage'); window.renderPromoList();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #ff9800, #e65100);">📢 PROMOTION CENTER</button>
-                <button onclick="window.downloadPhoneDirectory()" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #00bcd4, #01579b);">📥 Download Phonebook DB</button>
+                <button onclick="window.downloadPhoneDirectory()" class="btn-download" style="width: 100%; margin-bottom: 10px;">📥 Download Phonebook DB</button>
                 <button onclick="window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="width: 100%; margin-bottom: 10px; background: #1b5e20;">📍 Field Tracking (Live)</button>
                 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50; display: flex; justify-content: space-around;">
@@ -540,11 +540,17 @@
         function loadInitialData(isM, isO) {
             onSnapshot(collection(db, "customers"), (snap) => {
                 masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                
                 clearTimeout(renderTimeout);
+                
+                // 🌟 TARGET RENDER SYNC FIX 🌟
                 renderTimeout = setTimeout(() => {
                     if(isO) window.renderOfficerDashboard();
-                    else if(isM) { window.renderManagerDashboard(); window.syncManagerView(); window.renderFieldList(); }
+                    else if(isM) { 
+                        window.renderManagerDashboard(); 
+                        if(document.getElementById('callCenterDetailsPage').classList.contains('active-page')) window.syncManagerView(); 
+                        if(document.getElementById('fieldDetailsPage').classList.contains('active-page')) window.renderFieldList(); 
+                    }
+                    // Call center UI will render the same target logic as manager
                     else { if(document.getElementById('staffSearch').value.trim() === "") window.renderStaffUI(); }
                 }, 600); 
             });
@@ -599,7 +605,6 @@
                 if(document.getElementById('smsClickCount')) document.getElementById('smsClickCount').innerText = smsCount;
             });
 
-            // Setup Day Filters dynamically
             let filters = ["managerDayFilter", "staffDaySelect", "trackDaySelect", "offModalDate", "progressDaySelect"];
             filters.forEach(id => {
                 let sel = document.getElementById(id);
@@ -802,17 +807,14 @@
                 let rowC = d.listType === "Red" ? "row-red" : (isRisk ? "row-yellow" : "");
                 let isTargetToday = false; let isForwarded = false; let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
 
-                if (d.listType === "Red") { 
-                    if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedStaffDay) isTargetToday = false; else isTargetToday = true; 
+                // This logic exactly mirrors the manager's syncManagerView
+                if(selectedStaffDay === td) { 
+                    if(d.listType === "Red") isTargetToday = true; 
+                    else if(promiseDay === selectedStaffDay || agreeDay === selectedStaffDay) isTargetToday = true; 
+                    else if(agreeDay > 0 && agreeDay < selectedStaffDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) { isTargetToday = true; isForwarded = true; }
                 } else { 
-                    if (!isNaN(promiseDay) && promiseDay === selectedStaffDay) { isTargetToday = true; }
-                    else if (agreeDay === selectedStaffDay) { isTargetToday = true; }
-                    else if (agreeDay > 0 && agreeDay < selectedStaffDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) {
-                        if (selectedStaffDay === td) { isTargetToday = true; isForwarded = true; }
-                    }
-                    else if (!isNaN(promiseDay) && promiseDay > 0 && promiseDay < selectedStaffDay && (d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) {
-                        if (selectedStaffDay === td) { isTargetToday = true; isForwarded = true; }
-                    }
+                    if(promiseDay === selectedStaffDay || agreeDay === selectedStaffDay) isTargetToday = true; 
+                    else if(d.listType === "Red") isTargetToday = true; 
                 }
 
                 if (isTargetToday) { 
@@ -1272,7 +1274,7 @@
                     
                     document.getElementById('loadMsg').innerText = "⏳ Analyzing data for cleanup...";
                     
-                    let phoneWritesMap = new Map(); 
+                    let phoneWritesMap = new Map(); // 🌟 NEW PHONEBOOK LOGIC 🌟
                     
                     let excelIds = data.map(rawRow => {
                         let rawAcc = "";
@@ -1284,6 +1286,7 @@
                             for (let k in rawRow) { let valStr = String(rawRow[k]).trim(); if (valStr.includes("-") && valStr.length >= 6 && valStr.length <= 15 && !valStr.includes(" ")) { rawAcc = valStr; break; } }
                         }
                         
+                        // Extract Phone Numbers for PhoneBook Update
                         if(type === "New" || type === "Red") {
                             let cusPhone = ""; let cusName = "";
                             for (let k in rawRow) {
@@ -1296,6 +1299,7 @@
                                 phoneWritesMap.set(cleanPhone, { name: cusName, phone: cusPhone });
                             }
                         }
+                        
                         return String(rawAcc).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
                     }).filter(id => id.length >= 4);
 
@@ -1312,10 +1316,12 @@
                             }
                         }
                         
+                        // 🌟 BULK UPDATE PHONEBOOK API CALL 🌟
                         if(phoneWritesMap.size > 0) {
                             document.getElementById('loadMsg').innerText = `⏳ Updating Phonebook Directory...`;
                             let pArr = Array.from(phoneWritesMap.entries());
                             for(let i=0; i<pArr.length; i+=10) {
+                                // Save locally directly via Firestore client to save API tokens
                                 let pChunk = pArr.slice(i, i+10);
                                 await Promise.all(pChunk.map(item => setDoc(doc(db, "phoneDirectory", item[0]), { phone: item[1].phone, name: item[1].name })));
                             }
