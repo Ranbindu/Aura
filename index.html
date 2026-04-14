@@ -46,7 +46,11 @@
         .type-badge-open { background: #4caf50; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 8px; color: white; }
         .type-badge-issu { background: #f44336; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 8px; color: white; }
         
-        /* 🌟 New CSS for Special Task Popup 🌟 */
+        /* 🌟 FIXED: CSS Grid properly setup for side-by-side boxes 🌟 */
+        .progress-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-top: 20px; width: 100%; }
+        .progress-section { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .dashboard-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+
         .special-task-popup {
             position: fixed; top: 20px; right: 20px; 
             background: linear-gradient(135deg, #ffeb3b, #ff9800); 
@@ -69,7 +73,7 @@
         };
     </script>
 
-    <div id="specialTaskPopup" class="special-task-popup" onclick="alert('📌 SPECIAL TASK INSTRUCTION:\n\n' + this.dataset.msg)">
+    <div id="specialTaskPopup" class="special-task-popup" onclick="window.openStaffPromoTask()">
         🔔 Special Task! (Click to View)
     </div>
 
@@ -79,7 +83,7 @@
     </div>
 
     <div id="loginPage" class="page-container">
-        <div class="glass-panel login-box" style="max-width: 450px; margin: auto; padding: 50px; text-align: center;">
+        <div class="glass-panel" style="max-width: 450px; margin: auto; padding: 50px; text-align: center;">
             <h2>SECURE LOGIN</h2>
             <input type="text" id="username" placeholder="Email Address">
             <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()">
@@ -88,7 +92,7 @@
         </div>
     </div>
 
-    <div id="officerDashboardPage" class="page-container glass-panel mobile-container" style="max-width: 500px; margin: 0 auto; padding: 15px;">
+    <div id="officerDashboardPage" class="page-container glass-panel" style="max-width: 500px; margin: 0 auto; padding: 15px;">
         <div style="background: linear-gradient(135deg, #1b5e20, #4caf50); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2 style="margin: 0; font-size: 1.5em; text-align: left;">Welcome, <br><span id="offNameDisplay" style="color:#ffeb3b;">Officer</span></h2>
@@ -118,7 +122,7 @@
             <h2 class="branch-name">MANAGER DASHBOARD</h2>
             <button onclick="window.logout()" class="btn-danger">Logout</button>
         </div>
-        <div style="display: grid; grid-template-columns: 320px 1fr; gap: 20px;">
+        <div class="dashboard-grid">
             <div>
                 <button onclick="window.navigate('importPage')" style="width: 100%; margin-bottom: 10px;">📤 Import IFS Data</button>
                 <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
@@ -316,6 +320,19 @@
                 <button onclick="window.logout()" class="btn-danger" style="margin:0;">Logout</button>
             </div>
         </div>
+
+        <div id="staffPromoSection" style="display:none; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 2px solid #ff9800;">
+            <div class="flex-between">
+                <h3 style="color: #ffeb3b; margin: 0;">📢 Manager Assigned Promo Task</h3>
+                <button onclick="document.getElementById('staffPromoSection').style.display='none'" style="padding:5px 10px; background:#444; font-size:11px;">Close Task</button>
+            </div>
+            <p style="color: #ccc; font-style: italic; margin-bottom: 15px;">Message to send: <br><b id="staffPromoMessageDisplay" style="color: #fff; font-size: 14px;"></b></p>
+            <input type="text" id="staffPromoSearch" onkeyup="window.renderStaffPromoList()" placeholder="🔍 Search Phonebook..." style="width: 100%; margin-bottom: 10px;">
+            <div style="max-height: 250px; overflow-y: auto; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                <table style="margin: 0;"><thead><tr><th>Customer Name</th><th>Phone No</th><th>Send Promo</th></tr></thead><tbody id="staffPromoTableBody"></tbody></table>
+            </div>
+        </div>
+
         <div style="background: rgba(0,0,0,0.5); padding: 15px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
             <span style="font-weight: bold; font-size: 16px;">📅 දිනය තෝරන්න:</span>
             <select id="staffDaySelect" onchange="window.renderStaffUI()" style="width: 150px; margin: 0; padding: 8px;"></select>
@@ -469,16 +486,14 @@
                         isManagerSession = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
                         isOfficerSession = (e.includes('amila') || e.includes('rohan') || e.includes('heen') || e.includes('group'));
 
-                        // 🌟 3. SESSION TIMEOUT LOGIC (12h/24h) 🌟
+                        // 🌟 12/24 HOUR TIMEOUT LOGIC 🌟
                         let loginTimeStr = localStorage.getItem('aura_login_time');
                         if (loginTimeStr) {
                             let elapsedHours = (new Date().getTime() - parseInt(loginTimeStr)) / (1000 * 60 * 60);
                             let maxHours = isOfficerSession ? 24 : 12; 
                             if (elapsedHours >= maxHours) {
-                                alert("⚠️ ආරක්ෂිත පද්ධතිය: ඔබගේ කාල සීමාව අවසන් වී ඇත. කරුණාකර නැවත Login වන්න.");
-                                await signOut(auth);
-                                localStorage.clear(); sessionStorage.clear(); window.location.reload();
-                                return;
+                                alert("⚠️ කාල සීමාව අවසන්! කරුණාකර නැවත Login වන්න.");
+                                await signOut(auth); localStorage.clear(); sessionStorage.clear(); window.location.reload(); return;
                             }
                         } else {
                             localStorage.setItem('aura_login_time', new Date().getTime().toString());
@@ -499,16 +514,15 @@
                     }
                 });
 
-                // Auto-check session every 5 minutes internally
+                // Auto-check session every 5 minutes
                 setInterval(async () => {
                     let loginTimeStr = localStorage.getItem('aura_login_time');
                     if (loginTimeStr && auth.currentUser) {
                         let elapsedHours = (new Date().getTime() - parseInt(loginTimeStr)) / (1000 * 60 * 60);
                         let maxHours = isOfficerSession ? 24 : 12;
                         if (elapsedHours >= maxHours) {
-                            alert("⚠️ Session Expired automatically. Please login again.");
-                            await signOut(auth);
-                            localStorage.clear(); sessionStorage.clear(); window.location.reload();
+                            alert("⚠️ Session Expired. Please login again.");
+                            await signOut(auth); localStorage.clear(); sessionStorage.clear(); window.location.reload();
                         }
                     }
                 }, 300000);
@@ -521,7 +535,6 @@
         function loadInitialData(isM, isO) {
             onSnapshot(collection(db, "customers"), (snap) => {
                 masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                
                 clearTimeout(renderTimeout);
                 renderTimeout = setTimeout(() => {
                     if(isO) window.renderOfficerDashboard();
@@ -538,6 +551,7 @@
             onSnapshot(collection(db, "phoneDirectory"), (snap) => { 
                 snap.forEach(d => { phoneDirectory[d.id] = { phone: d.data().phone, name: d.data().name }; }); 
                 if(document.getElementById('promoCenterPage').classList.contains('active-page')) window.renderPromoList();
+                if(document.getElementById('staffPromoSection').style.display !== 'none') window.renderStaffPromoList();
             });
 
             onSnapshot(collection(db, "agent_mapping"), (snap) => { 
@@ -551,15 +565,17 @@
                 if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); 
             });
             
-            // 🌟 4. SPECIAL PROMO TASK LISTENER 🌟
+            // 🌟 MANAGER ASSIGNED TASK LISTENER 🌟
             onSnapshot(collection(db, "promo_tasks"), (snap) => {
                 let latestTask = null;
                 snap.forEach(d => { if(d.data().dateStr === sysToday) latestTask = d.data(); });
-                // Only show popup to Call Center Agents
-                if(latestTask && !isM && !isO) {
+                // Only Call Center Agent sees the popup
+                if(latestTask && !isManagerSession && !isOfficerSession) {
                     let popup = document.getElementById('specialTaskPopup');
                     popup.dataset.msg = latestTask.message;
                     popup.style.display = 'block';
+                } else {
+                    document.getElementById('specialTaskPopup').style.display = 'none';
                 }
             });
 
@@ -577,7 +593,6 @@
                 if(document.getElementById('smsClickCount')) document.getElementById('smsClickCount').innerText = smsCount;
             });
 
-            // Setup Day Filters dynamically
             let filters = ["managerDayFilter", "staffDaySelect", "trackDaySelect", "offModalDate", "progressDaySelect"];
             filters.forEach(id => {
                 let sel = document.getElementById(id);
@@ -604,12 +619,50 @@
             }
         };
 
-        // 🌟 MESSAGE CLICK LOGGER 🌟
+        // 🌟 LOG MESSAGE CLICKS TO DB 🌟
         window.logMessageClick = async (type) => {
             try { await addDoc(collection(db, "message_clicks"), { type: type, dateStr: sysToday, timestamp: new Date().getTime() }); } catch(e) {}
         };
 
-        // 🌟 CREATE SPECIAL TASK (MANAGER) 🌟
+        // 🌟 STAFF PROMO UI OPENER 🌟
+        window.openStaffPromoTask = () => {
+            let msg = document.getElementById('specialTaskPopup').dataset.msg;
+            document.getElementById('staffPromoMessageDisplay').innerText = msg;
+            document.getElementById('staffPromoSection').style.display = 'block';
+            document.getElementById('specialTaskPopup').style.display = 'none';
+            window.renderStaffPromoList();
+        };
+
+        // 🌟 STAFF PROMO PHONEBOOK LIST 🌟
+        window.renderStaffPromoList = () => {
+            let search = document.getElementById('staffPromoSearch') ? document.getElementById('staffPromoSearch').value.toLowerCase().trim() : "";
+            let html = "";
+            for (const [phoneKey, data] of Object.entries(phoneDirectory)) {
+                let safeName = data.name || "Customer"; let safePhone = data.phone || phoneKey;
+                if (search !== "" && !safeName.toLowerCase().includes(search) && !safePhone.includes(search)) continue;
+                if (!safePhone || safePhone.length < 9) continue; 
+                html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="text-align:left;">${safeName}</td><td>${safePhone}</td><td><button onclick="window.sendStaffPromoWA('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #25D366; margin-right: 5px; color: black; font-weight: bold;">WA</button><button onclick="window.sendStaffPromoSMS('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #2196f3;">SMS</button></td></tr>`;
+            }
+            document.getElementById('staffPromoTableBody').innerHTML = html || "<tr><td colspan='3'>No contacts found.</td></tr>";
+        };
+
+        window.sendStaffPromoWA = async (phone, name) => {
+            let rawMsg = document.getElementById('staffPromoMessageDisplay').innerText; 
+            let polishedMsg = `හිතවත් ${name},\n\n${rawMsg}\n\n- සිංගර් ගලෙන්බිඳුනුවැව`;
+            let formattedPhone = phone.replace(/[^0-9]/g, ''); if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1); 
+            window.open(`https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(polishedMsg)}`, '_blank');
+            await window.logMessageClick('WA');
+        };
+
+        window.sendStaffPromoSMS = async (phone, name) => {
+            let rawMsg = document.getElementById('staffPromoMessageDisplay').innerText; 
+            let polishedMsg = `හිතවත් ${name},\n\n${rawMsg}\n\n- සිංගර් ගලෙන්බිඳුනුවැව`;
+            let formattedPhone = phone.replace(/[^0-9]/g, ''); if(formattedPhone.startsWith('0')) formattedPhone = '+94' + formattedPhone.substring(1); 
+            window.location.href = `sms:${formattedPhone}?body=${encodeURIComponent(polishedMsg)}`;
+            await window.logMessageClick('SMS');
+        };
+
+        // 🌟 MANAGER CREATES TASK 🌟
         window.createSpecialTask = async () => {
             let msg = document.getElementById('specialTaskInput').value.trim();
             if(msg === "") { alert("❌ කරුණාකර කෝල් සෙන්ටර් එකට යැවිය යුතු පණිවිඩය ඇතුළත් කරන්න!"); return; }
@@ -620,11 +673,10 @@
             } catch(e) { alert("Error sending task: " + e.message); }
         };
 
-        // 🌟 1. PRINTABLE TARGET EXPORT (Exactly 5 Columns) 🌟
+        // 🌟 PRINTABLE EXPORT (Exactly 5 Columns) 🌟
         window.exportTargetListToExcel = () => {
             let exportData = [];
             let rows = document.querySelectorAll('#managerCCBody tr');
-            
             rows.forEach(row => {
                 if(row.style.display !== 'none' && row.id && row.id.startsWith('ccrow_')) {
                     let docId = row.id.split('_')[1];
@@ -640,16 +692,9 @@
                     }
                 }
             });
-
-            if(exportData.length === 0) { 
-                alert("No data to export! Please adjust your filters."); 
-                return; 
-            }
-
-            let ws = XLSX.utils.json_to_sheet(exportData);
-            let wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Target_List");
-            XLSX.writeFile(wb, "Aura_Target_List_" + sysToday + ".xlsx");
+            if(exportData.length === 0) { alert("No data to export! Please adjust your filters."); return; }
+            let ws = XLSX.utils.json_to_sheet(exportData); let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Target_List"); XLSX.writeFile(wb, "Aura_Target_List_" + sysToday + ".xlsx");
         };
 
         window.syncManagerView = () => {
@@ -665,12 +710,8 @@
             });
             
             sortedData.forEach(d => {
-                let dAgent = d.fieldAgent || "Unknown"; 
-                if (agentFilt !== "ALL" && dAgent !== agentFilt) return;
-                
-                let agreeDay = extractDay(d.agreeDate); 
-                let promiseDay = parseInt(d.promiseDate); 
-                let att = parseInt(d.callAttempts) || 0; 
+                let dAgent = d.fieldAgent || "Unknown"; if (agentFilt !== "ALL" && dAgent !== agentFilt) return;
+                let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate); let att = parseInt(d.callAttempts) || 0; 
                 let isRisk = (att >= 3 || d.notes === "Bad Feedback" || ((d.notes === "Call Not Answer" || d.notes === "Phone Not Working") && att >= 2)); 
                 let showOnDay = false;
                 
@@ -700,24 +741,10 @@
                         if(d.listType === "Red") targetRed++; else targetOpen++; 
                         if(d.lastCallDate === sysToday || d.notes === "Customer Paid") called++; 
                         
-                        let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; 
-                        let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; 
-                        let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`; 
-                        let displayStatus = statusText; 
+                        let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`; let displayStatus = statusText; 
+                        if(statusText === "Pending") { if(d.notes === "Call Not Answer") displayStatus = "Not Answer"; else if(d.notes === "Phone Not Working") displayStatus = "Not Working"; }
                         
-                        if(statusText === "Pending") { 
-                            if(d.notes === "Call Not Answer") displayStatus = "Not Answer"; 
-                            else if(d.notes === "Phone Not Working") displayStatus = "Not Working"; 
-                        }
-                        
-                        html += `<tr class="${rowC}" id="ccrow_${d.id}">
-                            <td>${d.accountNo} ${typeBadge}</td>
-                            <td>${cName}</td>
-                            <td>${dAgent}</td>
-                            <td>${getPhone(d)}</td>
-                            <td>${displayStatus}</td>
-                            <td>${pText}</td>
-                        </tr>`; 
+                        html += `<tr class="${rowC}" id="ccrow_${d.id}"><td>${d.accountNo} ${typeBadge}</td><td>${cName}</td><td>${dAgent}</td><td>${getPhone(d)}</td><td>${displayStatus}</td><td>${pText}</td></tr>`; 
                     }
                 }
             });
@@ -725,6 +752,7 @@
             document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`; document.getElementById('fCalled').innerText = called;
         };
 
+        // 🌟 STAFF (CALL CENTER) TARGET LOGIC FIX 🌟
         window.renderStaffUI = () => {
             let selectedStaffDay = parseInt(document.getElementById('staffDaySelect').value) || td;
             let warningDiv = document.getElementById('staffDateWarning'); let titleH2 = document.getElementById('staffTargetTitle');
@@ -751,14 +779,18 @@
                 let isTargetToday = false; let isForwarded = false; let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
 
                 if (d.listType === "Red") { 
-                    if (!(d.notes === "Promised to Pay" && promiseDay > selectedStaffDay)) isTargetToday = true; 
-                } else if (promiseDay > 0 && promiseDay <= selectedStaffDay) { 
-                    isTargetToday = true; if(promiseDay < selectedStaffDay) isForwarded = true; 
-                } else if (agreeDay > 0 && agreeDay <= selectedStaffDay && parseInt(d.callAttempts||0) === 0) { 
-                    isTargetToday = true; if(agreeDay < selectedStaffDay) isForwarded = true; 
-                } 
-                if (d.listType !== "Red" && (d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) { isTargetToday = true; isForwarded = true; }
-                
+                    isTargetToday = true;
+                    if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedStaffDay) isTargetToday = false; 
+                } else { 
+                    if (!isNaN(promiseDay) && promiseDay > 0 && promiseDay <= selectedStaffDay) { 
+                        isTargetToday = true; if(promiseDay < selectedStaffDay) isForwarded = true; 
+                    } else if (agreeDay > 0 && agreeDay <= selectedStaffDay && att === 0) { 
+                        isTargetToday = true; if(agreeDay < selectedStaffDay) isForwarded = true; 
+                    } else if (d.notes === "Call Not Answer" || d.notes === "Phone Not Working") { 
+                        isTargetToday = true; isForwarded = true; 
+                    }
+                }
+
                 if (isTargetToday) { 
                     if(d.listType === "Red") targetRed++; else targetOpen++; 
                     html += generateRowHTML(d, rowC, isForwarded); 
@@ -795,7 +827,6 @@
             let isStrictToday = (!isForwarded && d.listType !== "Red" && (extractDay(d.agreeDate) === td || parseInt(d.promiseDate) === td));
             let msgCategory = (d.listType === "Red") ? "RED" : (isStrictToday ? "TODAY" : "OVERDUE");
 
-            // 🌟 TRACKED BUTTONS 🌟
             let msgButtons = `
                 <button class="msg-btn-wa" onclick="window.logMessageClick('WA'); window.sendDirectWA('${d.id}', '${safePhone}', '${cName.replace(/'/g, "\\'")}', '${safeProd}', '${msgCategory}')">WA</button>
                 <button class="msg-btn-sms" onclick="window.logMessageClick('SMS'); alert('SMS සේවාව ක්‍රියාත්මක කර නොමැත!')">SMS</button>
@@ -852,11 +883,11 @@
                 document.getElementById('msgPreviewText').innerText = msg;
             }
 
-            let cusNic = (d.nic || "").replace(/[^A-Z0-9]/ig, '');
-            let phoneKey = cusNic !== "" ? cusNic : docId;
-            if(phoneVal !== d.phone && phoneVal !== "") { await setDoc(doc(db, "phoneDirectory", phoneKey), { phone: phoneVal, name: d.customerName }); }
+            // 🌟 PHONE PK UPSERT (Solves Duplicates) 🌟
+            let cleanPhone = phoneVal.replace(/[^0-9]/g, '');
+            if(cleanPhone.length >= 9) { await setDoc(doc(db, "phoneDirectory", cleanPhone), { phone: phoneVal, name: d.customerName }); }
             
-            await updateDoc(doc(db, "customers", docId), { callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
+            await updateDoc(doc(db, "customers", docId), { phone: phoneVal, callAttempts: currentAtt, notes: action, promiseDate: pDate, lastCallDate: sysToday });
             
             if(btnSave) { btnSave.innerText = "SAVED"; btnSave.style.background = "#4caf50"; }
             setTimeout(() => { let row = document.getElementById(`row_${docId}`); if(row) row.style.display = 'none'; if(document.getElementById('staffSearch').value.trim() === "") { window.renderStaffUI(); } }, 800); 
@@ -920,7 +951,7 @@
             document.getElementById('officerActionModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
         };
 
-        // 🌟 2. FIELD SAVE ISSUE & 5 MINUTE LOGIC FIXED (Promises used to guarantee sequence) 🌟
+        // 🌟 2. DOUBLE CLICK FIX & 5-MIN COOLDOWN 🌟
         window.saveOfficerData = async () => {
             let docId = document.getElementById('offModalAccNo').value;
             let action = document.getElementById('offModalAction').value;
@@ -930,56 +961,39 @@
             if(action === "") { alert("❌ කරුණාකර Status එකක් තෝරන්න!"); return; }
             if(action === "Promised to Pay" && pDate === "") { alert("❌ කරුණාකර Promise Date එකක් තෝරන්න!"); return; }
 
-            // 🌟 5-Minute Cooldown Block 🌟
             let lastSaveStr = localStorage.getItem('lastVisitSaveTime');
             if(lastSaveStr) {
                 let lastSave = parseInt(lastSaveStr);
-                if((new Date().getTime() - lastSave) < 300000) { // 300000ms = 5 minutes
+                if((new Date().getTime() - lastSave) < 300000) { // 5 mins
                     let remMin = 5 - Math.floor((new Date().getTime() - lastSave) / 60000);
                     alert(`⚠️ ආරක්ෂිත පද්ධතිය: ඊළඟ ගිණුම Update කිරීමට තව විනාඩි ${remMin} ක් රැඳී සිටින්න.`);
                     return;
                 }
             }
 
-            saveBtn.innerText = "⏳ Saving Location...";
-            saveBtn.disabled = true; // Disable button to prevent double clicks
+            saveBtn.innerText = "⏳ Saving..."; saveBtn.disabled = true;
 
             if (!navigator.geolocation) {
-                alert("❌ GPS Tracking is not supported by your browser!");
-                saveBtn.innerText = "💾 Save & Update GPS"; saveBtn.disabled = false;
-                return;
+                alert("❌ GPS Tracking is not supported!"); saveBtn.innerText = "💾 Save & Update GPS"; saveBtn.disabled = false; return;
             }
 
-            const getGPS = () => new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-            });
-            const getGPSFallback = () => new Promise((resolve, reject) => {
-                navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
-            });
+            const getGPS = () => new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }));
+            const getGPSFallback = () => new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }));
 
             try {
                 let pos;
-                try { pos = await getGPS(); } 
-                catch(e) { console.warn("High Accuracy Failed, trying normal GPS..."); pos = await getGPSFallback(); }
-
-                let lat = pos.coords.latitude;
-                let lng = pos.coords.longitude;
+                try { pos = await getGPS(); } catch(e) { pos = await getGPSFallback(); }
+                let lat = pos.coords.latitude; let lng = pos.coords.longitude;
                 let d = masterData.find(x => x.id === docId);
                 
-                // Wait for both DB writes to fully finish
                 await updateDoc(doc(db, "customers", docId), { notes: action, promiseDate: pDate, lastCallDate: sysToday });
-                await addDoc(collection(db, "field_visits"), {
-                    officer: currentOfficerName, accountNo: d.accountNo, customerName: d.customerName, action: action, promiseDate: pDate,
-                    lat: lat, lng: lng, timestamp: new Date().getTime(), dateStr: sysToday, timeStr: new Date().toLocaleTimeString()
-                });
+                await addDoc(collection(db, "field_visits"), { officer: currentOfficerName, accountNo: d.accountNo, customerName: d.customerName, action: action, promiseDate: pDate, lat: lat, lng: lng, timestamp: new Date().getTime(), dateStr: sysToday, timeStr: new Date().toLocaleTimeString() });
 
                 localStorage.setItem('lastVisitSaveTime', new Date().getTime().toString());
                 alert(`✅ Visit & GPS saved successfully!`);
-                window.closeModal();
-                document.getElementById('offSearchInput').value = ""; document.getElementById('offSearchResult').style.display = "none";
+                window.closeModal(); document.getElementById('offSearchInput').value = ""; document.getElementById('offSearchResult').style.display = "none";
             } catch(e) {
-                if(e.code && e.code === 1) alert("❌ GPS Location Failed! Please turn on Location/GPS.");
-                else alert("❌ Error saving data: " + e.message);
+                if(e.code && e.code === 1) alert("❌ GPS Failed! Turn on Location."); else alert("❌ Error: " + e.message);
             } finally {
                 saveBtn.innerText = "💾 Save & Update GPS"; saveBtn.disabled = false;
             }
@@ -1124,8 +1138,8 @@
         window.renderPromoList = () => {
             let search = document.getElementById('promoSearch') ? document.getElementById('promoSearch').value.toLowerCase().trim() : "";
             let html = ""; let count = 0;
-            for (const [nic, data] of Object.entries(phoneDirectory)) {
-                let safeName = data.name || "Customer"; let safePhone = data.phone || "";
+            for (const [phoneKey, data] of Object.entries(phoneDirectory)) {
+                let safeName = data.name || "Customer"; let safePhone = data.phone || phoneKey;
                 if (search !== "" && !safeName.toLowerCase().includes(search) && !safePhone.includes(search)) continue;
                 if (!safePhone || safePhone.length < 9) continue; 
                 count++;
@@ -1149,9 +1163,10 @@
 
         window.copyAllNumbers = () => {
             let numbers = [];
-            for (const [nic, data] of Object.entries(phoneDirectory)) {
-                if (data.phone && data.phone.length >= 9) {
-                    let formattedPhone = data.phone.replace(/[^0-9]/g, ''); if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1);
+            for (const [phoneKey, data] of Object.entries(phoneDirectory)) {
+                let p = data.phone || phoneKey;
+                if (p && p.length >= 9) {
+                    let formattedPhone = p.replace(/[^0-9]/g, ''); if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1);
                     numbers.push(formattedPhone);
                 }
             }
@@ -1179,8 +1194,8 @@
             let phone = document.getElementById('msgTargetPhone').value; let msg = document.getElementById('msgPreviewText').innerText;
             if(!phone || phone === "N/A" || phone.trim() === "") { alert("පාරිභෝගිකයාගේ දුරකථන අංකය සොයාගත නොහැක!"); return; }
             let formattedPhone = phone.replace(/[^0-9]/g, '');
-            if (type === 'WA') { if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1); window.open(`https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(msg)}`, '_blank'); } 
-            else if (type === 'SMS') { if(formattedPhone.startsWith('0')) formattedPhone = '+94' + formattedPhone.substring(1); window.location.href = `sms:${formattedPhone}?body=${encodeURIComponent(msg)}`; }
+            if (type === 'WA') { if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1); window.open(`https://web.whatsapp.com/send?phone=${formattedPhone}&text=${encodeURIComponent(msg)}`, '_blank'); window.logMessageClick('WA'); } 
+            else if (type === 'SMS') { if(formattedPhone.startsWith('0')) formattedPhone = '+94' + formattedPhone.substring(1); window.location.href = `sms:${formattedPhone}?body=${encodeURIComponent(msg)}`; window.logMessageClick('SMS'); }
             window.closeMessagingModal();
         };
 
@@ -1192,8 +1207,8 @@
         };
 
         window.downloadPhoneDirectory = () => {
-            let csvContent = "data:text/csv;charset=utf-8,ID/Account Number,Customer Name,Phone Number\n";
-            for (const [acc, data] of Object.entries(phoneDirectory)) { let cleanName = (data.name || 'N/A').replace(/,/g, ''); csvContent += `${acc},"${cleanName}",${data.phone}\n`; }
+            let csvContent = "data:text/csv;charset=utf-8,Phone Number,Customer Name\n";
+            for (const [phoneKey, data] of Object.entries(phoneDirectory)) { let cleanName = (data.name || 'N/A').replace(/,/g, ''); csvContent += `${phoneKey},"${cleanName}"\n`; }
             var encodedUri = encodeURI(csvContent); var link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Phonebook_Full.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
 
@@ -1217,6 +1232,9 @@
                     const token = await user.getIdToken(); const workbook = XLSX.read(e.target.result, {type:'array'}); const data = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {raw: false, dateNF: 'yyyy-mm-dd'});
                     
                     document.getElementById('loadMsg').innerText = "⏳ Analyzing data for cleanup...";
+                    
+                    let phoneWritesMap = new Map(); // 🌟 NEW PHONEBOOK LOGIC 🌟
+                    
                     let excelIds = data.map(rawRow => {
                         let rawAcc = "";
                         for (let k in rawRow) {
@@ -1226,6 +1244,21 @@
                         if(!rawAcc) {
                             for (let k in rawRow) { let valStr = String(rawRow[k]).trim(); if (valStr.includes("-") && valStr.length >= 6 && valStr.length <= 15 && !valStr.includes(" ")) { rawAcc = valStr; break; } }
                         }
+                        
+                        // Extract Phone Numbers for PhoneBook Update
+                        if(type === "New" || type === "Red") {
+                            let cusPhone = ""; let cusName = "";
+                            for (let k in rawRow) {
+                                let ck = String(k).toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                if (['MOBILENO', 'LPHONE', 'PHONE', 'MOBILE_NO'].includes(ck)) cusPhone = String(rawRow[k]).trim();
+                                if (['CUSTNAME', 'NAME', 'CUSTOMERNAME', 'CUST_NAME'].includes(ck)) cusName = String(rawRow[k]).trim();
+                            }
+                            let cleanPhone = cusPhone.replace(/[^0-9]/g, '');
+                            if(cleanPhone.length >= 9) {
+                                phoneWritesMap.set(cleanPhone, { name: cusName, phone: cusPhone });
+                            }
+                        }
+                        
                         return String(rawAcc).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
                     }).filter(id => id.length >= 4);
 
@@ -1239,6 +1272,17 @@
                             for (let i = 0; i < cleanupIds.length; i += 400) {
                                 let chunk = cleanupIds.slice(i, i + 400);
                                 await fetch(CLOUD_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ action: "cleanup", type: type, ids: chunk }) });
+                            }
+                        }
+                        
+                        // 🌟 BULK UPDATE PHONEBOOK API CALL 🌟
+                        if(phoneWritesMap.size > 0) {
+                            document.getElementById('loadMsg').innerText = `⏳ Updating Phonebook Directory...`;
+                            let pArr = Array.from(phoneWritesMap.entries());
+                            for(let i=0; i<pArr.length; i+=10) {
+                                // Save locally directly via Firestore client to save API tokens
+                                let pChunk = pArr.slice(i, i+10);
+                                await Promise.all(pChunk.map(item => setDoc(doc(db, "phoneDirectory", item[0]), { phone: item[1].phone, name: item[1].name })));
                             }
                         }
                     }
@@ -1256,7 +1300,11 @@
             reader.readAsArrayBuffer(file);
         };
         
-        function getPhone(d) { let lookup = d.nic ? d.nic.replace(/[^A-Z0-9]/ig, '') : d.id; return phoneDirectory[lookup] ? phoneDirectory[lookup].phone : (d.phone || 'N/A'); }
+        function getPhone(d) {
+            let p = d.phone ? d.phone.replace(/[^0-9]/g, '') : '';
+            if (p && phoneDirectory[p]) return phoneDirectory[p].phone;
+            return d.phone || 'N/A';
+        }
         function extractDay(s) { if(!s) return -1; let d = String(s).trim().split(" ")[0]; if(d.includes("-")) return parseInt(d.split("-")[2]); if(d.includes("/")) return parseInt(d.split("/")[0]); return parseInt(d); }
 
         bootSecureSystem();
