@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Recovery Management System</title>
     
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4caf50">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1055/1055661.png">
@@ -47,7 +51,7 @@
         .type-badge-issu { background: #f44336; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: bold; margin-left: 8px; color: white; }
         
         /* 🌟 FIXED: CSS Grid properly setup for side-by-side boxes 🌟 */
-        .progress-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-top: 20px; width: 100%; }
+        .progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; width: 100%; }
         .progress-section { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
         .dashboard-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
 
@@ -83,7 +87,7 @@
     </div>
 
     <div id="loginPage" class="page-container">
-        <div class="glass-panel" style="max-width: 450px; margin: auto; padding: 50px; text-align: center;">
+        <div class="glass-panel login-box" style="max-width: 450px; margin: auto; padding: 50px; text-align: center;">
             <h2>SECURE LOGIN</h2>
             <input type="text" id="username" placeholder="Email Address">
             <input type="password" id="password" placeholder="Password" onkeypress="if(event.key==='Enter') window.login()">
@@ -92,7 +96,7 @@
         </div>
     </div>
 
-    <div id="officerDashboardPage" class="page-container glass-panel" style="max-width: 500px; margin: 0 auto; padding: 15px;">
+    <div id="officerDashboardPage" class="page-container glass-panel mobile-container" style="max-width: 500px; margin: 0 auto; padding: 15px;">
         <div style="background: linear-gradient(135deg, #1b5e20, #4caf50); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2 style="margin: 0; font-size: 1.5em; text-align: left;">Welcome, <br><span id="offNameDisplay" style="color:#ffeb3b;">Officer</span></h2>
@@ -128,7 +132,7 @@
                 <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Logs</button>
                 <button onclick="window.navigate('promoCenterPage'); window.renderPromoList();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #ff9800, #e65100);">📢 PROMOTION CENTER</button>
-                <button onclick="window.downloadPhoneDirectory()" class="btn-download" style="width: 100%; margin-bottom: 10px;">📥 Download Phonebook DB</button>
+                <button onclick="window.downloadPhoneDirectory()" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #00bcd4, #01579b);">📥 Download Phonebook DB</button>
                 <button onclick="window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="width: 100%; margin-bottom: 10px; background: #1b5e20;">📍 Field Tracking (Live)</button>
                 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50; display: flex; justify-content: space-around;">
@@ -486,14 +490,15 @@
                         isManagerSession = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
                         isOfficerSession = (e.includes('amila') || e.includes('rohan') || e.includes('heen') || e.includes('group'));
 
-                        // 🌟 12/24 HOUR TIMEOUT LOGIC 🌟
+                        // 🌟 3. SESSION TIMEOUT LOGIC (12h/24h) 🌟
                         let loginTimeStr = localStorage.getItem('aura_login_time');
                         if (loginTimeStr) {
                             let elapsedHours = (new Date().getTime() - parseInt(loginTimeStr)) / (1000 * 60 * 60);
                             let maxHours = isOfficerSession ? 24 : 12; 
                             if (elapsedHours >= maxHours) {
-                                alert("⚠️ කාල සීමාව අවසන්! කරුණාකර නැවත Login වන්න.");
-                                await signOut(auth); localStorage.clear(); sessionStorage.clear(); window.location.reload(); return;
+                                alert("⚠️ ආරක්ෂිත පද්ධතිය: ඔබගේ කාල සීමාව අවසන් වී ඇත. කරුණාකර නැවත Login වන්න.");
+                                await window.logout();
+                                return;
                             }
                         } else {
                             localStorage.setItem('aura_login_time', new Date().getTime().toString());
@@ -514,15 +519,15 @@
                     }
                 });
 
-                // Auto-check session every 5 minutes
+                // Auto-check session every 5 minutes internally
                 setInterval(async () => {
                     let loginTimeStr = localStorage.getItem('aura_login_time');
                     if (loginTimeStr && auth.currentUser) {
                         let elapsedHours = (new Date().getTime() - parseInt(loginTimeStr)) / (1000 * 60 * 60);
                         let maxHours = isOfficerSession ? 24 : 12;
                         if (elapsedHours >= maxHours) {
-                            alert("⚠️ Session Expired. Please login again.");
-                            await signOut(auth); localStorage.clear(); sessionStorage.clear(); window.location.reload();
+                            alert("⚠️ Session Expired automatically. Please login again.");
+                            await window.logout();
                         }
                     }
                 }, 300000);
@@ -535,6 +540,7 @@
         function loadInitialData(isM, isO) {
             onSnapshot(collection(db, "customers"), (snap) => {
                 masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                
                 clearTimeout(renderTimeout);
                 renderTimeout = setTimeout(() => {
                     if(isO) window.renderOfficerDashboard();
@@ -565,7 +571,7 @@
                 if(document.getElementById('bmIssuePage').classList.contains('active-page')) window.renderBMIssues(); 
             });
             
-            // 🌟 MANAGER ASSIGNED TASK LISTENER 🌟
+            // 🌟 4. SPECIAL PROMO TASK LISTENER 🌟
             onSnapshot(collection(db, "promo_tasks"), (snap) => {
                 let latestTask = null;
                 snap.forEach(d => { if(d.data().dateStr === sysToday) latestTask = d.data(); });
@@ -593,6 +599,7 @@
                 if(document.getElementById('smsClickCount')) document.getElementById('smsClickCount').innerText = smsCount;
             });
 
+            // Setup Day Filters dynamically
             let filters = ["managerDayFilter", "staffDaySelect", "trackDaySelect", "offModalDate", "progressDaySelect"];
             filters.forEach(id => {
                 let sel = document.getElementById(id);
@@ -607,7 +614,17 @@
             });
         }
 
-        window.logout = async () => { await signOut(auth); localStorage.clear(); sessionStorage.clear(); location.reload(); };
+        // 🌟 3. BROWSER CACHE CLEARING ON LOGOUT 🌟
+        window.logout = async () => { 
+            await signOut(auth); 
+            localStorage.clear(); 
+            sessionStorage.clear(); 
+            if ('caches' in window) {
+                const names = await caches.keys();
+                for (const name of names) { await caches.delete(name); }
+            }
+            window.location.reload(true); 
+        };
         
         window.login = async () => {
             document.getElementById('loginStatus').innerText = "⏳ Authenticating...";
@@ -633,14 +650,21 @@
             window.renderStaffPromoList();
         };
 
-        // 🌟 STAFF PROMO PHONEBOOK LIST 🌟
+        // 🌟 1. STAFF PROMO PHONEBOOK LIST (No Duplicates) 🌟
         window.renderStaffPromoList = () => {
             let search = document.getElementById('staffPromoSearch') ? document.getElementById('staffPromoSearch').value.toLowerCase().trim() : "";
             let html = "";
+            let seenPhones = new Set(); // Prevent Duplicates on UI level
+            
             for (const [phoneKey, data] of Object.entries(phoneDirectory)) {
                 let safeName = data.name || "Customer"; let safePhone = data.phone || phoneKey;
                 if (search !== "" && !safeName.toLowerCase().includes(search) && !safePhone.includes(search)) continue;
                 if (!safePhone || safePhone.length < 9) continue; 
+                
+                let cleanP = safePhone.replace(/[^0-9]/g, '');
+                if (seenPhones.has(cleanP)) continue;
+                seenPhones.add(cleanP);
+
                 html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="text-align:left;">${safeName}</td><td>${safePhone}</td><td><button onclick="window.sendStaffPromoWA('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #25D366; margin-right: 5px; color: black; font-weight: bold;">WA</button><button onclick="window.sendStaffPromoSMS('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #2196f3;">SMS</button></td></tr>`;
             }
             document.getElementById('staffPromoTableBody').innerHTML = html || "<tr><td colspan='3'>No contacts found.</td></tr>";
@@ -673,7 +697,7 @@
             } catch(e) { alert("Error sending task: " + e.message); }
         };
 
-        // 🌟 PRINTABLE EXPORT (Exactly 5 Columns) 🌟
+        // 🌟 1. PRINTABLE EXPORT (Exactly 5 Columns) 🌟
         window.exportTargetListToExcel = () => {
             let exportData = [];
             let rows = document.querySelectorAll('#managerCCBody tr');
@@ -752,7 +776,7 @@
             document.getElementById('fTarget').innerHTML = `${targetOpen + targetRed} <span style="font-size:12px; opacity:0.8;">(Open: ${targetOpen} | Issu: ${targetRed})</span>`; document.getElementById('fCalled').innerText = called;
         };
 
-        // 🌟 STAFF (CALL CENTER) TARGET LOGIC FIX 🌟
+        // 🌟 2. STAFF (CALL CENTER) TARGET LOGIC FIX 🌟
         window.renderStaffUI = () => {
             let selectedStaffDay = parseInt(document.getElementById('staffDaySelect').value) || td;
             let warningDiv = document.getElementById('staffDateWarning'); let titleH2 = document.getElementById('staffTargetTitle');
@@ -779,15 +803,15 @@
                 let isTargetToday = false; let isForwarded = false; let agreeDay = extractDay(d.agreeDate); let promiseDay = parseInt(d.promiseDate);
 
                 if (d.listType === "Red") { 
-                    isTargetToday = true;
-                    if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedStaffDay) isTargetToday = false; 
+                    if (d.notes === "Promised to Pay" && !isNaN(promiseDay) && promiseDay > selectedStaffDay) isTargetToday = false; else isTargetToday = true; 
                 } else { 
-                    if (!isNaN(promiseDay) && promiseDay > 0 && promiseDay <= selectedStaffDay) { 
-                        isTargetToday = true; if(promiseDay < selectedStaffDay) isForwarded = true; 
-                    } else if (agreeDay > 0 && agreeDay <= selectedStaffDay && att === 0) { 
-                        isTargetToday = true; if(agreeDay < selectedStaffDay) isForwarded = true; 
-                    } else if (d.notes === "Call Not Answer" || d.notes === "Phone Not Working") { 
-                        isTargetToday = true; isForwarded = true; 
+                    if (!isNaN(promiseDay) && promiseDay === selectedStaffDay) { isTargetToday = true; }
+                    else if (agreeDay === selectedStaffDay) { isTargetToday = true; }
+                    else if (agreeDay > 0 && agreeDay < selectedStaffDay && (att === 0 || d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) {
+                        if (selectedStaffDay === td) { isTargetToday = true; isForwarded = true; }
+                    }
+                    else if (!isNaN(promiseDay) && promiseDay > 0 && promiseDay < selectedStaffDay && (d.notes === "Call Not Answer" || d.notes === "Phone Not Working")) {
+                        if (selectedStaffDay === td) { isTargetToday = true; isForwarded = true; }
                     }
                 }
 
@@ -883,7 +907,7 @@
                 document.getElementById('msgPreviewText').innerText = msg;
             }
 
-            // 🌟 PHONE PK UPSERT (Solves Duplicates) 🌟
+            // 🌟 1. PHONE PK UPSERT (Solves Duplicates) 🌟
             let cleanPhone = phoneVal.replace(/[^0-9]/g, '');
             if(cleanPhone.length >= 9) { await setDoc(doc(db, "phoneDirectory", cleanPhone), { phone: phoneVal, name: d.customerName }); }
             
@@ -951,7 +975,7 @@
             document.getElementById('officerActionModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
         };
 
-        // 🌟 2. DOUBLE CLICK FIX & 5-MIN COOLDOWN 🌟
+        // 🌟 2. FIELD SAVE ISSUE & 5-MIN COOLDOWN FIXED (Promises used to guarantee sequence) 🌟
         window.saveOfficerData = async () => {
             let docId = document.getElementById('offModalAccNo').value;
             let action = document.getElementById('offModalAction').value;
@@ -1135,13 +1159,21 @@
             });
         };
 
+        // 🌟 1. PROMO LIST AUTO FILTER DUPLICATES 🌟
         window.renderPromoList = () => {
             let search = document.getElementById('promoSearch') ? document.getElementById('promoSearch').value.toLowerCase().trim() : "";
             let html = ""; let count = 0;
+            let seenPhones = new Set();
+            
             for (const [phoneKey, data] of Object.entries(phoneDirectory)) {
                 let safeName = data.name || "Customer"; let safePhone = data.phone || phoneKey;
                 if (search !== "" && !safeName.toLowerCase().includes(search) && !safePhone.includes(search)) continue;
                 if (!safePhone || safePhone.length < 9) continue; 
+                
+                let cleanP = safePhone.replace(/[^0-9]/g, '');
+                if(seenPhones.has(cleanP)) continue;
+                seenPhones.add(cleanP);
+                
                 count++;
                 html += `<tr style="border-bottom: 1px solid rgba(255,255,255,0.1);"><td style="text-align:left;">${safeName}</td><td>${safePhone}</td><td><button onclick="window.sendPromoWA('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #25D366; margin-right: 5px; color: black; font-weight: bold;">WA</button><button onclick="window.sendPromoSMS('${safePhone}', '${safeName.replace(/'/g, "\\'")}')" style="padding: 5px 10px; font-size: 11px; background: #2196f3;">SMS</button></td></tr>`;
             }
@@ -1162,15 +1194,15 @@
         };
 
         window.copyAllNumbers = () => {
-            let numbers = [];
+            let numbers = []; let seen = new Set();
             for (const [phoneKey, data] of Object.entries(phoneDirectory)) {
                 let p = data.phone || phoneKey;
                 if (p && p.length >= 9) {
                     let formattedPhone = p.replace(/[^0-9]/g, ''); if(formattedPhone.startsWith('0')) formattedPhone = '94' + formattedPhone.substring(1);
-                    numbers.push(formattedPhone);
+                    if(!seen.has(formattedPhone)) { numbers.push(formattedPhone); seen.add(formattedPhone); }
                 }
             }
-            navigator.clipboard.writeText(numbers.join(', ')).then(() => { alert(`✅ Copied ${numbers.length} numbers to clipboard successfully!`); }).catch(err => { alert("❌ Failed to copy numbers."); });
+            navigator.clipboard.writeText(numbers.join(', ')).then(() => { alert(`✅ Copied ${numbers.length} unique numbers to clipboard successfully!`); }).catch(err => { alert("❌ Failed to copy numbers."); });
         };
 
         window.sendDirectWA = async (docId, phone, name, prod, msgCategory) => {
@@ -1208,7 +1240,14 @@
 
         window.downloadPhoneDirectory = () => {
             let csvContent = "data:text/csv;charset=utf-8,Phone Number,Customer Name\n";
-            for (const [phoneKey, data] of Object.entries(phoneDirectory)) { let cleanName = (data.name || 'N/A').replace(/,/g, ''); csvContent += `${phoneKey},"${cleanName}"\n`; }
+            let seen = new Set();
+            for (const [phoneKey, data] of Object.entries(phoneDirectory)) { 
+                let cleanP = (data.phone || phoneKey).replace(/[^0-9]/g, '');
+                if(!seen.has(cleanP)) {
+                    let cleanName = (data.name || 'N/A').replace(/,/g, ''); csvContent += `${cleanP},"${cleanName}"\n`; 
+                    seen.add(cleanP);
+                }
+            }
             var encodedUri = encodeURI(csvContent); var link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", "Aura_Phonebook_Full.csv"); document.body.appendChild(link); link.click(); document.body.removeChild(link);
         };
 
@@ -1233,7 +1272,7 @@
                     
                     document.getElementById('loadMsg').innerText = "⏳ Analyzing data for cleanup...";
                     
-                    let phoneWritesMap = new Map(); // 🌟 NEW PHONEBOOK LOGIC 🌟
+                    let phoneWritesMap = new Map(); 
                     
                     let excelIds = data.map(rawRow => {
                         let rawAcc = "";
@@ -1245,7 +1284,6 @@
                             for (let k in rawRow) { let valStr = String(rawRow[k]).trim(); if (valStr.includes("-") && valStr.length >= 6 && valStr.length <= 15 && !valStr.includes(" ")) { rawAcc = valStr; break; } }
                         }
                         
-                        // Extract Phone Numbers for PhoneBook Update
                         if(type === "New" || type === "Red") {
                             let cusPhone = ""; let cusName = "";
                             for (let k in rawRow) {
@@ -1258,7 +1296,6 @@
                                 phoneWritesMap.set(cleanPhone, { name: cusName, phone: cusPhone });
                             }
                         }
-                        
                         return String(rawAcc).trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
                     }).filter(id => id.length >= 4);
 
@@ -1275,12 +1312,10 @@
                             }
                         }
                         
-                        // 🌟 BULK UPDATE PHONEBOOK API CALL 🌟
                         if(phoneWritesMap.size > 0) {
                             document.getElementById('loadMsg').innerText = `⏳ Updating Phonebook Directory...`;
                             let pArr = Array.from(phoneWritesMap.entries());
                             for(let i=0; i<pArr.length; i+=10) {
-                                // Save locally directly via Firestore client to save API tokens
                                 let pChunk = pArr.slice(i, i+10);
                                 await Promise.all(pChunk.map(item => setDoc(doc(db, "phoneDirectory", item[0]), { phone: item[1].phone, name: item[1].name })));
                             }
