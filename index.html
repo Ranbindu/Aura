@@ -38,7 +38,6 @@
         th { background-color: rgba(0, 0, 0, 0.8); color: #81c784; padding: 15px; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
         td { padding: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
         
-        /* 🌟 Advanced Highlights for Pigeon Hole 🌟 */
         .row-yellow { background-color: rgba(255, 193, 7, 0.25) !important; border-left: 5px solid #ffeb3b; } 
         .row-red { background-color: rgba(244, 67, 54, 0.4); }
         .row-green { background-color: rgba(76, 175, 80, 0.25); }
@@ -64,7 +63,6 @@
         .msg-btn-wa { padding: 4px 8px; font-size: 11px; background: #25D366; border-radius: 5px; cursor: pointer; border: none; color: white; font-weight: bold; margin-right: 5px; }
         .msg-btn-sms { padding: 4px 8px; font-size: 11px; background: #2196f3; border-radius: 5px; cursor: pointer; border: none; color: white; font-weight: bold; }
 
-        /* Field Officer Mobile UI Styles */
         .mobile-container { max-width: 500px; margin: 0 auto; padding: 15px; }
         .mobile-header { background: linear-gradient(135deg, #1b5e20, #4caf50); padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .mobile-stat-row { display: flex; justify-content: space-between; margin-top: 15px; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; }
@@ -73,7 +71,7 @@
         .mobile-card { background: rgba(0,0,0,0.7); border: 1px solid #4caf50; border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         .mobile-promise-list { background: rgba(255,152,0,0.2); border: 1px solid #ff9800; padding: 15px; border-radius: 15px; margin-bottom: 20px; }
         
-        /* 🌟 UI GRIDS 🌟 */
+        /* 🌟 FIXED: CSS Grid properly setup for side-by-side boxes 🌟 */
         .progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 20px; width: 100%; }
         .progress-section { background: rgba(0, 0, 0, 0.5); padding: 25px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); }
         .dashboard-grid { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
@@ -156,7 +154,7 @@
                 <button onclick="window.navigateProgress()" style="width: 100%; margin-bottom: 10px;">📊 Performance Overview</button>
                 <button onclick="window.navigateManagerCC()" style="width: 100%; margin-bottom: 10px;">📋 Call Center Logs</button>
                 <button onclick="window.navigate('promoCenterPage'); window.renderPromoList();" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #ff9800, #e65100);">📢 PROMOTION CENTER</button>
-                <button onclick="window.downloadPhoneDirectory()" class="btn-download" style="width: 100%; margin-bottom: 10px; background: linear-gradient(135deg, #00bcd4, #01579b);">📥 Download Phonebook DB</button>
+                <button onclick="window.downloadPhoneDirectory()" class="btn-download" style="width: 100%; margin-bottom: 10px;">📥 Download Phonebook DB</button>
                 <button onclick="window.navigate('managerTrackingPage'); window.renderManagerTracking();" style="width: 100%; margin-bottom: 10px; background: #1b5e20;">📍 Field Tracking (Live)</button>
                 
                 <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: center; border: 1px solid #4caf50; display: flex; justify-content: space-around;">
@@ -171,7 +169,7 @@
                     <div class="stat-value" id="dashTotal">0</div>
                 </div>
                 <div class="stat-box" style="border-color:#ffc107;">
-                    <div><span style="color: #ffeb3b;">Not Responding Account (Risk)</span><br><b style="color: #ffe082;">Risk Amount: <span id="dashYellowValue">Rs. 0</span></b><br><button onclick="window.filterRiskAccounts()" style="padding: 4px 10px; font-size: 11px; margin-top:5px;">View</button></div>
+                    <div><span style="color: #ffeb3b;">Not Responding Account (Risk)</span><br><b style="color: #ffe082;">Risk Amount: <span id="dashYellowValue">Rs. 0</span></b></div>
                     <div class="stat-value" id="dashYellow">0</div>
                 </div>
                 <div class="stat-box" style="border-color:#f44336;">
@@ -360,12 +358,9 @@
             <span style="font-weight: bold; font-size: 16px;">📅 දිනය තෝරන්න:</span>
             <select id="staffDaySelect" onchange="window.renderStaffUI()" style="width: 150px; margin: 0; padding: 8px;"></select>
         </div>
-        <div id="staffDateWarning" style="display: none; background: rgba(244, 67, 54, 0.9); border: 2px solid #ff5252; color: white; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 20px; font-weight: bold;">
-            ⚠️ අවධානයට: ඔබ අද දිනය තෝරාගෙන නොමැත!
-        </div>
         
         <table id="staffTable">
-            <thead><tr><th>Account</th><th>Name</th><th>Product</th><th>Mobile</th><th>Action</th><th>Att.</th><th>P. Date</th><th>Send Msg</th><th>Save</th></tr></thead>
+            <thead><tr><th>Account No</th><th>Name</th><th>Product</th><th>Mobile No</th><th>Action / Feedback</th><th>Att.</th><th>P. Date</th><th>Send Msg</th><th>Save</th></tr></thead>
             <tbody id="staffTableBody"></tbody>
         </table>
     </div>
@@ -466,6 +461,17 @@
         <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 20px;">Close Window</button>
     </div>
 
+    <div id="bmPaymentModal" class="glass-panel" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1001; width: 420px; padding: 30px;">
+        <h2 style="border-bottom: 2px solid #9c27b0; padding-bottom: 10px; color: #ce93d8;">UPDATE PAYMENT</h2>
+        <p>Account: <b id="payAcc" style="color: #ffeb3b;"></b></p>
+        <p>Balance: <b id="payBal" style="color: #ff9800;"></b></p>
+        <input type="hidden" id="payDocId"><input type="hidden" id="payCurrentSettled"><input type="hidden" id="payCurrentIssued">
+        <label>අලුතින් ලැබුණු මුදල:</label>
+        <input type="number" id="payNewAmt" placeholder="Ex: 2500" style="font-size: 18px; font-weight: bold;">
+        <button onclick="window.saveBMPayment()" style="width: 100%; background: #9c27b0; margin-top: 20px;">Save Payment</button>
+        <button onclick="window.closeModal()" style="width: 100%; background: #444; margin-top: 10px;">Cancel</button>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -497,7 +503,7 @@
                         isManagerSession = (e === 'bmgb@gmail.com' || e.includes('manager') || e.includes('admin') || e.includes('bm'));
                         isOfficerSession = (e.includes('amila') || e.includes('rohan') || e.includes('heen') || e.includes('group'));
 
-                        // 🌟 SESSION 12h/24h LOGIC 🌟
+                        // 🌟 12H/24H LOGIC & CACHE BUST 🌟
                         let loginTimeStr = localStorage.getItem('aura_login_time');
                         if (loginTimeStr) {
                             let elapsedHours = (new Date().getTime() - parseInt(loginTimeStr)) / (1000 * 60 * 60);
@@ -582,7 +588,7 @@
             });
         }
 
-        // 🌟 CACHE CLEARING ON LOGOUT 🌟
+        // 🌟 CACHE CLEAR FIX 🌟
         window.logout = async () => { 
             await signOut(auth); localStorage.clear(); sessionStorage.clear(); 
             if ('caches' in window) { const names = await caches.keys(); for (const name of names) { await caches.delete(name); } }
@@ -634,7 +640,6 @@
             try { await addDoc(collection(db, "promo_tasks"), { message: msg, dateStr: sysToday, timestamp: new Date().getTime() }); alert("✅ Task successfully sent to Call Center!"); document.getElementById('specialTaskInput').value = ""; } catch(e) { alert("Error sending task: " + e.message); }
         };
 
-        // 🌟 PRINTABLE EXPORT (Exactly 5 Columns) 🌟
         window.exportTargetListToExcel = () => {
             let exportData = []; let rows = document.querySelectorAll('#managerCCBody tr');
             rows.forEach(row => {
@@ -676,11 +681,7 @@
                     if (filterStatus === "RISK" && !isRisk) show = false;
                     
                     if(show) { 
-                        targetTot++; 
-                        if(d.lastCallDate === sysToday || d.notes === "Customer Paid") called++; 
-                        if(d.notes === "Call Not Answer" || d.notes === "Phone Not Working") missed++;
-                        if(d.notes === "Promised to Pay") promised++;
-                        if(d.notes === "Customer Paid") paid++;
+                        targetTot++; if(d.lastCallDate === sysToday || d.notes === "Customer Paid") called++; if(d.notes === "Call Not Answer" || d.notes === "Phone Not Working") missed++; if(d.notes === "Promised to Pay") promised++; if(d.notes === "Customer Paid") paid++;
                         
                         let pText = d.promiseDate ? d.promiseDate + " වෙනිදා" : "-"; let cName = (d.customerName && d.customerName !== "undefined") ? d.customerName : "නම නොමැත"; let typeBadge = d.listType === "Red" ? `<span class="type-badge-issu">ISSU</span>` : `<span class="type-badge-open">OPEN</span>`; let displayStatus = statusText; 
                         if(statusText === "Pending") { if(d.notes === "Call Not Answer") displayStatus = "Not Answer"; else if(d.notes === "Phone Not Working") displayStatus = "Not Working"; }
@@ -693,7 +694,7 @@
             document.getElementById('sumTarget').innerText = targetTot; document.getElementById('sumCalled').innerText = called; document.getElementById('sumMissed').innerText = missed; document.getElementById('sumPromised').innerText = promised; document.getElementById('sumPaid').innerText = paid;
         };
 
-        // 🌟 STAFF PIGEON HOLE LOGIC (Forwarding & Yellow Risk) 🌟
+        // 🌟 STAFF TARGET LOGIC (Pigeon Hole / Forwarding) 🌟
         window.renderStaffUI = () => {
             let selectedStaffDay = parseInt(document.getElementById('staffDaySelect').value) || td;
             let warningDiv = document.getElementById('staffDateWarning'); let titleH2 = document.getElementById('staffTargetTitle');
@@ -731,10 +732,7 @@
                     }
                 }
 
-                if (isTargetToday) { 
-                    targetCount++; 
-                    html += generateRowHTML(d, rowC, isForwarded); 
-                }
+                if (isTargetToday) { targetCount++; html += generateRowHTML(d, rowC, isForwarded); }
             });
             document.getElementById('staffTableBody').innerHTML = html || "<tr><td colspan='9'>තෝරාගත් දිනයට ඉලක්ක නොමැත! (No targets for selected day)</td></tr>"; 
             document.getElementById('staffTargetNum').innerText = targetCount;
@@ -795,7 +793,6 @@
             
             let d = masterData.find(x => x.id === docId); 
             
-            // 🌟 SAVE ACTION REMOVAL LOGIC 🌟
             if (action === "Call Not Answer" || action === "Phone Not Working") {
                 if (currentAtt >= 2) { document.getElementById(`row_${docId}`).style.display = 'none'; updateTargetCountUI(); } 
                 else { document.getElementById(`row_${docId}`).style.borderLeft = "5px solid #ff9800"; } 
@@ -811,11 +808,9 @@
             if(btnSave) { btnSave.innerText = "SAVED"; btnSave.style.background = "#4caf50"; }
         };
 
-        function updateTargetCountUI() {
-            let num = parseInt(document.getElementById('staffTargetNum').innerText);
-            if(num > 0) document.getElementById('staffTargetNum').innerText = num - 1;
-        }
+        function updateTargetCountUI() { let num = parseInt(document.getElementById('staffTargetNum').innerText); if(num > 0) document.getElementById('staffTargetNum').innerText = num - 1; }
 
+        // 🌟 OFFICER & FIELD TRACKING 🌟
         window.renderOfficerDashboard = () => {
             if(!currentOfficerName) return; let targetAmt = 0, collectedAmt = 0, promiseHtml = "", pCount = 0;
             masterData.forEach(d => {
@@ -846,7 +841,6 @@
             document.getElementById('officerActionModal').style.display = 'block'; document.getElementById('modalOverlay').style.display = 'block';
         };
 
-        // 🌟 GPS PROMISE FIX & 5-MIN COOLDOWN 🌟
         window.saveOfficerData = async () => {
             let docId = document.getElementById('offModalAccNo').value; let action = document.getElementById('offModalAction').value; let pDate = document.getElementById('offModalDate').value; let saveBtn = document.getElementById('gpsSaveBtn');
             if(action === "") { alert("❌ කරුණාකර Status එකක් තෝරන්න!"); return; } if(action === "Promised to Pay" && pDate === "") { alert("❌ කරුණාකර Promise Date එකක් තෝරන්න!"); return; }
