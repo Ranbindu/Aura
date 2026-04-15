@@ -727,22 +727,29 @@ async function boot() {
 }
 
 function handleUser(user) {
-  const e = user.email.toLowerCase();
-  const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
+  try {
+    const e = user.email.toLowerCase();
+    const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
 
-  if      (e === 'amila@gmail.com')  { currentRole = "officer"; currentOfficer = "Amila"; }
-  else if (e === 'rohan@gmail.com')  { currentRole = "officer"; currentOfficer = "Rohan"; }
-  else if (e === 'heen@gmail.com')   { currentRole = "officer"; currentOfficer = "Heenpahana"; }
-  else if (e === 'group@gmail.com')  { currentRole = "officer"; currentOfficer = "Group Sale"; }
-  else if (isManager)                { currentRole = "manager"; }
-  else                               { currentRole = "staff"; }
+    if      (e === 'amila@gmail.com')  { currentRole = "officer"; currentOfficer = "Amila"; }
+    else if (e === 'rohan@gmail.com')  { currentRole = "officer"; currentOfficer = "Rohan"; }
+    else if (e === 'heen@gmail.com')   { currentRole = "officer"; currentOfficer = "Heenpahana"; }
+    else if (e === 'group@gmail.com')  { currentRole = "officer"; currentOfficer = "Group Sale"; }
+    else if (isManager)                { currentRole = "manager"; }
+    else                               { currentRole = "staff"; }
 
-  setupDaySelects();
-  subscribeData();
+    setupDaySelects();
+    subscribeData(); 
 
-  if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
-  else if (currentRole === "manager")  { goTo('dashPage'); }
-  else                                 { goTo('staffPage'); }
+    if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
+    else if (currentRole === "manager")  { goTo('dashPage'); }
+    else                                 { goTo('staffPage'); }
+    
+  } catch(error) {
+    console.error("System Loading Error:", error);
+    // Error eka screen eke pennanawa hitawenne nathuwa
+    document.getElementById('loginErr').innerText = "❌ System Error: " + error.message;
+  }
 }
 
 // ═══════════════════════════════════════
