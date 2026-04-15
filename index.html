@@ -1974,6 +1974,78 @@ window.toast = (msg, type="info") => {
 //  BOOT THE SYSTEM
 // ═══════════════════════════════════════
 boot();
+  // --- ALUTH FIX EKA (Meka yatinma dammama parana awul okkoma hari yanawa) ---
+let isSystemLoaded = false;
+
+window.doLogin = async () => {
+  const email = document.getElementById('loginEmail')?.value.trim();
+  const pass  = document.getElementById('loginPass')?.value;
+  const err   = document.getElementById('loginErr');
+
+  if (!email || !pass) {
+    if (err) err.innerText = "❌ Email and Password required!";
+    return;
+  }
+  if (err) err.innerText = "⏳ Logging in...";
+  
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+    if (err) err.innerText = "✅ Login Success! Loading dashboard...";
+    handleUser(userCredential.user); // Dashboard ekata force karanawa
+  } catch(e) {
+    if (err) err.innerText = "❌ Invalid email or password!";
+  }
+};
+
+function handleUser(user) {
+  if (isSystemLoaded) return; 
+  try {
+    const e = user.email.toLowerCase();
+    const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
+
+    if      (e === 'amila@gmail.com')  { currentRole = "officer"; currentOfficer = "Amila"; }
+    else if (e === 'rohan@gmail.com')  { currentRole = "officer"; currentOfficer = "Rohan"; }
+    else if (e === 'heen@gmail.com')   { currentRole = "officer"; currentOfficer = "Heenpahana"; }
+    else if (e === 'group@gmail.com')  { currentRole = "officer"; currentOfficer = "Group Sale"; }
+    else if (isManager)                { currentRole = "manager"; }
+    else                               { currentRole = "staff"; }
+
+    setupDaySelects();
+    subscribeData();
+    isSystemLoaded = true;
+
+    if      (currentRole === "officer")  { setupOfficerUI(); window.goTo('officerPage'); }
+    else if (currentRole === "manager")  { window.goTo('dashPage'); }
+    else                                 { window.goTo('staffPage'); }
+  } catch(err) {
+    document.getElementById('loginErr').innerText = "❌ Error: " + err.message;
+  }
+}
+
+async function boot() {
+  loader("Connecting to Aura Secure Vault...");
+  try {
+    const r = await fetch(CLOUD_URL);
+    const cfg = await r.json();
+    app  = initializeApp(cfg);
+    auth = getAuth(app);
+    db   = getFirestore(app);
+
+    onAuthStateChanged(auth, user => {
+      loaderHide();
+      if (user) { handleUser(user); }
+      else      { isSystemLoaded = false; window.goTo('loginPage'); }
+    });
+    
+    setPersistence(auth, browserLocalPersistence).catch(e => console.warn(e));
+  } catch(e) {
+    loaderHide();
+    window.toast("Failed to connect: " + e.message, "error"); 
+    setTimeout(() => window.goTo('loginPage'), 1500); 
+  }
+}
+// --- ALUTH FIX EKA END ---
+boot(); 
 </script>
 </body>
 </html>
