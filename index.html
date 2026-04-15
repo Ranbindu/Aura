@@ -1886,12 +1886,12 @@ window.doLogin = async () => {
   if (err) err.innerText = "⏳ Authenticating...";
   
   try {
-    // Meken Firebase eken login eka check karanawa
-    await signInWithEmailAndPassword(auth, email, pass);
-    if (err) err.innerText = "✅ Login Success!";
+    // Firebase eken login wenawa
+    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+    if (err) err.innerText = "✅ Login Success! Loading dashboard...";
     
-    // (Kalin thibba handleUser(userCredential.user); kiyana line eka ain kala. 
-    // Mokada Firebase eken auto login eka allagena athulata gannawa)
+    // Page eka stuck wena eka nawaththanna kelinma Dashboard ekata Force karanawa!
+    handleUser(userCredential.user);
 
   } catch(e) {
     console.error("Login Error:", e);
