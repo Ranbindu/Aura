@@ -1878,7 +1878,6 @@ window.doLogin = async () => {
   const pass  = document.getElementById('loginPass')?.value;
   const err   = document.getElementById('loginErr');
 
-  // Input check kirima
   if (!email || !pass) {
     if (err) err.innerText = "❌ Email and Password required!";
     return;
@@ -1887,12 +1886,12 @@ window.doLogin = async () => {
   if (err) err.innerText = "⏳ Authenticating...";
   
   try {
-    // Login wena eka
-    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-    if (err) err.innerText = "✅ Login Success! Loading system...";
+    // Meken Firebase eken login eka check karanawa
+    await signInWithEmailAndPassword(auth, email, pass);
+    if (err) err.innerText = "✅ Login Success!";
     
-    // Listener eka stuck unoth, manually user wa athulata yawima
-    handleUser(userCredential.user);
+    // (Kalin thibba handleUser(userCredential.user); kiyana line eka ain kala. 
+    // Mokada Firebase eken auto login eka allagena athulata gannawa)
 
   } catch(e) {
     console.error("Login Error:", e);
@@ -1907,7 +1906,6 @@ window.doLogin = async () => {
     }
   }
 };
-
 window.doLogout = async () => {
   try {
     await signOut(auth);
