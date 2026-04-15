@@ -701,31 +701,24 @@ async function boot() {
   try {
     const r = await fetch(CLOUD_URL);
     const cfg = await r.json();
-    
-    // Cloudflare worker eken error ekak awoth eka allaganna
-    if(cfg.error) throw new Error(cfg.error);
-
     app  = initializeApp(cfg);
     auth = getAuth(app);
     db   = getFirestore(app);
 
-    // Listener eka mulinma run karanna (Hang wima nawaththanna)
     onAuthStateChanged(auth, user => {
       loaderHide();
       if (user) { handleUser(user); }
-      else      { goTo('loginPage'); }
+      else      { window.goTo('loginPage'); } // <-- window.goTo kiyala haduwa
     });
-
-    // Persistence eka await nokara safely run karanna
-    setPersistence(auth, browserLocalPersistence).catch(e => console.warn("Local storage issue:", e));
+    
+    setPersistence(auth, browserLocalPersistence).catch(e => console.warn(e));
 
   } catch(e) {
     loaderHide();
-    toast("Failed to connect: " + e.message, "error");
-    setTimeout(() => goTo('loginPage'), 1500);
+    window.toast("Failed to connect: " + e.message, "error"); 
+    setTimeout(() => window.goTo('loginPage'), 1500); 
   }
 }
-
 function handleUser(user) {
   try {
     const e = user.email.toLowerCase();
@@ -739,19 +732,17 @@ function handleUser(user) {
     else                               { currentRole = "staff"; }
 
     setupDaySelects();
-    subscribeData(); 
+    subscribeData();
 
-    if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
-    else if (currentRole === "manager")  { goTo('dashPage'); }
-    else                                 { goTo('staffPage'); }
+    // <-- Meka thamayi prashne thibbe! window.goTo widiyata haduwa.
+    if      (currentRole === "officer")  { setupOfficerUI(); window.goTo('officerPage'); }
+    else if (currentRole === "manager")  { window.goTo('dashPage'); }
+    else                                 { window.goTo('staffPage'); }
     
-  } catch(error) {
-    console.error("System Loading Error:", error);
-    // Error eka screen eke pennanawa hitawenne nathuwa
-    document.getElementById('loginErr').innerText = "❌ System Error: " + error.message;
+  } catch(err) {
+    document.getElementById('loginErr').innerText = "❌ Setup Error: " + err.message;
   }
 }
-
 // ═══════════════════════════════════════
 //  DATA SUBSCRIPTIONS (real-time)
 // ═══════════════════════════════════════
@@ -1883,27 +1874,14 @@ window.doLogin = async () => {
     return;
   }
 
-  if (err) err.innerText = "⏳ Authenticating...";
+  if (err) err.innerText = "⏳ Logging in...";
   
   try {
-    // Firebase eken login wenawa
     const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-    if (err) err.innerText = "✅ Login Success! Loading dashboard...";
-    
-    // Page eka stuck wena eka nawaththanna kelinma Dashboard ekata Force karanawa!
+    if (err) err.innerText = "✅ Login Success! Loading...";
     handleUser(userCredential.user);
-
   } catch(e) {
-    console.error("Login Error:", e);
-    if (err) {
-      if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
-        err.innerText = "❌ Invalid email or password!";
-      } else if (e.code === 'auth/network-request-failed') {
-        err.innerText = "❌ Network Error! Please check your connection.";
-      } else {
-        err.innerText = "❌ " + e.message;
-      }
-    }
+    if (err) err.innerText = "❌ Invalid email or password!";
   }
 };
 window.doLogout = async () => {
@@ -1914,7 +1892,6 @@ window.doLogout = async () => {
     window.location.reload();
   } catch(e) { window.location.reload(); }
 };
-
 // ═══════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════
