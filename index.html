@@ -698,16 +698,24 @@ async function boot() {
   try {
     const r = await fetch(CLOUD_URL);
     const cfg = await r.json();
+    
+    // Cloudflare worker eken error ekak awoth eka allaganna
+    if(cfg.error) throw new Error(cfg.error);
+
     app  = initializeApp(cfg);
     auth = getAuth(app);
     db   = getFirestore(app);
-    await setPersistence(auth, browserLocalPersistence);
 
+    // Listener eka mulinma run karanna (Hang wima nawaththanna)
     onAuthStateChanged(auth, user => {
       loaderHide();
       if (user) { handleUser(user); }
       else      { goTo('loginPage'); }
     });
+
+    // Persistence eka await nokara safely run karanna
+    setPersistence(auth, browserLocalPersistence).catch(e => console.warn("Local storage issue:", e));
+
   } catch(e) {
     loaderHide();
     toast("Failed to connect: " + e.message, "error");
@@ -1859,11 +1867,34 @@ window.doLogin = async () => {
   const email = document.getElementById('loginEmail')?.value.trim();
   const pass  = document.getElementById('loginPass')?.value;
   const err   = document.getElementById('loginErr');
+
+  // Input check kirima
+  if (!email || !pass) {
+    if (err) err.innerText = "❌ Email and Password required!";
+    return;
+  }
+
   if (err) err.innerText = "⏳ Authenticating...";
+  
   try {
-    await signInWithEmailAndPassword(auth, email, pass);
+    // Login wena eka
+    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+    if (err) err.innerText = "✅ Login Success! Loading system...";
+    
+    // Listener eka stuck unoth, manually user wa athulata yawima
+    handleUser(userCredential.user);
+
   } catch(e) {
-    if (err) err.innerText = "❌ " + (e.code === 'auth/invalid-credential' ? "Invalid email or password!" : e.message);
+    console.error("Login Error:", e);
+    if (err) {
+      if (e.code === 'auth/invalid-credential' || e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password') {
+        err.innerText = "❌ Invalid email or password!";
+      } else if (e.code === 'auth/network-request-failed') {
+        err.innerText = "❌ Network Error! Please check your connection.";
+      } else {
+        err.innerText = "❌ " + e.message;
+      }
+    }
   }
 };
 
