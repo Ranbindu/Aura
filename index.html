@@ -692,10 +692,11 @@ const SYS_TODAY  = THIS_MONTH + "-" + String(TD).padStart(2,'0');
 
 window.SYS_TODAY = SYS_TODAY;
 window.TD = TD;
-
 // ═══════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════
+let isSystemLoaded = false; // System eka freeze wena eka nawaththana lock eka
+
 async function boot() {
   loader("Connecting to Aura Secure Vault...");
   try {
@@ -705,13 +706,16 @@ async function boot() {
     auth = getAuth(app);
     db   = getFirestore(app);
 
+    // Firebase auto persistence nisa setPersistence ain kala (Freeze wena nisa)
     onAuthStateChanged(auth, user => {
       loaderHide();
-      if (user) { handleUser(user); }
-      else      { window.goTo('loginPage'); } // <-- window.goTo kiyala haduwa
+      if (user) { 
+        handleUser(user); 
+      } else { 
+        isSystemLoaded = false; // Reset karanawa
+        window.goTo('loginPage'); 
+      }
     });
-    
-    setPersistence(auth, browserLocalPersistence).catch(e => console.warn(e));
 
   } catch(e) {
     loaderHide();
@@ -719,7 +723,10 @@ async function boot() {
     setTimeout(() => window.goTo('loginPage'), 1500); 
   }
 }
+
 function handleUser(user) {
+  if (isSystemLoaded) return; // Deparak run wela screen eka stuck wena eka meken nawaththanawa
+  
   try {
     const e = user.email.toLowerCase();
     const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
@@ -733,13 +740,16 @@ function handleUser(user) {
 
     setupDaySelects();
     subscribeData();
+    
+    isSystemLoaded = true; // System eka load wela iwarai
 
-    // <-- Meka thamayi prashne thibbe! window.goTo widiyata haduwa.
+    // Dashboard ekata force karala maru karanawa
     if      (currentRole === "officer")  { setupOfficerUI(); window.goTo('officerPage'); }
     else if (currentRole === "manager")  { window.goTo('dashPage'); }
     else                                 { window.goTo('staffPage'); }
     
   } catch(err) {
+    console.error("System Error:", err);
     document.getElementById('loginErr').innerText = "❌ Setup Error: " + err.message;
   }
 }
@@ -1877,9 +1887,10 @@ window.doLogin = async () => {
   if (err) err.innerText = "⏳ Logging in...";
   
   try {
-    const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-    if (err) err.innerText = "✅ Login Success! Loading...";
-    handleUser(userCredential.user);
+    // Firebase login
+    await signInWithEmailAndPassword(auth, email, pass);
+    if (err) err.innerText = "✅ Login Success! Loading dashboard...";
+    // Auto page eka maru wena nisa methana monawath katha karanne na
   } catch(e) {
     if (err) err.innerText = "❌ Invalid email or password!";
   }
