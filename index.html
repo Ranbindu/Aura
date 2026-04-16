@@ -1180,10 +1180,19 @@ function handleUser(user) {
 
   setupDaySelects();
 
-  // ★ Navigate IMMEDIATELY - don't wait for data
-  if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
-  else if (currentRole === "manager")  { goTo('dashPage'); }
-  else                                 { goTo('staffPage'); }
+  // Navigate first, data loads after
+  if (currentRole === "officer") {
+    setupOfficerUI();
+    goTo('officerPage');
+  } else if (currentRole === "manager") {
+    goTo('dashPage');
+    // Show loading state in manager dashboard
+    const mgrStats = document.getElementById('mgrStats');
+    if (mgrStats) mgrStats.innerHTML = '<div style="padding:20px;color:#7aa886;text-align:center;">⏳ Loading data...</div>';
+  } else {
+    goTo('staffPage');
+    // Loading state shown in table by loadStaffDataOnce
+  }
 
   // Subscribe only once - data loads in background
   if (!isSystemLoaded) {
@@ -1261,63 +1270,37 @@ function subscribeData() {
 
 // ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
-  try {
-    loader("Loading today's targets...");
-    const snap = await getDocs(collection(db, "customers"));
-    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    loaderHide();
-    renderStaffUI();
+  // Show loading state IN TABLE (no loader overlay - that covers the page!)
+  const tb = document.getElementById('staffTableBody');
+  if (tb) tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#7aa886;">⏳ Loading accounts...</td></tr>';
 
-    // After initial load, listen for changes only
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      // Only update locally changed docs (incremental)
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") {
-          masterData = masterData.filter(x => x.id !== d.id);
-        } else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d;
-          else masterData.push(d);
-        }
-      });
-      if (snap.docChanges().length > 0 && 
-          !document.getElementById('staffSearch')?.value.trim()) {
-        renderStaffUI();
-      }
-    }));
-  } catch(e) {
-    loaderHide();
-    toast("❌ Load failed: " + e.message, "error");
-  }
+  // Use onSnapshot - real-time and more reliable than getDocs
+  _unsubs.push(onSnapshot(collection(db, "customers"), (snap) => {
+    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+    if (!document.getElementById('staffSearch')?.value.trim()) {
+      renderStaffUI();
+    }
+  }, (err) => {
+    console.error("Staff data error:", err.code, err.message);
+    const tb2 = document.getElementById('staffTableBody');
+    if (tb2) tb2.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#ef5350;">❌ Data load failed: ' + err.code + '<br><small>Firebase Rules check කරන්න</small></td></tr>';
+  }));
 }
 
 // ★ OFFICER: only their assigned accounts
-async function loadOfficerDataOnce() {
-  try {
-    const snap = await getDocs(collection(db, "customers"));
+function loadOfficerDataOnce() {
+  // Real-time listener - no getDocs, no loader
+  _unsubs.push(onSnapshot(collection(db, "customers"), (snap) => {
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     renderOfficerDash();
+  }, (err) => {
+    console.error("Officer data error:", err.code);
+    toast("❌ Data error: " + err.code, "error");
+  }));
 
-    // Listen for changes
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") masterData = masterData.filter(x => x.id !== d.id);
-        else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d; else masterData.push(d);
-        }
-      });
-      renderOfficerDash();
-    }));
-
-    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
-      fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
-    }));
-  } catch(e) {
-    toast("❌ " + e.message, "error");
-  }
+  _unsubs.push(onSnapshot(collection(db, "field_visits"), (snap) => {
+    fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
+  }));
 }
 
 
