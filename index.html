@@ -1185,159 +1185,52 @@ function unsubAll() { _unsubs.forEach(fn => { try{fn();}catch(e){} }); _unsubs =
 function subscribeData() {
   unsubAll(); // Clean slate
 
-  // ── Shared: Agent mapping ──
+  // ── Agent mapping ──
   _unsubs.push(onSnapshot(collection(db, "agent_mapping"), snap => {
     snap.forEach(d => { agentMap[d.id] = d.data().fieldAgent; });
   }));
 
-  // ── Role-based loading ──
-  if      (currentRole === "staff")   { subscribeStaffData(); }
-  else if (currentRole === "officer") { subscribeOfficerData(); }
-  else if (currentRole === "manager") { subscribeManagerData(); }
-}
+  // ── ALL roles: load full customers collection (no WHERE = no index needed) ──
+  // Client-side filtering avoids Firestore composite index requirements
+  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+    masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    if      (currentRole === "manager") { renderManagerDash(); if(isActivePage('ccLogsPage')) renderCCLogs(); if(isActivePage('fieldPage')) renderFieldPage(); }
+    else if (currentRole === "officer") { renderOfficerDash(); }
+    else if (currentRole === "staff")   { if(!document.getElementById('staffSearch')?.value.trim()) renderStaffUI(); }
+  }));
 
-// ─────────────────────────────────────
-//  STAFF: Today's pigeon-hole only
-//  Loads: Red accounts + today's agree date accounts
-// ─────────────────────────────────────
-function subscribeStaffData() {
-  return new Promise(resolve => {
-    let redDone = false, openDone = false;
-    const checkDone = () => { if (redDone && openDone) resolve(); };
-
-    // Load RED accounts
-    const qRed = query(collection(db, "customers"), where("listType","==","Red"));
-    _unsubs.push(onSnapshot(qRed, snap => {
-      const newRed = snap.docs.map(d => ({id:d.id,...d.data()}));
-      masterData = masterData.filter(x => x.listType !== "Red");
-      masterData = [...masterData, ...newRed];
-      if (!redDone) { redDone = true; checkDone(); }
-      if (redDone && openDone && !document.getElementById("staffSearch").value.trim()) renderStaffUI();
+  // ── Manager extras ──
+  if (currentRole === "manager" || currentRole === "staff" || currentRole === "officer") {
+    _unsubs.push(onSnapshot(collection(db, "phoneDirectory"), snap => {
+      snap.forEach(d => { phoneDir[d.id] = d.data(); });
+      if (isActivePage("promoCenterPage")) renderPromo();
     }));
-
-    // Promo task notifications
+    _unsubs.push(onSnapshot(collection(db, "bm_issues"), snap => {
+      bmIssues = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      renderBMStats();
+      if (isActivePage("bmIssuePage")) renderBMIssues();
+    }));
+    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
+      fieldVisits = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      if (isActivePage("trackPage")) renderTracking();
+    }));
     _unsubs.push(onSnapshot(collection(db, "promo_tasks"), snap => {
       promoTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
       updatePromoNotification();
+      if (isActivePage("promoCenterPage")) renderPromoTaskList();
     }));
-
-    // Chat notifications
-    subscribeChatNotifications();
-
-    // Load OPEN accounts
-    const qOpen = query(collection(db, "customers"), where("listType","==","New"));
-    _unsubs.push(onSnapshot(qOpen, snap => {
-      const newOpen = snap.docs.map(d => ({id:d.id,...d.data()}));
-      masterData = masterData.filter(x => x.listType !== "New");
-      masterData = [...masterData, ...newOpen];
-      if (!openDone) { openDone = true; checkDone(); }
-      if (redDone && openDone && !document.getElementById("staffSearch").value.trim()) renderStaffUI();
+    _unsubs.push(onSnapshot(collection(db, "team_chat"), snap => {
+      if (!isActivePage('chatPage')) {
+        const msgs = snap.docs.map(d => d.data());
+        if (msgs.length > 0) {
+          const latest = msgs[msgs.length-1];
+          if (latest.timestamp > lastChatSeen && latest.sender !== chatUserName) showChatBadge();
+        }
+      }
     }));
-  });
+  }
 }
 
-// ─────────────────────────────────────
-//  OFFICER: Only their assigned accounts
-// ─────────────────────────────────────
-function subscribeOfficerData() {
-  return new Promise(resolve => {
-    // Officer also gets promo task notifications
-    _unsubs.push(onSnapshot(collection(db, "promo_tasks"), snap => {
-      promoTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    }));
-
-    const qOff = query(collection(db, "customers"),
-      where("fieldAgent", "==", currentOfficer),
-      where("listType", "==", "Red")
-    );
-    _unsubs.push(onSnapshot(qOff, snap => {
-      masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-      resolve();
-      renderOfficerDash();
-    }));
-  });
-}
-
-// ─────────────────────────────────────
-//  MANAGER: Summary stats + on-demand full load
-// ─────────────────────────────────────
-async function subscribeManagerData() {
-  // Phonebook (for promo center - load lazily)
-  _unsubs.push(onSnapshot(collection(db, "phoneDirectory"), snap => {
-    snap.forEach(d => { phoneDir[d.id] = d.data(); });
-    if (isActivePage("promoCenterPage")) renderPromo();
-  }));
-
-  // Promo Tasks (manager sends tasks to call center)
-  _unsubs.push(onSnapshot(collection(db, "promo_tasks"), snap => {
-    promoTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    if (isActivePage("promoCenterPage")) renderPromoTaskList();
-  }));
-
-  // Chat notifications for manager
-  subscribeChatNotifications();
-
-  // BM Issues
-  _unsubs.push(onSnapshot(collection(db, "bm_issues"), snap => {
-    bmIssues = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    renderBMStats();
-    if (isActivePage("bmIssuePage")) renderBMIssues();
-  }));
-
-  // Field visits
-  _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
-    fieldVisits = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    if (isActivePage("trackPage")) renderTracking();
-  }));
-
-  // ★ Manager gets FULL data — but loaded smartly
-  // First: load today's actionable accounts fast
-  await loadManagerSummary();
-
-  // Then: background load everything else
-  setTimeout(() => loadManagerFull(), 800);
-}
-
-// Manager: fast summary from Red + today's Open
-async function loadManagerSummary() {
-  try {
-    const [redSnap, todaySnap] = await Promise.all([
-      getDocs(query(collection(db, "customers"), where("listType","==","Red"))),
-      getDocs(query(collection(db, "customers"), where("listType","==","New")))
-    ]);
-    masterData = [
-      ...redSnap.docs.map(d => ({id:d.id,...d.data()})),
-      ...todaySnap.docs.map(d => ({id:d.id,...d.data()}))
-    ];
-    // Deduplicate
-    const seen = new Set();
-    masterData = masterData.filter(d => { if(seen.has(d.id)) return false; seen.add(d.id); return true; });
-    renderManagerDash();
-    if (isActivePage("ccLogsPage")) renderCCLogs();
-    if (isActivePage("fieldPage")) renderFieldPage();
-  } catch(e) { console.error("Summary load failed:", e); }
-}
-
-// Manager: full real-time listener (background)
-function loadManagerFull() {
-  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    renderManagerDash();
-    if (isActivePage("ccLogsPage")) renderCCLogs();
-    if (isActivePage("fieldPage")) renderFieldPage();
-  }));
-}
-
-// ★ Public function: force reload full data (for manager pages needing everything)
-window.loadFullDataIfNeeded = async () => {
-  if (masterData.length > 50) return; // Already loaded
-  loader("Loading full data...");
-  try {
-    const snap = await getDocs(collection(db, "customers"));
-    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    loaderHide();
-  } catch(e) { loaderHide(); }
-};
 
 // ═══════════════════════════════════════
 //  UTILITY: getPhone
@@ -3160,36 +3053,10 @@ window.uploadExcel = async (ev, type) => {
       loaderHide();
       toast(`✅ ${type} upload complete! ${done} records processed.`, "success");
 
-      // ★ FORCE FRESH RELOAD after upload - don't wait for snapshot
-      loader("🔄 Refreshing system data...");
-      try {
-        // Clear and reload masterData from Firestore immediately
-        masterData = [];
-        const [redSnap, openSnap] = await Promise.all([
-          getDocs(query(collection(db, "customers"), where("listType","==","Red"))),
-          getDocs(query(collection(db, "customers"), where("listType","==","New")))
-        ]);
-        const seen = new Set();
-        const fresh = [
-          ...redSnap.docs.map(d => ({id:d.id,...d.data()})),
-          ...openSnap.docs.map(d => ({id:d.id,...d.data()}))
-        ].filter(d => { if(seen.has(d.id)) return false; seen.add(d.id); return true; });
-        masterData = fresh;
-        loaderHide();
-        toast(`✅ System refreshed! ${fresh.length} accounts loaded.`, "success");
-        // Re-render current page
-        if (currentRole === "manager") {
-          renderManagerDash();
-          if (isActivePage('ccLogsPage')) renderCCLogs();
-          if (isActivePage('fieldPage')) renderFieldPage();
-        } else if (currentRole === "staff") {
-          renderStaffUI();
-        }
-      } catch(refreshErr) {
-        loaderHide();
-        console.warn("Auto-refresh failed:", refreshErr);
-        toast("⚠️ Upload done. Please refresh page to see new data.", "info");
-      }
+      // ★ onSnapshot will auto-refresh when Firestore data changes
+      // No manual reload needed - snapshot listeners detect changes automatically
+      loaderHide();
+      toast("⚠️ Upload done! Data will refresh automatically.", "info");
 
     } catch(err) {
       loaderHide();
