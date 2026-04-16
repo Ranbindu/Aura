@@ -40,7 +40,7 @@ if ('caches' in window) {
   body{
     background-color: #050d07;
     background-image: 
-      linear-gradient(135deg, rgba(4,12,6,0.70) 0%, rgba(5,18,10,0.65) 100%),
+      linear-gradient(135deg, rgba(4,12,6,0.78) 0%, rgba(5,18,10,0.75) 100%),
       url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1920&auto=format&fit=crop');
     background-repeat: no-repeat;
     background-position: center center;
@@ -56,6 +56,8 @@ if ('caches' in window) {
     z-index:10;
     min-height:100vh;
     animation:fadeUp .35s ease;
+    /* Ensure content visible above forest background */
+    isolation:isolate;
   }
   @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
   .wrap{max-width:1480px; margin:0 auto; padding:20px 16px; position:relative; z-index:10;}
@@ -242,6 +244,15 @@ if ('caches' in window) {
     border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
   #loaderMsg{color:var(--green); font-weight:600; font-size:14px;}
+
+  /* ── ALL PAGES: ensure content visible ── */
+  #staffPage, #dashPage, #officerPage, #importPage, #progressPage,
+  #ccLogsPage, #fieldPage, #trackPage, #promoCenterPage, 
+  #bmIssuePage, #chatPage, #historyPage {
+    background: transparent;
+    position: relative;
+    z-index: 10;
+  }
 
   /* ── MANAGER DASHBOARD ── */
   .mgr-grid{display:grid; grid-template-columns:300px 1fr; gap:20px;}
@@ -1238,7 +1249,12 @@ function handleUser(user) {
   // ★ Navigate IMMEDIATELY - don't wait for data
   if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
   else if (currentRole === "manager")  { goTo('dashPage'); }
-  else                                 { goTo('staffPage'); }
+  else { 
+    goTo('staffPage');
+    // Show empty UI immediately so page looks active
+    const tbody = document.getElementById('staffTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color:var(--muted);">⏳ Loading today's accounts...</td></tr>';
+  }
 
   // Subscribe only once - data loads in background
   if (!isSystemLoaded) {
@@ -1316,28 +1332,16 @@ function subscribeData() {
 
 // ★ STAFF: Real-time listener (simpler, more reliable)
 async function loadStaffDataOnce() {
-  loader("Loading today's targets...");
-  
-  // Timeout - if data doesn't load in 8s, show empty UI
-  const loadTimeout = setTimeout(() => {
-    loaderHide();
-    renderStaffUI();
-    toast("⚠️ Slow connection - showing available data", "info");
-  }, 8000);
-
+  // ★ NO loader here - staffPage already showing
+  // Just load data quietly in background
   _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-    clearTimeout(loadTimeout);
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    loaderHide();
     if (!document.getElementById('staffSearch')?.value.trim()) {
       renderStaffUI();
     }
   }, err => {
-    clearTimeout(loadTimeout);
-    loaderHide();
     console.error("Staff data error:", err);
-    toast("❌ Data load failed: " + err.message, "error");
-    renderStaffUI();
+    toast("❌ Data load failed. Check Firebase rules.", "error");
   }));
 }
 
@@ -3285,7 +3289,7 @@ window.goTo = (pageId) => {
     if (pageId === 'loginPage') {
       pg.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; z-index:500 !important; align-items:center !important; justify-content:center !important;';
     } else {
-      pg.style.cssText = 'display:block !important; position:relative !important; z-index:5 !important;';
+      pg.style.cssText = 'display:block !important; position:relative !important; z-index:10 !important; min-height:100vh !important;';
     }
     window.scrollTo(0,0);
   }
