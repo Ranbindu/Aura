@@ -979,6 +979,8 @@
       </div>
     </div>
     <!-- Today's Promises -->
+    <!-- ★ Task Notification Banner -->
+    <div id="officerTaskBanner" style="display:none; margin-bottom:14px;"></div>
     <div style="background:rgba(255,145,0,.12); border:1px solid rgba(255,145,0,.35); border-radius:14px; padding:14px; margin-bottom:16px;">
       <h3 style="color:var(--yellow); font-size:14px; margin-bottom:10px;">📅 Today's Promises (<span id="offPromCount">0</span>)</h3>
       <div id="offPromBody" style="max-height:160px; overflow-y:auto; font-size:12px;"></div>
@@ -1318,33 +1320,47 @@ function subscribeData() {
 
 // ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
-  // Use onSnapshot - no loader overlay, page already visible
-  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+  try {
+    // First: getDocs for immediate display
+    const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    if (!document.getElementById('staffSearch')?.value.trim()) {
-      renderStaffUI();
-    }
-  }, err => {
-    console.error("Staff load error:", err.code, err.message);
-    toast("❌ Data error: " + err.code, "error");
-  }));
+    renderStaffUI();
+    
+    // Then: listen for real-time updates
+    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+      snap.docChanges().forEach(change => {
+        const d = {id: change.doc.id, ...change.doc.data()};
+        if (change.type === "removed") {
+          masterData = masterData.filter(x => x.id !== d.id);
+        } else {
+          const i = masterData.findIndex(x => x.id === d.id);
+          if (i !== -1) masterData[i] = d; else masterData.push(d);
+        }
+      });
+      if (snap.docChanges().length > 0 && !document.getElementById('staffSearch')?.value.trim()) {
+        renderStaffUI();
+      }
+    }));
+  } catch(e) {
+    console.error("Staff load error:", e);
+    toast("❌ Load failed. Check Firebase rules.", "error");
+  }
 }
 
 // ★ OFFICER: only their assigned accounts
-async function loadOfficerDataOnce() {
+async async function loadOfficerDataOnce() {
   try {
     const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     renderOfficerDash();
 
-    // Listen for changes
     _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
       snap.docChanges().forEach(change => {
         const d = {id: change.doc.id, ...change.doc.data()};
         if (change.type === "removed") masterData = masterData.filter(x => x.id !== d.id);
         else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d; else masterData.push(d);
+          const i = masterData.findIndex(x => x.id === d.id);
+          if (i !== -1) masterData[i] = d; else masterData.push(d);
         }
       });
       renderOfficerDash();
@@ -1353,10 +1369,92 @@ async function loadOfficerDataOnce() {
     _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
       fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
     }));
+
+    // ★ Officer task notifications from chat
+    _unsubs.push(onSnapshot(collection(db, "team_chat"), snap => {
+      const allMsgs = snap.docs.map(d => ({id:d.id,...d.data()}));
+      const myTasks = allMsgs.filter(m => 
+        m.isTask && 
+        m.taskStatus !== 'cancelled' &&
+        (m.assignedTo === currentOfficer || m.assignedTo === 'All')
+      ).sort((a,b) => (b.timestamp||0) - (a.timestamp||0));
+      renderOfficerTasks(myTasks);
+    }));
+
   } catch(e) {
     toast("❌ " + e.message, "error");
   }
 }
+
+// Render officer task cards
+function renderOfficerTasks(tasks) {
+  const banner = document.getElementById('officerTaskBanner');
+  if (!banner) return;
+  if (!tasks.length) { banner.style.display='none'; return; }
+  banner.style.display = 'block';
+
+  const pending = tasks.filter(t => t.taskStatus === 'pending');
+  const done    = tasks.filter(t => t.taskStatus === 'completed');
+  let html = '';
+
+  pending.forEach(t => {
+    const priColor = t.priority==='urgent'?'#ef5350':t.priority==='info'?'#66bb6a':'#ffd600';
+    const priLabel = t.priority==='urgent'?'🔴 URGENT':t.priority==='info'?'🟢 Info':'🟡 Normal';
+    html += `<div style="background:rgba(255,145,0,0.15); border:2px solid rgba(255,145,0,0.5); border-radius:14px; padding:14px; margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <span style="font-size:12px; font-weight:700; color:${priColor};">📋 Task · ${priLabel}</span>
+        ${t.dueDate?`<span style="font-size:11px; color:var(--muted);">📅 ${t.dueDate}</span>`:''}
+      </div>
+      <div style="font-size:14px; color:#fff; line-height:1.6; margin-bottom:10px; white-space:pre-wrap;">${escapeHtml(t.message||'')}</div>
+      <textarea id="reply_${t.id}" placeholder="Update / ප්‍රගතිය ලියන්න..." rows="2"
+        style="width:100%; font-size:12px; resize:none; border-radius:8px; padding:8px; margin-bottom:8px; box-sizing:border-box; font-family:inherit;"></textarea>
+      <div style="display:flex; gap:8px;">
+        <button onclick="updateOfficerTask('${t.id}','completed')" 
+          style="flex:1; background:var(--green2); padding:9px; font-size:13px; border-radius:20px; margin:0;">✅ Complete</button>
+        <button onclick="updateOfficerTask('${t.id}','in_progress')" 
+          style="flex:1; background:rgba(255,214,0,0.2); border:1px solid var(--yellow); padding:9px; font-size:13px; border-radius:20px; margin:0; color:var(--yellow);">⏳ In Progress</button>
+      </div>
+    </div>`;
+  });
+
+  if (done.length) {
+    html += `<div style="background:rgba(76,175,80,0.1); border:1px solid rgba(76,175,80,0.3); border-radius:12px; padding:12px;">
+      <div style="font-size:12px; color:var(--green); font-weight:700; margin-bottom:8px;">✅ Completed Tasks (${done.length})</div>
+      ${done.map(t=>`<div style="font-size:12px; color:var(--muted); padding:5px 0; border-bottom:1px solid rgba(255,255,255,0.05);">
+        ${escapeHtml((t.message||'').substring(0,50))}${t.message?.length>50?'...':''} ✅
+        ${t.officerReply?`<div style="color:var(--text); font-style:italic; margin-top:3px;">"${escapeHtml(t.officerReply)}"</div>`:''}
+      </div>`).join('')}
+    </div>`;
+  }
+
+  banner.innerHTML = html;
+}
+
+// Officer: update task status + send reply
+window.updateOfficerTask = async (taskId, status) => {
+  const reply = document.getElementById('reply_' + taskId)?.value.trim() || '';
+  try {
+    const statusLabel = status === 'completed' ? 'Completed' : 'In Progress';
+    await updateDoc(doc(db, "team_chat", taskId), {
+      taskStatus:   status,
+      completedBy:  currentOfficer,
+      completedAt:  new Date().toISOString(),
+      officerReply: reply
+    });
+    if (reply || status === 'completed') {
+      await addDoc(collection(db, "team_chat"), {
+        sender:    currentOfficer,
+        role:      "officer",
+        message:   `📋 Task ${statusLabel}${reply ? ': ' + reply : ''}`,
+        timestamp: Date.now(),
+        dateStr:   SYS_TODAY,
+        timeStr:   new Date().toLocaleTimeString('en-LK',{hour:'2-digit',minute:'2-digit'}),
+        isTaskReply: true
+      });
+    }
+    toast(status==='completed' ? "✅ Task marked complete!" : "⏳ Marked as In Progress!", "success");
+  } catch(e) { toast("❌ " + e.message, "error"); }
+};
 
 
 // ═══════════════════════════════════════
@@ -2174,10 +2272,11 @@ function renderChatMessages(msgs) {
         </div>
         <div style="font-size:13px; color:var(--text); line-height:1.6; margin-bottom:${canComplete||isDone?'10px':'0'};">${escapeHtml(m.message||'')}</div>
         ${isDone 
-          ? `<div style="font-size:11px; color:var(--green); font-weight:700;">✅ Completed by ${m.completedBy||'Staff'} · ${m.completedAt?new Date(m.completedAt).toLocaleTimeString('en-LK',{hour:'2-digit',minute:'2-digit'}):''}</div>`
+          ? `<div style="font-size:11px; color:var(--green); font-weight:700;">✅ Completed by ${m.completedBy||'Staff'} · ${m.completedAt?new Date(m.completedAt).toLocaleTimeString('en-LK',{hour:'2-digit',minute:'2-digit'}):''}</div>
+             ${m.officerReply?`<div style="font-size:12px; color:var(--muted); margin-top:4px; font-style:italic;">"${escapeHtml(m.officerReply)}"</div>`:''}`
           : canComplete
             ? `<button onclick="markTaskComplete('${m.id}')" style="padding:5px 14px; font-size:11px; background:var(--green2); border-radius:20px; margin:0;">✅ Mark Complete</button>`
-            : ''
+            : (m.taskStatus==='in_progress' ? '<span style="font-size:11px; color:var(--yellow);">⏳ In Progress</span>' : '')
         }
       </div>`;
       return;
