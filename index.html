@@ -197,12 +197,13 @@
 
   /* ── LOADING SPINNER ── */
   #globalLoader{
-    display:flex; position:fixed; inset:0; 
+    display:none; position:fixed; inset:0; 
     background: rgba(0,0,0,0.65);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     z-index:8000; align-items:center; justify-content:center; flex-direction:column; gap:16px;
   }
+  #globalLoader.show{ display:flex; }
   #globalLoader.show{display:flex;}
   .spinner{width:48px; height:48px; border:4px solid rgba(61,220,116,.2);
     border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite;}
@@ -3273,11 +3274,18 @@ window.closeAllModals = () => {
 function loader(msg) {
   const el = document.getElementById('globalLoader');
   const mg = document.getElementById('loaderMsg');
-  if (el) el.classList.add('show');
+  if (el) { 
+    el.classList.add('show'); 
+    el.style.display = 'flex'; // Force show
+  }
   if (mg && msg) mg.innerText = msg;
 }
 function loaderHide() {
-  document.getElementById('globalLoader')?.classList.remove('show');
+  const el = document.getElementById('globalLoader');
+  if (el) {
+    el.classList.remove('show');
+    el.style.display = 'none'; // Force hide with inline style
+  }
 }
 window.toast = (msg, type="info") => {
   const c = document.getElementById('toastContainer');
