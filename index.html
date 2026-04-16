@@ -557,6 +557,14 @@
     <div id="staffDayWarning" style="display:none; background:rgba(239,83,80,.85); border-radius:9px; padding:10px 16px; text-align:center; margin-bottom:12px; font-weight:600; font-size:13px;">
       ⚠️ අවධානය: ඔබ අද දිනය select කර නැත!
     </div>
+    <!-- Live Progress Bar -->
+    <div id="staffProgressBar" style="background:var(--surface2); border-radius:10px; padding:10px 16px; margin-bottom:12px; display:flex; align-items:center; gap:16px; border:1px solid var(--border);">
+      <span style="font-size:12px; color:var(--muted); white-space:nowrap;">Today's Progress:</span>
+      <div style="flex:1; background:rgba(255,255,255,.08); border-radius:99px; height:8px; overflow:hidden;">
+        <div id="staffProgFill" style="height:100%; background:linear-gradient(90deg,var(--green2),var(--green)); border-radius:99px; width:0%; transition:width .5s ease;"></div>
+      </div>
+      <span id="staffProgText" style="font-size:12px; font-weight:700; color:var(--green); white-space:nowrap;">0 / 0</span>
+    </div>
     <div class="tbl-wrap glass" style="max-height:80vh; overflow-y:auto;">
       <table id="staffTable">
         <thead><tr><th>Account</th><th>Customer</th><th>Mobile</th><th>Message</th><th>Att.</th><th>Action</th><th>P.Date</th><th>Save</th><th>ℹ️</th></tr></thead>
@@ -1081,8 +1089,9 @@ function updateProgress() {
     // Day targets
     if (include) {
       dayTarget++;
-      const { include: includedAndDone } = { include: d.lastCallDate === SYS_TODAY || d.notes === "Customer Paid" };
-      if (d.lastCallDate === SYS_TODAY || d.notes === "Customer Paid") dayDone++;
+      // Count as done: called today OR paid OR WhatsApp sent today
+      const isDone = d.lastCallDate === SYS_TODAY || d.notes === "Customer Paid";
+      if (isDone) dayDone++;
     }
   });
 
@@ -1297,7 +1306,7 @@ function renderTracking() {
 
   // Init map
   if (!visitMap) {
-    visitMap = L.map('map').setView([7.9, 80.6], 9);
+    visitMap = L.map('map').setView([8.05, 80.55], 11);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       { attribution: '&copy; OSM | Aura ERP' }).addTo(visitMap);
   }
@@ -1321,7 +1330,8 @@ function renderTracking() {
     });
     visitMap.fitBounds(bounds, { padding: [50,50] });
   } else {
-    visitMap.setView([7.9, 80.6], 9);
+    // Default: Galenbindunuwewa area
+    visitMap.setView([8.05, 80.55], 11);
   }
 }
 window.renderTracking = renderTracking;
@@ -1340,11 +1350,13 @@ function renderPromo() {
     count++;
     const safeN = name.replace(/'/g, "\\'");
     html += `<tr style="border-bottom:1px solid var(--border);">
-      <td style="text-align:left; font-size:12px;">${name}</td>
-      <td style="font-size:12px;">${phone}</td>
-      <td>
-        <button class="btn-xs btn-wa" onclick="sendPromoWA('${phone}','${safeN}')">WA</button>
-        <button class="btn-xs btn-blue" onclick="sendPromoSMS('${phone}','${safeN}')" style="margin-left:4px;">SMS</button>
+      <td style="text-align:left; font-size:12px; font-weight:600;">${name}</td>
+      <td style="font-size:12px; color:var(--muted);">${phone}</td>
+      <td style="text-align:center;">
+        <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+          <button class="btn-xs btn-wa" onclick="sendPromoWA('${phone}','${safeN}')" style="width:70px; padding:4px 8px;">💬 WA</button>
+          <button class="btn-xs btn-blue" onclick="sendPromoSMS('${phone}','${safeN}')" style="width:70px; padding:4px 8px;">📱 SMS</button>
+        </div>
       </td>
     </tr>`;
   }
@@ -1497,8 +1509,24 @@ function renderStaffUI() {
   document.getElementById('staffTableBody').innerHTML = html ||
     "<tr><td colspan='9' style='text-align:center; padding:30px; color:var(--muted);'>✅ No targets for today! All done.</td></tr>";
 
+  const totalTargets = openC + redC;
   document.getElementById('staffTargetBadge').innerHTML =
-    `${openC+redC} <span style="font-size:13px; opacity:.8;">(Open:${openC} | Issu:${redC})</span>`;
+    `${totalTargets} <span style="font-size:13px; opacity:.8;">(Open:${openC} | Issu:${redC})</span>`;
+  
+  // Update live progress bar
+  const doneTodayStaff = masterData.filter(d => d.lastCallDate === SYS_TODAY || d.notes === "Customer Paid").length;
+  const totalStaff = masterData.length;
+  const pctStaff = totalTargets > 0 ? Math.round((doneTodayStaff / totalTargets) * 100) : 0;
+  const fillEl = document.getElementById('staffProgFill');
+  const textEl = document.getElementById('staffProgText');
+  if (fillEl) fillEl.style.width = Math.min(pctStaff, 100) + '%';
+  if (textEl) textEl.innerText = `${doneTodayStaff} done / ${totalTargets} remaining`;
+  
+  // Update header text
+  const selDayNow = parseInt(document.getElementById('staffDaySel')?.value) || TD;
+  const isNowToday = selDayNow === TD;
+  const h2 = document.getElementById('staffTitle');
+  if (h2) h2.childNodes[0].textContent = isNowToday ? "TODAY'S TARGET: " : `DAY ${selDayNow} TARGET: `;
 }
 window.renderStaffUI = renderStaffUI;
 
@@ -1625,6 +1653,9 @@ window.saveData = async (docId, msgCat) => {
 
     toast("✅ Saved!", "success");
 
+    // ★ FIX 2: Update live call counter immediately
+    updateLiveCallCount();
+
     // Smooth row hide
     const row = document.getElementById(`row_${docId}`);
     if (row) {
@@ -1642,6 +1673,26 @@ window.saveData = async (docId, msgCat) => {
     if (btn) { btn.innerText = "SAVE"; btn.disabled = false; }
   }
 };
+
+// ★ Live call count updater (runs after every save)
+function updateLiveCallCount() {
+  // Count how many were actioned today
+  let todayDone = masterData.filter(d => d.lastCallDate === SYS_TODAY || d.notes === "Customer Paid").length;
+  
+  // Update staffPage target badge area if visible
+  const badge = document.getElementById('staffTargetBadge');
+  // badge updates via renderStaffUI which removes the row - no need to update
+  
+  // Update manager dashboard if open
+  const dashTodayEl = document.getElementById('dashTodayDone');
+  if (dashTodayEl) dashTodayEl.innerText = todayDone;
+  
+  // Update progress page if open
+  if (isActivePage('progressPage')) updateProgress();
+  
+  // Update CC logs if manager has it open
+  if (isActivePage('ccLogsPage')) renderCCLogs();
+}
 
 // Staff search (account no only)
 window.searchStaffTable = () => {
