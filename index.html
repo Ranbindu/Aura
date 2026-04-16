@@ -1145,48 +1145,52 @@ const FB_CFG = {
 
 async function boot() {
   loader("Connecting to Aura Secure Vault...");
-
-  // Cancel safety net (module loaded OK)
   if (window._aura_safety_timer) clearTimeout(window._aura_safety_timer);
 
+  let bootDone = false; // prevent race condition
+
   const SHOW_LOGIN = setTimeout(() => {
-    console.log("⏰ Timeout - showing login");
+    if (bootDone) return; // auth already handled
+    bootDone = true;
     loaderHide();
     goTo('loginPage');
-  }, 1500);
+  }, 4000); // 4s - enough for slow connections
 
   try {
-    console.log("🔥 Aura boot starting...");
     app  = initializeApp(FB_CFG);
     auth = getAuth(app);
     db   = getFirestore(app);
-    console.log("🔥 Firebase initialized");
 
-    // Check cached session
+    // Cached session check (instant)
     const cachedUser = auth.currentUser;
     if (cachedUser) {
+      bootDone = true;
       clearTimeout(SHOW_LOGIN);
       loaderHide();
       handleUser(cachedUser);
       return;
     }
 
-    // Wait for Firebase to check session
-    console.log("🔥 Waiting for auth state...");
     onAuthStateChanged(auth, (user) => {
-      console.log("🔥 Auth state:", user ? "LOGGED IN: " + user.email : "NOT LOGGED IN");
       clearTimeout(SHOW_LOGIN);
       loaderHide();
+      if (bootDone && user) { handleUser(user); return; }
+      if (bootDone) return;
+      bootDone = true;
       if (user) handleUser(user);
       else goTo('loginPage');
     });
 
   } catch(e) {
-    clearTimeout(SHOW_LOGIN);
-    loaderHide();
-    goTo('loginPage');
+    if (!bootDone) {
+      bootDone = true;
+      clearTimeout(SHOW_LOGIN);
+      loaderHide();
+      goTo('loginPage');
+    }
   }
 }
+
 
 
 function handleUser(user) {
