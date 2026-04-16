@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Aura ERP v2 — Recovery System</title>
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">  
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f2518">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -683,6 +680,7 @@ let bmIssues        = [];   // [{id, accountNo, ...}]
 let fieldVisits     = [];   // field officer GPS logs
 let currentRole     = "";   // "manager" | "officer" | "staff"
 let currentOfficer  = "";   // officer name
+let isSystemLoaded  = false; // prevent duplicate subscriptions
 
 // ── Date helpers ──
 const NOW = new Date();
@@ -692,11 +690,10 @@ const SYS_TODAY  = THIS_MONTH + "-" + String(TD).padStart(2,'0');
 
 window.SYS_TODAY = SYS_TODAY;
 window.TD = TD;
+
 // ═══════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════
-let isSystemLoaded = false; // System eka freeze wena eka nawaththana lock eka
-
 async function boot() {
   loader("Connecting to Aura Secure Vault...");
   try {
@@ -705,54 +702,40 @@ async function boot() {
     app  = initializeApp(cfg);
     auth = getAuth(app);
     db   = getFirestore(app);
+    await setPersistence(auth, browserLocalPersistence);
 
-    // Firebase auto persistence nisa setPersistence ain kala (Freeze wena nisa)
     onAuthStateChanged(auth, user => {
       loaderHide();
-      if (user) { 
-        handleUser(user); 
-      } else { 
-        isSystemLoaded = false; // Reset karanawa
-        window.goTo('loginPage'); 
-      }
+      if (user) { handleUser(user); }
+      else      { goTo('loginPage'); }
     });
-
   } catch(e) {
     loaderHide();
-    window.toast("Failed to connect: " + e.message, "error"); 
-    setTimeout(() => window.goTo('loginPage'), 1500); 
+    toast("Failed to connect: " + e.message, "error");
+    setTimeout(() => goTo('loginPage'), 1500);
   }
 }
 
 function handleUser(user) {
-  if (isSystemLoaded) return; // Deparak run wela screen eka stuck wena eka meken nawaththanawa
-  
-  try {
-    const e = user.email.toLowerCase();
-    const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
+  const e = user.email.toLowerCase();
+  const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
 
-    if      (e === 'amila@gmail.com')  { currentRole = "officer"; currentOfficer = "Amila"; }
-    else if (e === 'rohan@gmail.com')  { currentRole = "officer"; currentOfficer = "Rohan"; }
-    else if (e === 'heen@gmail.com')   { currentRole = "officer"; currentOfficer = "Heenpahana"; }
-    else if (e === 'group@gmail.com')  { currentRole = "officer"; currentOfficer = "Group Sale"; }
-    else if (isManager)                { currentRole = "manager"; }
-    else                               { currentRole = "staff"; }
+  if      (e === 'amila@gmail.com')  { currentRole = "officer"; currentOfficer = "Amila"; }
+  else if (e === 'rohan@gmail.com')  { currentRole = "officer"; currentOfficer = "Rohan"; }
+  else if (e === 'heen@gmail.com')   { currentRole = "officer"; currentOfficer = "Heenpahana"; }
+  else if (e === 'group@gmail.com')  { currentRole = "officer"; currentOfficer = "Group Sale"; }
+  else if (isManager)                { currentRole = "manager"; }
+  else                               { currentRole = "staff"; }
 
-    setupDaySelects();
-    subscribeData();
-    
-    isSystemLoaded = true; // System eka load wela iwarai
+  setupDaySelects();
+  // ★ FIX: Only subscribe once (prevent duplicate Firestore listeners)
+  if (!isSystemLoaded) { subscribeData(); isSystemLoaded = true; }
 
-    // Dashboard ekata force karala maru karanawa
-    if      (currentRole === "officer")  { setupOfficerUI(); window.goTo('officerPage'); }
-    else if (currentRole === "manager")  { window.goTo('dashPage'); }
-    else                                 { window.goTo('staffPage'); }
-    
-  } catch(err) {
-    console.error("System Error:", err);
-    document.getElementById('loginErr').innerText = "❌ Setup Error: " + err.message;
-  }
+  if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
+  else if (currentRole === "manager")  { goTo('dashPage'); }
+  else                                 { goTo('staffPage'); }
 }
+
 // ═══════════════════════════════════════
 //  DATA SUBSCRIPTIONS (real-time)
 // ═══════════════════════════════════════
@@ -1878,23 +1861,19 @@ window.doLogin = async () => {
   const email = document.getElementById('loginEmail')?.value.trim();
   const pass  = document.getElementById('loginPass')?.value;
   const err   = document.getElementById('loginErr');
-
-  if (!email || !pass) {
-    if (err) err.innerText = "❌ Email and Password required!";
-    return;
-  }
-
+  if (!email || !pass) { if(err) err.innerText="❌ Email & Password required!"; return; }
   if (err) err.innerText = "⏳ Logging in...";
-  
   try {
-    // Firebase login
-    await signInWithEmailAndPassword(auth, email, pass);
-    if (err) err.innerText = "✅ Login Success! Loading dashboard...";
-    // Auto page eka maru wena nisa methana monawath katha karanne na
+    // ★ FIX: Call handleUser directly after login - don't rely solely on onAuthStateChanged
+    // which can fire before/after unpredictably when boot() fetch() is running
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    if (err) err.innerText = "✅ Loading dashboard...";
+    handleUser(cred.user);
   } catch(e) {
     if (err) err.innerText = "❌ Invalid email or password!";
   }
 };
+
 window.doLogout = async () => {
   try {
     await signOut(auth);
@@ -1903,6 +1882,7 @@ window.doLogout = async () => {
     window.location.reload();
   } catch(e) { window.location.reload(); }
 };
+
 // ═══════════════════════════════════════
 //  NAVIGATION
 // ═══════════════════════════════════════
