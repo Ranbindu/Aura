@@ -237,6 +237,7 @@
         <button onclick="goTo('promoCenterPage'); renderPromo(); renderPromoTaskList();" style="background:linear-gradient(135deg,#5d1a00,var(--orange)); width:100%; margin-bottom:8px; padding:9px 16px;">📢 Promotion Center</button>
         <button onclick="goTo('bmIssuePage'); renderBMIssues()" style="background:linear-gradient(135deg,#1a0030,#6a1b9a); width:100%; margin-bottom:8px; padding:9px 16px;">💼 BM Issue Management</button>
         <button onclick="downloadPhoneDir()" class="btn-teal" style="width:100%; margin-bottom:8px;">📥 Download Phonebook</button>
+        <button onclick="goTo('historyPage'); renderHistoryPage();" style="background:linear-gradient(135deg,#37474f,#546e7a); width:100%; margin-bottom:8px; padding:9px 16px;">📅 Monthly History</button>
 
         <div class="card" style="margin-top:16px; text-align:center;">
           <div style="display:flex; justify-content:space-around;">
@@ -286,6 +287,91 @@
           <div style="display:flex; justify-content:space-between; border-top:1px dashed var(--border); padding-top:8px;"><span style="color:var(--orange); font-weight:700; font-size:13px;">Outstanding (<span id="bmOutCount">0</span>)</span><b id="bmBalance" style="color:var(--orange); font-size:1.2rem;">Rs. 0</b></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────── MONTHLY HISTORY PAGE ─────── -->
+<div id="historyPage" class="page">
+  <div class="wrap" style="max-width:1400px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+      <h2 style="color:#90caf9;">📅 Monthly Performance History</h2>
+      <button onclick="goTo('dashPage')" class="btn-sm">← Back</button>
+    </div>
+
+    <!-- Month Selector -->
+    <div class="glass" style="padding:20px; margin-bottom:20px;">
+      <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+        <span style="font-weight:700; color:var(--muted);">Select Month:</span>
+        <select id="histMonthSel" onchange="renderHistoryPage()" style="width:200px;">
+          <option value="">-- Select Month --</option>
+        </select>
+        <div id="histLoadMsg" style="color:var(--muted); font-size:13px;"></div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div id="histSummaryCards" style="display:none;">
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; margin-bottom:20px;">
+        <div class="card" style="border-left:5px solid var(--blue); text-align:center;">
+          <div style="font-size:11px; color:var(--muted);">Total Accounts</div>
+          <div id="histTotal" style="font-size:2.5rem; font-weight:900; color:var(--blue);">0</div>
+        </div>
+        <div class="card" style="border-left:5px solid var(--green); text-align:center;">
+          <div style="font-size:11px; color:var(--muted);">Paid (Success)</div>
+          <div id="histPaid" style="font-size:2.5rem; font-weight:900; color:var(--green);">0</div>
+          <div id="histPaidAmt" style="font-size:12px; color:var(--muted);">Rs. 0</div>
+        </div>
+        <div class="card" style="border-left:5px solid var(--red); text-align:center;">
+          <div style="font-size:11px; color:var(--muted);">Arrears Accounts</div>
+          <div id="histRed" style="font-size:2.5rem; font-weight:900; color:var(--red);">0</div>
+          <div id="histRedAmt" style="font-size:12px; color:var(--muted);">Rs. 0</div>
+        </div>
+        <div class="card" style="border-left:5px solid var(--yellow); text-align:center;">
+          <div style="font-size:11px; color:var(--muted);">💰 Success Rate</div>
+          <div id="histRate" style="font-size:2.5rem; font-weight:900; color:var(--yellow);">0%</div>
+        </div>
+        <div class="card" style="border-left:5px solid var(--orange); text-align:center;">
+          <div style="font-size:11px; color:var(--muted);">Risk Accounts</div>
+          <div id="histRisk" style="font-size:2.5rem; font-weight:900; color:var(--orange);">0</div>
+        </div>
+        <div class="card" style="border-left:5px solid var(--purple); text-align:center;">
+          <div style="font-size:11px; color:var(--muted);">Total Arrears Value</div>
+          <div id="histArrAmt" style="font-size:1.4rem; font-weight:900; color:var(--purple);">Rs. 0</div>
+          <div id="histArrCollected" style="font-size:12px; color:var(--green); margin-top:4px;"></div>
+        </div>
+      </div>
+
+      <!-- Agent Breakdown -->
+      <div class="glass" style="padding:20px; margin-bottom:20px; overflow-x:auto;">
+        <h3 style="color:var(--orange); margin-bottom:16px;">🌾 Field Agent Breakdown</h3>
+        <table style="margin:0;">
+          <thead><tr><th>Agent</th><th>Total Arrears</th><th>Collected</th><th>Remaining</th><th>Accounts</th><th>Rate</th></tr></thead>
+          <tbody id="histAgentBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Account List -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+        <h3 style="color:var(--blue);">Account Details</h3>
+        <div style="display:flex; gap:10px;">
+          <select id="histFilter" onchange="renderHistAccountList()" style="width:180px;">
+            <option value="ALL">All Accounts</option>
+            <option value="Red">Arrears (ISSU)</option>
+            <option value="New">Open Accounts</option>
+            <option value="PAID">Paid ✅</option>
+            <option value="RISK">Risk Accounts</option>
+          </select>
+          <button onclick="exportHistoryExcel()" class="btn-teal btn-sm">📥 Export Excel</button>
+        </div>
+      </div>
+      <div class="tbl-wrap glass" style="max-height:60vh; overflow-y:auto;">
+        <table><thead><tr><th>Account No</th><th>Customer</th><th>Type</th><th>Agent</th><th>Arrears</th><th>Feedback</th><th>Attempts</th><th>Status</th></tr></thead>
+        <tbody id="histAccountBody"></tbody></table>
+      </div>
+    </div>
+    <div id="histEmptyMsg" style="text-align:center; padding:60px; color:var(--muted); font-size:16px;">
+      ← Select a month to view history
     </div>
   </div>
 </div>
@@ -1481,6 +1567,177 @@ window.copyAllNumbers = () => {
 //  BM ISSUES
 // ═══════════════════════════════════════
 // ═══════════════════════════════════════
+//  MONTHLY HISTORY SYSTEM
+// ═══════════════════════════════════════
+
+let historyData = []; // loaded archive data for selected month
+
+// Populate month selector from Firestore archives
+window.renderHistoryPage = async () => {
+  const sel = document.getElementById('histMonthSel');
+  const msg = document.getElementById('histLoadMsg');
+  if (!sel) return;
+
+  // Load available months from archive collection
+  if (sel.options.length <= 1) {
+    if (msg) msg.innerText = "⏳ Loading available months...";
+    try {
+      const snap = await getDocs(collection(db, "monthly_archives"));
+      const months = [...new Set(snap.docs.map(d => d.data().archiveMonth))].sort().reverse();
+      sel.innerHTML = '<option value="">-- Select Month --</option>';
+      months.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        // Format: 2025-03 → March 2025
+        const [yr, mo] = m.split('-');
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        opt.text = (monthNames[parseInt(mo)-1] || mo) + ' ' + yr;
+        sel.appendChild(opt);
+      });
+      if (msg) msg.innerText = months.length > 0 ? months.length + ' months available' : 'No history yet';
+    } catch(e) {
+      if (msg) msg.innerText = "❌ Load failed: " + e.message;
+    }
+  }
+
+  const selectedMonth = sel.value;
+  if (!selectedMonth) {
+    document.getElementById('histSummaryCards').style.display = 'none';
+    document.getElementById('histEmptyMsg').style.display = 'block';
+    return;
+  }
+
+  // Load data for selected month
+  if (msg) msg.innerText = "⏳ Loading " + selectedMonth + "...";
+  try {
+    const snap = await getDocs(
+      query(collection(db, "monthly_archives"), where("archiveMonth","==",selectedMonth))
+    );
+    historyData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    if (msg) msg.innerText = historyData.length + " accounts loaded";
+    renderHistSummary();
+    renderHistAccountList();
+    document.getElementById('histSummaryCards').style.display = 'block';
+    document.getElementById('histEmptyMsg').style.display = 'none';
+  } catch(e) {
+    if (msg) msg.innerText = "❌ " + e.message;
+  }
+};
+
+function renderHistSummary() {
+  let total=0, paid=0, paidAmt=0, red=0, redAmt=0, risk=0, arrTotal=0, arrCollected=0;
+  const agentStats = {
+    "Group Sale": {tAmt:0, cAmt:0, tAcc:0, cAcc:0},
+    "Heenpahana": {tAmt:0, cAmt:0, tAcc:0, cAcc:0},
+    "Rohan":      {tAmt:0, cAmt:0, tAcc:0, cAcc:0},
+    "Amila":      {tAmt:0, cAmt:0, tAcc:0, cAcc:0}
+  };
+
+  historyData.forEach(d => {
+    total++;
+    const att = parseInt(d.callAttempts)||0;
+    const isPaid = d.notes === "Customer Paid";
+    const mPay = Number(d.monthlyPay)||0;
+    const arr  = Number(d.arrearsAmount)||0;
+    const agent = d.fieldAgent || "Unknown";
+    const isRiskAcc = att>=3 || d.notes==="Bad Feedback" || ((d.notes==="Call Not Answer"||d.notes==="Phone Not Working") && att>=2);
+
+    if (isPaid) { paid++; paidAmt += (d.listType==="Red" ? arr : mPay); }
+    if (d.listType==="Red") {
+      red++; redAmt += arr; arrTotal += arr;
+      if (isPaid) arrCollected += arr;
+      if (agentStats[agent]) {
+        agentStats[agent].tAmt += arr;
+        agentStats[agent].tAcc++;
+        if (isPaid) { agentStats[agent].cAmt += arr; agentStats[agent].cAcc++; }
+      }
+    }
+    if (isRiskAcc) risk++;
+  });
+
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
+  const rs = v => "Rs. " + Number(v).toLocaleString('en-US');
+  set('histTotal',   total);
+  set('histPaid',    paid);
+  set('histPaidAmt', rs(paidAmt));
+  set('histRed',     red);
+  set('histRedAmt',  rs(redAmt));
+  set('histRate',    (total>0 ? Math.round((paid/total)*100) : 0) + '%');
+  set('histRisk',    risk);
+  set('histArrAmt',  rs(arrTotal));
+  set('histArrCollected', "Collected: " + rs(arrCollected) + " | Remaining: " + rs(arrTotal-arrCollected));
+
+  // Agent table
+  let agHtml = '';
+  Object.entries(agentStats).forEach(([ag, s]) => {
+    const rate = s.tAmt > 0 ? Math.round((s.cAmt/s.tAmt)*100) : 0;
+    const rColor = rate>=70 ? 'var(--green)' : rate>=40 ? 'var(--yellow)' : 'var(--red)';
+    agHtml += `<tr>
+      <td><b>${ag}</b></td>
+      <td>${rs(s.tAmt)}</td>
+      <td style="color:var(--green);">${rs(s.cAmt)}</td>
+      <td style="color:var(--yellow);">${rs(s.tAmt-s.cAmt)}</td>
+      <td>${s.tAcc} acc</td>
+      <td><b style="color:${rColor};">${rate}%</b></td>
+    </tr>`;
+  });
+  const agTb = document.getElementById('histAgentBody');
+  if (agTb) agTb.innerHTML = agHtml || "<tr><td colspan='6'>No data</td></tr>";
+}
+
+window.renderHistAccountList = () => {
+  const filter = document.getElementById('histFilter')?.value || "ALL";
+  let html = '';
+  historyData.forEach(d => {
+    const isPaid = d.notes === "Customer Paid";
+    const att = parseInt(d.callAttempts)||0;
+    const isRiskAcc = att>=3 || d.notes==="Bad Feedback" || ((d.notes==="Call Not Answer"||d.notes==="Phone Not Working") && att>=2);
+    if (filter==="Red"  && d.listType!=="Red") return;
+    if (filter==="New"  && d.listType!=="New") return;
+    if (filter==="PAID" && !isPaid) return;
+    if (filter==="RISK" && !isRiskAcc) return;
+    const rowC = isPaid ? "row-green" : d.listType==="Red" ? "row-red" : isRiskAcc ? "row-yellow" : "";
+    const cName = (d.customerName && d.customerName!=="undefined") ? d.customerName : "—";
+    const badge = d.listType==="Red" ? '<span class="badge badge-issu">ISSU</span>' : '<span class="badge badge-open">OPEN</span>';
+    const status = isPaid ? "✅ Paid" : isRiskAcc ? "⚠️ Risk" : "⏳ Pending";
+    html += `<tr class="${rowC}">
+      <td>${d.accountNo||"—"} ${badge}</td>
+      <td>${cName}</td>
+      <td>${d.listType||"—"}</td>
+      <td style="font-size:11px;">${d.fieldAgent||"—"}</td>
+      <td>${d.listType==="Red" ? "Rs."+(Number(d.arrearsAmount)||0).toLocaleString('en-US') : "Rs."+(Number(d.monthlyPay)||0).toLocaleString('en-US')}</td>
+      <td style="font-size:11px;">${d.notes||"—"}</td>
+      <td>${att}</td>
+      <td><b>${status}</b></td>
+    </tr>`;
+  });
+  const tb = document.getElementById('histAccountBody');
+  if (tb) tb.innerHTML = html || "<tr><td colspan='8' style='text-align:center; color:var(--muted);'>No accounts found.</td></tr>";
+};
+
+window.exportHistoryExcel = () => {
+  if (!historyData.length) { toast("No data!", "error"); return; }
+  const month = document.getElementById('histMonthSel')?.value || "unknown";
+  const data = historyData.map(d => ({
+    "Account No":   d.accountNo||"",
+    "Customer":     d.customerName||"",
+    "Type":         d.listType||"",
+    "Agent":        d.fieldAgent||"",
+    "Arrears":      Number(d.arrearsAmount)||0,
+    "Monthly Pay":  Number(d.monthlyPay)||0,
+    "Feedback":     d.notes||"",
+    "Attempts":     d.callAttempts||0,
+    "Promise Date": d.promiseDate||"",
+    "Agree Date":   d.agreeDate||""
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "History_" + month);
+  XLSX.writeFile(wb, "Aura_History_" + month + ".xlsx");
+  toast("✅ Exported " + data.length + " records!", "success");
+};
+
+// ═══════════════════════════════════════
 //  PROMO TASK SYSTEM
 // ═══════════════════════════════════════
 
@@ -2160,6 +2417,54 @@ window.uploadExcel = async (ev, type) => {
       if (!rows.length) throw new Error("Excel file is empty or invalid format!");
 
       loader(`Processing ${rows.length} records...`);
+
+      // ══════════════════════════════════════════
+      // ★ ARCHIVE current month data BEFORE reset
+      // Only archive when uploading "New" (Open list) = new month
+      // ══════════════════════════════════════════
+      if (type === "New" && masterData.length > 0) {
+        // Calculate archive month = previous month
+        const prevDate = new Date(NOW.getFullYear(), NOW.getMonth() - 1, 1);
+        const archiveMonth = prevDate.getFullYear() + "-" + String(prevDate.getMonth()+1).padStart(2,'0');
+        
+        // Ask manager to confirm archive
+        const confirmArchive = confirm(
+          `📦 Archive Confirmation\n\n` +
+          `Current system has ${masterData.length} accounts.\n` +
+          `These will be archived as: ${archiveMonth}\n\n` +
+          `After archiving, fresh data from Excel will be loaded.\n` +
+          `Historical data can be viewed in "Monthly History" page.\n\n` +
+          `Continue with archive + upload?`
+        );
+        
+        if (!confirmArchive) {
+          loaderHide();
+          toast("Upload cancelled.", "info");
+          return;
+        }
+
+        // Archive in batches of 150
+        loader(`📦 Archiving ${masterData.length} records as ${archiveMonth}...`);
+        const archiveBatch = 150;
+        for (let i=0; i<masterData.length; i+=archiveBatch) {
+          const chunk = masterData.slice(i, i+archiveBatch);
+          loader(`📦 Archiving ${Math.min(i+archiveBatch, masterData.length)} / ${masterData.length}...`);
+          const arcRes = await fetch(CLOUD_URL, {
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${token}`},
+            body: JSON.stringify({ 
+              action: "archiveMonth", 
+              archiveMonth: archiveMonth,
+              data: chunk 
+            })
+          });
+          if (!arcRes.ok) {
+            const errTxt = await arcRes.text();
+            throw new Error("Archive failed: " + errTxt.substring(0,100));
+          }
+        }
+        toast(`✅ ${masterData.length} records archived as ${archiveMonth}!`, "success");
+      }
 
       // ── Cleanup old records ──
       if (type === "New" || type === "Red") {
