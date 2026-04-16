@@ -234,7 +234,7 @@
         <button onclick="goTo('ccLogsPage'); renderCCLogs()">📋 Call Center Logs</button>
         <button onclick="goTo('fieldPage'); renderFieldPage()" class="btn-sm" style="background:linear-gradient(135deg,var(--green2),#2e7d32); width:100%; margin-bottom:8px; padding:9px 16px;">🌾 Field Officer Performance</button>
         <button onclick="goTo('trackPage'); renderTracking()" style="background:linear-gradient(135deg,#0d3b50,#1565c0); width:100%; margin-bottom:8px; padding:9px 16px;">📍 Field Live Tracking</button>
-        <button onclick="goTo('promoCenterPage'); renderPromo()" style="background:linear-gradient(135deg,#5d1a00,var(--orange)); width:100%; margin-bottom:8px; padding:9px 16px;">📢 Promotion Center</button>
+        <button onclick="goTo('promoCenterPage'); renderPromo(); renderPromoTaskList();" style="background:linear-gradient(135deg,#5d1a00,var(--orange)); width:100%; margin-bottom:8px; padding:9px 16px;">📢 Promotion Center</button>
         <button onclick="goTo('bmIssuePage'); renderBMIssues()" style="background:linear-gradient(135deg,#1a0030,#6a1b9a); width:100%; margin-bottom:8px; padding:9px 16px;">💼 BM Issue Management</button>
         <button onclick="downloadPhoneDir()" class="btn-teal" style="width:100%; margin-bottom:8px;">📥 Download Phonebook</button>
 
@@ -387,6 +387,8 @@
       <span style="font-size:12px; font-weight:600;">Status:</span>
       <select id="logStatusFilter" onchange="renderCCLogs()" style="width:180px;">
         <option value="ALL">All Accounts</option>
+        <option value="ISSU">🔴 Arrears (ISSU)</option>
+        <option value="OPEN">🟢 Open Accounts</option>
         <option value="CALLED">Called / Paid</option>
         <option value="PENDING">Pending (New)</option>
         <option value="RISK">Risk Accounts</option>
@@ -394,9 +396,12 @@
         <option value="NOT_WORKING">Phone Not Working</option>
         <option value="BAD_FEEDBACK">Bad Feedback</option>
       </select>
-      <div style="margin-left:auto; text-align:right; font-size:12px;">
-        Target: <b id="ccTarget" style="color:var(--yellow); font-size:1.1rem;">0</b>&nbsp;&nbsp;
-        Done: <b id="ccDone" style="color:var(--green); font-size:1.1rem;">0</b>
+      <div style="margin-left:auto; text-align:right; font-size:12px; display:flex; align-items:center; gap:16px;">
+        <span>Target: <b id="ccTarget" style="color:var(--yellow); font-size:1.1rem;">0</b></span>
+        <span>Called: <b id="ccDone" style="color:var(--blue); font-size:1.1rem;">0</b></span>
+        <span style="background:rgba(61,220,116,.15); border:1px solid var(--green); border-radius:20px; padding:4px 14px;">
+          💰 Paid Rate: <b id="ccRate" style="color:var(--green);">0%</b>
+        </span>
       </div>
     </div>
     <div class="tbl-wrap glass" style="max-height:70vh; overflow-y:auto;">
@@ -484,9 +489,17 @@
 <!-- ─────── PROMO CENTER ─────── -->
 <div id="promoCenterPage" class="page">
   <div class="wrap" style="max-width:1200px;">
-    <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
       <h2 style="color:var(--yellow);">📢 Promotion Center</h2>
-      <button onclick="goTo('dashPage')" class="btn-sm">← Back</button>
+      <div style="display:flex; gap:10px;">
+        <button onclick="openModal('createTaskModal')" style="background:linear-gradient(135deg,var(--orange),#e65100); padding:8px 18px;">🔔 Send Task to Call Center</button>
+        <button onclick="goTo('dashPage')" class="btn-sm">← Back</button>
+      </div>
+    </div>
+    <!-- Active Tasks List -->
+    <div id="promoTaskListSection" style="margin-bottom:20px; display:none;">
+      <h3 style="color:var(--orange); margin-bottom:10px;">📋 Active Tasks (<span id="promoTaskCount">0</span>)</h3>
+      <div id="promoTaskListBody"></div>
     </div>
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
       <div class="glass" style="padding:22px;">
@@ -554,6 +567,18 @@
         <button onclick="doLogout()" class="btn-red btn-sm">Logout</button>
       </div>
     </div>
+    <!-- 🔔 Promo Task Notification Banner -->
+    <div id="promoTaskBanner" style="display:none; background:linear-gradient(135deg,rgba(255,145,0,.25),rgba(255,214,0,.15)); border:2px solid var(--orange); border-radius:12px; padding:14px 18px; margin-bottom:14px; cursor:pointer;" onclick="showPromoTaskModal()">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span style="font-size:1.8rem;">🔔</span>
+        <div>
+          <div style="font-weight:700; color:var(--yellow); font-size:14px;">Special Task from Branch Manager!</div>
+          <div id="promoTaskPreview" style="font-size:12px; color:#ccc; margin-top:3px;">Click to view task details</div>
+        </div>
+        <span style="margin-left:auto; background:var(--orange); color:#000; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700;">VIEW</span>
+      </div>
+    </div>
+
     <div id="staffDayWarning" style="display:none; background:rgba(239,83,80,.85); border-radius:9px; padding:10px 16px; text-align:center; margin-bottom:12px; font-weight:600; font-size:13px;">
       ⚠️ අවධානය: ඔබ අද දිනය select කර නැත!
     </div>
@@ -657,6 +682,34 @@
   <button onclick="closeAllModals()" style="width:100%; background:#333; margin-top:8px;">Cancel</button>
 </div>
 
+<!-- Promo Task Modal (Staff view) -->
+<div id="promoTaskModal" class="modal glass">
+  <h2 style="color:var(--yellow);">🔔 Special Task</h2>
+  <div style="background:rgba(0,0,0,.5); padding:16px; border-radius:10px; margin:14px 0; border:1px solid var(--orange);">
+    <div style="font-size:11px; color:var(--muted); margin-bottom:8px;">FROM: Branch Manager</div>
+    <div id="promoTaskFullMsg" style="font-size:14px; line-height:1.7; white-space:pre-wrap;"></div>
+  </div>
+  <div style="display:flex; gap:10px; margin-top:14px;">
+    <button onclick="markTaskDone()" style="background:var(--green2); width:100%;">✅ Mark as Completed</button>
+    <button onclick="closeAllModals()" style="background:#444; width:100%;">Later</button>
+  </div>
+</div>
+
+<!-- Promo Task Create Modal (Manager) -->
+<div id="createTaskModal" class="modal glass" style="width:min(500px,94vw);">
+  <h2 style="color:var(--yellow);">📢 Send Special Task to Call Center</h2>
+  <label>Task Message:</label>
+  <textarea id="taskMsgInput" rows="5" placeholder="eg: ඉලක්කගත ගනුදෙනුකරුවන්ට රක්ෂිතාවරණ ගැන දන්වන්න..." style="width:100%; margin-top:8px;"></textarea>
+  <label>Priority:</label>
+  <select id="taskPriority" style="margin-top:6px;">
+    <option value="normal">🟡 Normal</option>
+    <option value="urgent">🔴 Urgent</option>
+    <option value="info">🟢 Information Only</option>
+  </select>
+  <button onclick="sendPromoTask()" style="width:100%; background:var(--orange); margin-top:16px;">📤 Send Task to Call Center</button>
+  <button onclick="closeAllModals()" style="width:100%; background:#444; margin-top:8px;">Cancel</button>
+</div>
+
 <!-- BM Payment Modal -->
 <div id="bmPayModal" class="modal glass">
   <h2 style="color:var(--purple);">UPDATE PAYMENT</h2>
@@ -691,6 +744,7 @@ let fieldVisits     = [];   // field officer GPS logs
 let currentRole     = "";   // "manager" | "officer" | "staff"
 let currentOfficer  = "";   // officer name
 let isSystemLoaded  = false; // prevent duplicate subscriptions
+let promoTasks      = [];   // manager promo tasks
 
 // ── Date helpers ──
 const NOW = new Date();
@@ -804,6 +858,12 @@ function subscribeStaffData() {
       if (redDone && openDone && !document.getElementById("staffSearch").value.trim()) renderStaffUI();
     }));
 
+    // Promo task notifications
+    _unsubs.push(onSnapshot(collection(db, "promo_tasks"), snap => {
+      promoTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      updatePromoNotification();
+    }));
+
     // Load OPEN accounts
     const qOpen = query(collection(db, "customers"), where("listType","==","New"));
     _unsubs.push(onSnapshot(qOpen, snap => {
@@ -826,6 +886,11 @@ function subscribeStaffData() {
 // ─────────────────────────────────────
 function subscribeOfficerData() {
   return new Promise(resolve => {
+    // Officer also gets promo task notifications
+    _unsubs.push(onSnapshot(collection(db, "promo_tasks"), snap => {
+      promoTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    }));
+
     const qOff = query(collection(db, "customers"),
       where("fieldAgent", "==", currentOfficer),
       where("listType", "==", "Red")
@@ -846,6 +911,12 @@ async function subscribeManagerData() {
   _unsubs.push(onSnapshot(collection(db, "phoneDirectory"), snap => {
     snap.forEach(d => { phoneDir[d.id] = d.data(); });
     if (isActivePage("promoCenterPage")) renderPromo();
+  }));
+
+  // Promo Tasks (manager sends tasks to call center)
+  _unsubs.push(onSnapshot(collection(db, "promo_tasks"), snap => {
+    promoTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    if (isActivePage("promoCenterPage")) renderPromoTaskList();
   }));
 
   // BM Issues
@@ -1097,11 +1168,16 @@ function updateProgress() {
 
   const d2s = (n, t) => t > 0 ? Math.round((n/t)*100) : 0;
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.innerText = v; };
-  set('pRateDay',   d2s(dayDone,   dayTarget)   + "%");
-  set('pRateMonth', d2s(monthDone, monthTarget)  + "%");
+  
+  // ★ Success rate = Paid / Target (not called/target)
+  const dayPaid   = masterData.filter(d => d.notes === "Customer Paid" && (d.listType === "Red" || extractDay(d.agreeDate) <= (selectedDay||TD))).length;
+  const monthPaid = masterData.filter(d => d.notes === "Customer Paid").length;
+  
+  set('pRateDay',   d2s(dayPaid,   dayTarget)   + "%");
+  set('pRateMonth', d2s(monthPaid, monthTarget)  + "%");
   set('pTarget',    dayTarget);
-  set('pDone',      dayDone);
-  set('dashRate',   d2s(monthDone, monthTarget)  + "%");
+  set('pDone',      dayDone + ' called / ' + dayPaid + ' paid');
+  set('dashRate',   d2s(monthPaid, monthTarget)  + "%");
 }
 window.updateProgress = updateProgress;
 
@@ -1119,7 +1195,7 @@ function renderCCLogs() {
   const statusFilter = document.getElementById('logStatusFilter')?.value || "ALL";
   const agentFilter  = document.getElementById('ccAgentFilter')?.value || "ALL";
 
-  let html = "", target = 0, done = 0;
+  let html = "", target = 0, done = 0, paidCount = 0;
 
   // ★ Sort: promises first, red second, normal last
   const sorted = [...masterData].sort((a, b) => {
@@ -1145,11 +1221,14 @@ function renderCCLogs() {
     const riskBadge = riskFlag ? '<span class="badge badge-risk">RISK</span>' : '';
     let rowC = d.listType === "Red" ? "row-red" : (riskFlag ? "row-yellow" : (isPaid ? "row-green" : ""));
     let statusTxt = "Pending";
-    if (isPaid) { statusTxt = "✅ Paid"; done++; }
-    else if (d.lastCallDate === SYS_TODAY) { statusTxt = "Called"; done++; }
+    const wasActioned = d.lastCallDate === SYS_TODAY;
+    if (isPaid) { statusTxt = "✅ Paid"; done++; paidCount++; }
+    else if (wasActioned) { statusTxt = d.notes || "Called"; done++; }
     else if (att > 0) statusTxt = "Attempted";
 
     // Apply status filter
+    if (statusFilter === "ISSU"         && d.listType !== "Red")             return;
+    if (statusFilter === "OPEN"         && d.listType !== "New")             return;
     if (statusFilter === "CALLED"       && statusTxt === "Pending")          return;
     if (statusFilter === "PENDING"      && (att > 0 || isPaid))              return;
     if (statusFilter === "RISK"         && !riskFlag)                        return;
@@ -1174,6 +1253,16 @@ function renderCCLogs() {
   const setEl = (id, v) => { const el = document.getElementById(id); if(el) el.innerText = v; };
   setEl('ccTarget', target);
   setEl('ccDone', done);
+  // ★ Success rate = PAID only / target (not all actioned)
+  const successRate = target > 0 ? Math.round((paidCount/target)*100) : 0;
+  const rateEl = document.getElementById('ccRate');
+  if (rateEl) {
+    rateEl.innerText = successRate + '%';
+    rateEl.style.color = successRate >= 80 ? '#4caf50' : successRate >= 50 ? '#ffd600' : '#ef5350';
+  }
+  // Done count label = actioned (called)
+  const doneEl = document.getElementById('ccDone');
+  if (doneEl) doneEl.innerText = done + ' called / ' + paidCount + ' paid';
 }
 window.renderCCLogs = renderCCLogs;
 
@@ -1391,6 +1480,130 @@ window.copyAllNumbers = () => {
 // ═══════════════════════════════════════
 //  BM ISSUES
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+//  PROMO TASK SYSTEM
+// ═══════════════════════════════════════
+
+// Staff: Show notification if active tasks exist
+function updatePromoNotification() {
+  const banner = document.getElementById('promoTaskBanner');
+  if (!banner) return;
+
+  const today = SYS_TODAY;
+  const activeTasks = promoTasks.filter(t =>
+    t.status === 'active' && (!t.date || t.date === today)
+  );
+
+  if (activeTasks.length > 0) {
+    banner.style.display = 'block';
+    const latest = activeTasks[activeTasks.length - 1];
+    const prev = document.getElementById('promoTaskPreview');
+    if (prev) {
+      const priorityIcon = latest.priority === 'urgent' ? '🔴' : latest.priority === 'info' ? '🟢' : '🟡';
+      prev.innerText = `${priorityIcon} ${(latest.message || '').substring(0, 80)}...`;
+    }
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// Staff: Open task modal
+window.showPromoTaskModal = () => {
+  const today = SYS_TODAY;
+  const activeTasks = promoTasks.filter(t =>
+    t.status === 'active' && (!t.date || t.date === today)
+  );
+  if (!activeTasks.length) return;
+
+  const latest = activeTasks[activeTasks.length - 1];
+  const priorityLabel = latest.priority === 'urgent' ? '🔴 URGENT' : latest.priority === 'info' ? '🟢 Information' : '🟡 Normal';
+  document.getElementById('promoTaskFullMsg').innerHTML =
+    `<b style="color:var(--orange);">Priority: ${priorityLabel}</b>\n\n${latest.message || ''}`;
+  document.getElementById('promoTaskModal').setAttribute('data-task-id', latest.id);
+  openModal('promoTaskModal');
+};
+
+// Staff: Mark task as done
+window.markTaskDone = async () => {
+  const taskId = document.getElementById('promoTaskModal').getAttribute('data-task-id');
+  if (!taskId) return;
+  try {
+    await updateDoc(doc(db, "promo_tasks", taskId), {
+      completedBy: currentRole === 'staff' ? 'Call Center' : currentOfficer,
+      completedAt: SYS_TODAY,
+      status: 'completed'
+    });
+    closeAllModals();
+    toast("✅ Task marked as completed!", "success");
+  } catch(e) {
+    toast("❌ " + e.message, "error");
+  }
+};
+
+// Manager: Send new task
+window.sendPromoTask = async () => {
+  const msg = document.getElementById('taskMsgInput')?.value.trim();
+  const priority = document.getElementById('taskPriority')?.value || 'normal';
+  if (!msg) { toast("❌ Message ලියන්න!", "error"); return; }
+
+  try {
+    await addDoc(collection(db, "promo_tasks"), {
+      message: msg,
+      priority,
+      status: 'active',
+      date: SYS_TODAY,
+      createdAt: new Date().toISOString(),
+      createdBy: 'Branch Manager'
+    });
+    closeAllModals();
+    document.getElementById('taskMsgInput').value = '';
+    toast("✅ Task sent to Call Center!", "success");
+  } catch(e) {
+    toast("❌ " + e.message, "error");
+  }
+};
+
+// Manager: Render task list in promo center
+function renderPromoTaskList() {
+  const section = document.getElementById('promoTaskListSection');
+  const body    = document.getElementById('promoTaskListBody');
+  const cnt     = document.getElementById('promoTaskCount');
+  if (!section || !body) return;
+
+  if (promoTasks.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  if (cnt) cnt.innerText = promoTasks.length;
+
+  let html = '';
+  [...promoTasks].reverse().forEach(t => {
+    const statusColor = t.status === 'completed' ? 'var(--green)' : 'var(--orange)';
+    const statusTxt   = t.status === 'completed'
+      ? `✅ Completed by ${t.completedBy || 'Staff'}`
+      : '⏳ Pending';
+    const priorityIcon = t.priority === 'urgent' ? '🔴' : t.priority === 'info' ? '🟢' : '🟡';
+    html += `<div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px; border-left:4px solid ${statusColor};">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:12px; color:var(--muted);">${priorityIcon} ${t.date || ''} | ${t.createdBy || 'Manager'}</span>
+        <span style="font-size:11px; color:${statusColor}; font-weight:700;">${statusTxt}</span>
+      </div>
+      <div style="font-size:13px; color:var(--text);">${(t.message||'').substring(0,150)}</div>
+      ${t.status === 'active' ? `<button onclick="cancelTask('${t.id}')" class="btn-xs btn-red" style="margin-top:8px;">❌ Cancel Task</button>` : ''}
+    </div>`;
+  });
+  body.innerHTML = html;
+}
+window.renderPromoTaskList = renderPromoTaskList;
+
+// Manager: Cancel a task
+window.cancelTask = async (taskId) => {
+  try {
+    await updateDoc(doc(db, "promo_tasks", taskId), { status: 'cancelled' });
+    toast("Task cancelled.", "info");
+  } catch(e) { toast("❌ " + e.message, "error"); }
+};
+
+// ═══════════════════════════════════════
+
 function renderBMStats() {
   let issued=0, collected=0, bal=0, accCount=0, outCount=0;
   bmIssues.forEach(d => {
@@ -1676,21 +1889,19 @@ window.saveData = async (docId, msgCat) => {
 
 // ★ Live call count updater (runs after every save)
 function updateLiveCallCount() {
-  // Count how many were actioned today
-  let todayDone = masterData.filter(d => d.lastCallDate === SYS_TODAY || d.notes === "Customer Paid").length;
-  
-  // Update staffPage target badge area if visible
-  const badge = document.getElementById('staffTargetBadge');
-  // badge updates via renderStaffUI which removes the row - no need to update
-  
-  // Update manager dashboard if open
+  // Called today (any action taken)
+  const calledToday = masterData.filter(d => d.lastCallDate === SYS_TODAY).length;
+  // Paid (actual success)
+  const paidToday = masterData.filter(d => d.notes === "Customer Paid").length;
+
+  // Update manager dashboard
   const dashTodayEl = document.getElementById('dashTodayDone');
-  if (dashTodayEl) dashTodayEl.innerText = todayDone;
-  
-  // Update progress page if open
+  if (dashTodayEl) dashTodayEl.innerText = calledToday + ' called / ' + paidToday + ' paid';
+
+  // Update progress page
   if (isActivePage('progressPage')) updateProgress();
-  
-  // Update CC logs if manager has it open
+
+  // Update CC logs
   if (isActivePage('ccLogsPage')) renderCCLogs();
 }
 
