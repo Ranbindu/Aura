@@ -37,9 +37,9 @@
 
   /* ── LAYOUT ── */
   .page{display:none; animation:fadeUp .35s ease;}
-  .page.active{display:block; position:relative; z-index:5;}
+  .page.active{display:block;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-  .wrap{max-width:1480px; margin:0 auto; padding:20px 16px; position:relative; z-index:5;}
+  .wrap{max-width:1480px; margin:0 auto; padding:20px 16px;}
   .glass{
     background: rgba(5,15,8,0.55);
     border: 1px solid rgba(61,220,116,0.22);
@@ -144,28 +144,24 @@
   /* ── LOGIN ── */
   #loginPage{
     display:none;
-    align-items:center;
-    justify-content:center;
-    min-height:100vh;
+    align-items:center; 
+    justify-content:center; 
+    min-height:100vh; 
     padding:20px;
   }
   #loginPage.active{
     display:flex !important;
-    position:fixed !important;
-    inset:0 !important;
-    z-index:500 !important;
-    background:transparent !important;
+    z-index: 10 !important;
+    position: relative !important;
   }
   .login-box{
     width:100%; max-width:420px; padding:48px 40px; text-align:center;
-    background: rgba(3,12,5,0.82);
+    background: rgba(3,12,5,0.60);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
-    border: 1px solid rgba(61,220,116,0.3);
+    border: 1px solid rgba(61,220,116,0.2);
     border-radius: 24px;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.1);
-    position:relative;
-    z-index:501;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08);
   }
   .logo-text{font-size:4.5rem; font-weight:900; line-height:1;
     background:linear-gradient(135deg,var(--green),#2196f3,#9c27b0);
@@ -299,10 +295,6 @@
     background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%);
     pointer-events: none;
     z-index: 0;
-  }
-  /* Ensure all content above vignette */
-  #loginPage, .page.active, #globalLoader, #toastContainer, .modal-overlay, .modal {
-    position: relative;
   }
   .page, #toastContainer {
     position: relative;
@@ -1090,7 +1082,7 @@
     }
     var errEl = document.getElementById('loginErr');
     if (errEl) { errEl.style.color='#ff9800'; errEl.innerText='⚠️ Connecting... retry if needed.'; }
-  }, 2500); // Reduced: show login faster if module slow
+  }, 4500);
   window._aura_safety_timer = safetyTimer;
 })();
 </script>
@@ -1278,46 +1270,65 @@ function subscribeData() {
   }));
 }
 
-// ★ STAFF: Real-time listener (simpler, more reliable)
+// ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
-  loader("Loading today's targets...");
-  
-  // Timeout - if data doesn't load in 8s, show empty UI
-  const loadTimeout = setTimeout(() => {
-    loaderHide();
-    renderStaffUI();
-    toast("⚠️ Slow connection - showing available data", "info");
-  }, 8000);
-
-  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-    clearTimeout(loadTimeout);
+  try {
+    loader("Loading today's targets...");
+    const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     loaderHide();
-    if (!document.getElementById('staffSearch')?.value.trim()) {
-      renderStaffUI();
-    }
-  }, err => {
-    clearTimeout(loadTimeout);
-    loaderHide();
-    console.error("Staff data error:", err);
-    toast("❌ Data load failed: " + err.message, "error");
     renderStaffUI();
-  }));
+
+    // After initial load, listen for changes only
+    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+      // Only update locally changed docs (incremental)
+      snap.docChanges().forEach(change => {
+        const d = {id: change.doc.id, ...change.doc.data()};
+        if (change.type === "removed") {
+          masterData = masterData.filter(x => x.id !== d.id);
+        } else {
+          const idx = masterData.findIndex(x => x.id === d.id);
+          if (idx !== -1) masterData[idx] = d;
+          else masterData.push(d);
+        }
+      });
+      if (snap.docChanges().length > 0 && 
+          !document.getElementById('staffSearch')?.value.trim()) {
+        renderStaffUI();
+      }
+    }));
+  } catch(e) {
+    loaderHide();
+    toast("❌ Load failed: " + e.message, "error");
+  }
 }
 
-// ★ OFFICER: Real-time listener
-function loadOfficerDataOnce() {
-  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+// ★ OFFICER: only their assigned accounts
+async function loadOfficerDataOnce() {
+  try {
+    const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     renderOfficerDash();
-  }, err => {
-    console.error("Officer data error:", err);
-    toast("❌ " + err.message, "error");
-  }));
 
-  _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
-    fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
-  }));
+    // Listen for changes
+    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+      snap.docChanges().forEach(change => {
+        const d = {id: change.doc.id, ...change.doc.data()};
+        if (change.type === "removed") masterData = masterData.filter(x => x.id !== d.id);
+        else {
+          const idx = masterData.findIndex(x => x.id === d.id);
+          if (idx !== -1) masterData[idx] = d; else masterData.push(d);
+        }
+      });
+      renderOfficerDash();
+    }));
+
+    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
+      fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
+    }));
+  } catch(e) {
+    toast("❌ " + e.message, "error");
+  }
 }
 
 
@@ -3247,9 +3258,9 @@ window.goTo = (pageId) => {
   if (pg) {
     pg.classList.add('active');
     if (pageId === 'loginPage') {
-      pg.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; z-index:500 !important; align-items:center !important; justify-content:center !important;';
+      pg.style.cssText = 'display:flex !important; z-index:10 !important;';
     } else {
-      pg.style.cssText = 'display:block !important; position:relative !important; z-index:5 !important;';
+      pg.style.cssText = 'display:block !important;';
     }
     window.scrollTo(0,0);
   }
