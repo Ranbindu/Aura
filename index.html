@@ -4,11 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Aura ERP v2 — Recovery System</title>
-<script>
-if('serviceWorker' in navigator)
-  navigator.serviceWorker.getRegistrations().then(r=>r.forEach(s=>s.unregister()));
-if('caches' in window) caches.keys().then(k=>k.forEach(n=>caches.delete(n)));
-</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -42,7 +37,7 @@ if('caches' in window) caches.keys().then(k=>k.forEach(n=>caches.delete(n)));
 
   /* ── LAYOUT ── */
   .page{display:none; animation:fadeUp .35s ease;}
-  .page.active{display:block;}
+  .page.active{display:block; background:#050d07;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
   .wrap{max-width:1480px; margin:0 auto; padding:20px 16px;}
   .glass{
@@ -155,12 +150,9 @@ if('caches' in window) caches.keys().then(k=>k.forEach(n=>caches.delete(n)));
     padding:20px;
   }
   #loginPage.active{
-    display:flex!important;
-    position:fixed!important;
-    inset:0!important;
-    z-index:200!important;
-    align-items:center!important;
-    justify-content:center!important;
+    display:flex !important;
+    z-index: 10 !important;
+    position: relative !important;
   }
   .login-box{
     width:100%; max-width:420px; padding:48px 40px; text-align:center;
@@ -355,8 +347,6 @@ if('caches' in window) caches.keys().then(k=>k.forEach(n=>caches.delete(n)));
   </div>
 </div>
 
-
-<div id="appShell" style="display:none; position:fixed; inset:0; z-index:100; background:#050d07; overflow-y:auto; overflow-x:hidden;">
 <!-- ─────── MANAGER DASHBOARD ─────── -->
 <div id="dashPage" class="page">
   <div class="wrap">
@@ -1088,7 +1078,7 @@ if('caches' in window) caches.keys().then(k=>k.forEach(n=>caches.delete(n)));
     var loginPage = document.getElementById('loginPage');
     if (loginPage) {
       loginPage.classList.add('active');
-      loginPage.style.cssText='display:flex!important;position:fixed!important;inset:0!important;z-index:200!important;align-items:center!important;justify-content:center!important;'; var sh=document.getElementById('appShell');if(sh)sh.style.display='none';
+      loginPage.style.cssText = 'display:flex !important; z-index:10 !important;';
     }
     var errEl = document.getElementById('loginErr');
     if (errEl) { errEl.style.color='#ff9800'; errEl.innerText='⚠️ Connecting... retry if needed.'; }
@@ -1146,24 +1136,31 @@ async function boot() {
   // Cancel safety net (module loaded OK)
   if (window._aura_safety_timer) clearTimeout(window._aura_safety_timer);
 
-  let bootDone=false;
-  const SHOW_LOGIN=setTimeout(()=>{
-    if(bootDone) return; bootDone=true;
-    loaderHide(); goTo('loginPage');
-  },5000);
-  try{
-    app=initializeApp(FB_CFG); auth=getAuth(app); db=getFirestore(app);
-    const cu=auth.currentUser;
-    if(cu){ bootDone=true; clearTimeout(SHOW_LOGIN); loaderHide(); handleUser(cu); return; }
-    onAuthStateChanged(auth,(user)=>{
+  let _done = false;
+  const SHOW_LOGIN = setTimeout(() => {
+    if (_done) return;
+    _done = true;
+    loaderHide();
+    goTo('loginPage');
+  }, 5000);
+
+  try {
+    app  = initializeApp(FB_CFG);
+    auth = getAuth(app);
+    db   = getFirestore(app);
+    const cu = auth.currentUser;
+    if (cu) { _done=true; clearTimeout(SHOW_LOGIN); loaderHide(); handleUser(cu); return; }
+    onAuthStateChanged(auth, (user) => {
       clearTimeout(SHOW_LOGIN);
-      if(bootDone&&user){ handleUser(user); return; }
-      if(bootDone) return;
-      bootDone=true; loaderHide();
-      if(user) handleUser(user); else goTo('loginPage');
+      if (_done && user) { handleUser(user); return; }
+      if (_done) return;
+      _done = true;
+      loaderHide();
+      if (user) handleUser(user);
+      else goTo('loginPage');
     });
-  }catch(e){
-    if(!bootDone){ bootDone=true; clearTimeout(SHOW_LOGIN); loaderHide(); goTo('loginPage'); }
+  } catch(e) {
+    if (!_done) { _done=true; clearTimeout(SHOW_LOGIN); loaderHide(); goTo('loginPage'); }
   }
 }
 
@@ -1265,6 +1262,7 @@ function subscribeData() {
 // ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
   try {
+    loader("Loading today's targets...");
     const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     loaderHide();
@@ -3239,20 +3237,21 @@ window.doLogout = async () => {
 //  NAVIGATION
 // ═══════════════════════════════════════
 window.goTo = (pageId) => {
-  const gl = document.getElementById('globalLoader');
-  if(gl){ gl.style.display='none'; gl.classList.remove('show'); }
-  document.querySelectorAll('.page').forEach(p=>{
-    p.classList.remove('active'); p.style.display='none';
+  // Hide all pages
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.cssText = 'display:none !important';
   });
+  // Show target page
   const pg = document.getElementById(pageId);
-  const shell = document.getElementById('appShell');
-  if(pageId==='loginPage'){
-    if(shell) shell.style.display='none';
-    if(pg){ pg.classList.add('active'); pg.style.cssText='display:flex!important;position:fixed!important;inset:0!important;z-index:200!important;align-items:center!important;justify-content:center!important;'; }
-  } else {
-    if(shell) shell.style.display='block';
-    if(pg){ pg.classList.add('active'); pg.style.display='block'; }
-    if(shell) shell.scrollTo(0,0);
+  if (pg) {
+    pg.classList.add('active');
+    if (pageId === 'loginPage') {
+      pg.style.cssText = 'display:flex !important; z-index:10 !important;';
+    } else {
+      pg.style.cssText = 'display:block !important;';
+    }
+    window.scrollTo(0,0);
   }
 };
 function isActivePage(id) {
@@ -3328,6 +3327,5 @@ window.toast = (msg, type="info") => {
 // ═══════════════════════════════════════
 boot();
 </script>
-</div>
 </body>
 </html>
