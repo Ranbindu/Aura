@@ -6,6 +6,7 @@
 <title>Aura ERP v2 — Recovery System</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f2518">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -208,10 +209,11 @@
   <div class="glass login-box">
     <div class="logo-text">AURA</div>
     <div class="logo-sub">Recovery Systems · v2</div>
-    <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="username" style="margin-bottom:12px;">
-    <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password"
-      onkeypress="if(event.key==='Enter') doLogin()">
-    <button onclick="doLogin()" style="width:100%; margin-top:16px; padding:12px;">LOGIN TO SYSTEM</button>
+    <form onsubmit="event.preventDefault(); doLogin();" autocomplete="on">
+      <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="username" style="margin-bottom:12px;">
+      <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
+      <button type="submit" style="width:100%; margin-top:16px; padding:12px;">LOGIN TO SYSTEM</button>
+    </form>
     <div id="loginErr" style="color:#ff8a80; margin-top:14px; font-size:13px; font-weight:600;"></div>
     <div style="margin-top:24px; font-size:10px; color:var(--muted); letter-spacing:2px;">POWERED BY MR.RANBINDU</div>
   </div>
@@ -2000,14 +2002,28 @@ window.doLogin = async () => {
   const err   = document.getElementById('loginErr');
   if (!email || !pass) { if(err) err.innerText="❌ Email & Password required!"; return; }
   if (err) err.innerText = "⏳ Logging in...";
+
+  // Wait for Firebase to be ready (boot might still be loading)
+  let waitCount = 0;
+  while (!auth && waitCount < 30) { 
+    await new Promise(r => setTimeout(r, 300)); 
+    waitCount++; 
+  }
+  if (!auth) { if(err) err.innerText="❌ System not ready. Refresh and try again."; return; }
+
   try {
-    // ★ FIX: Call handleUser directly after login - don't rely solely on onAuthStateChanged
-    // which can fire before/after unpredictably when boot() fetch() is running
     const cred = await signInWithEmailAndPassword(auth, email, pass);
-    if (err) err.innerText = "✅ Loading dashboard...";
-    handleUser(cred.user);
+    if (err) err.innerText = "✅ Authenticated! Loading...";
+    await handleUser(cred.user);
   } catch(e) {
-    if (err) err.innerText = "❌ Invalid email or password!";
+    console.error("Login error:", e);
+    if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
+      if (err) err.innerText = "❌ Wrong email or password!";
+    } else if (e.code === 'auth/network-request-failed') {
+      if (err) err.innerText = "❌ Network error. Check connection!";
+    } else {
+      if (err) err.innerText = "❌ Error: " + e.message;
+    }
   }
 };
 
