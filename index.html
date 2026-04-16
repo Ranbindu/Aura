@@ -22,10 +22,13 @@
   html,body{min-height:100vh; background:var(--bg); color:var(--text);
     font-family:'Segoe UI',system-ui,sans-serif; overflow-x:hidden;}
   body{
-    background: 
-      linear-gradient(135deg, rgba(4,12,6,0.72) 0%, rgba(5,18,10,0.68) 100%),
-      url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=90&w=1920&auto=format&fit=crop') 
-      no-repeat center center fixed;
+    background-color: #050d07;
+    background-image: 
+      linear-gradient(135deg, rgba(4,12,6,0.70) 0%, rgba(5,18,10,0.65) 100%),
+      url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1920&auto=format&fit=crop');
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-attachment: fixed;
     background-size: cover;
   }
 
@@ -192,9 +195,9 @@
   /* ── LOADING SPINNER ── */
   #globalLoader{
     display:flex; position:fixed; inset:0; 
-    background: rgba(0,0,0,0.78);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     z-index:8000; align-items:center; justify-content:center; flex-direction:column; gap:16px;
   }
   #globalLoader.show{display:flex;}
@@ -296,11 +299,16 @@
 
 <!-- ─────── GLOBAL LOADER ─────── -->
 <div id="globalLoader">
-  <div style="text-align:center;">
-    <div style="font-size:3.5rem; font-weight:900; background:linear-gradient(135deg,#3ddc74,#2196f3,#9c27b0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:4px; margin-bottom:8px;">AURA</div>
-    <div style="font-size:10px; color:#7aa886; letter-spacing:8px; text-transform:uppercase; margin-bottom:32px;">Recovery Systems</div>
-    <div class="spinner"></div>
-    <div id="loaderMsg" style="margin-top:16px; color:#3ddc74; font-size:13px; font-weight:600; letter-spacing:.5px;">Connecting to Aura Secure Vault...</div>
+  <div style="text-align:center; animation:fadeUp .5s ease;">
+    <div style="font-size:4.5rem; font-weight:900; 
+      background:linear-gradient(135deg,#3ddc74,#2196f3,#9c27b0); 
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; 
+      letter-spacing:6px; margin-bottom:6px;
+      filter:drop-shadow(0 0 20px rgba(61,220,116,0.5));">AURA</div>
+    <div style="font-size:10px; color:#7aa886; letter-spacing:10px; text-transform:uppercase; margin-bottom:36px; font-weight:600;">RECOVERY SYSTEMS</div>
+    <div class="spinner" style="margin:0 auto;"></div>
+    <div id="loaderMsg" style="margin-top:18px; color:#3ddc74; font-size:13px; font-weight:600; letter-spacing:.5px; min-width:280px;">Connecting to Aura Secure Vault...</div>
+    <div style="margin-top:12px; font-size:10px; color:rgba(122,168,134,0.5); letter-spacing:2px;">POWERED BY MR.RANBINDU</div>
   </div>
 </div>
 
@@ -1079,7 +1087,10 @@ window.TD = TD;
 async function boot() {
   loader("Connecting to Aura Secure Vault...");
   try {
-    const r = await fetch(CLOUD_URL);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const r = await fetch(CLOUD_URL, { signal: controller.signal });
+    clearTimeout(timeout);
     const cfg = await r.json();
     app  = initializeApp(cfg);
     auth = getAuth(app);
@@ -1092,9 +1103,31 @@ async function boot() {
       else      { goTo('loginPage'); }
     });
   } catch(e) {
-    loaderHide();
-    toast("Failed to connect: " + e.message, "error");
-    setTimeout(() => goTo('loginPage'), 1500);
+    console.warn("Cloud fetch failed, using cached config:", e.message);
+    // Fallback: use hardcoded Firebase config if worker unreachable
+    try {
+      const fallbackCfg = {
+        apiKey: "AIzaSyCkvMk3DQt5Bq3rK_bA-GThbxB4wOXNq1g",
+        authDomain: "aura-7bc62.firebaseapp.com",
+        projectId: "aura-7bc62",
+        storageBucket: "aura-7bc62.firebasestorage.app",
+        messagingSenderId: "791728658552",
+        appId: "1:791728658552:web:7f62baa17d44e40dc5b58d"
+      };
+      app  = initializeApp(fallbackCfg);
+      auth = getAuth(app);
+      db   = getFirestore(app);
+      await setPersistence(auth, browserLocalPersistence);
+      onAuthStateChanged(auth, user => {
+        loaderHide();
+        if (user) { handleUser(user); }
+        else      { goTo('loginPage'); }
+      });
+    } catch(e2) {
+      loaderHide();
+      toast("❌ Connection failed. Check internet.", "error");
+      setTimeout(() => goTo('loginPage'), 1500);
+    }
   }
 }
 
