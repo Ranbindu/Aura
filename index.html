@@ -37,7 +37,13 @@
 
   /* ── LAYOUT ── */
   .page{display:none; animation:fadeUp .35s ease;}
-  .page.active{display:block; background:#050d07;}
+  .page.active{
+    display:block;
+    background:#050d07;
+    min-height:100vh;
+    width:100%;
+    position:relative;
+  }
   @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
   .wrap{max-width:1480px; margin:0 auto; padding:20px 16px;}
   .glass{
@@ -333,17 +339,34 @@
 <div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
 
 <!-- ─────── LOGIN PAGE ─────── -->
-<div id="loginPage" class="page">
-  <div class="glass login-box">
+<div id="loginPage" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  align-items:center;
+  justify-content:center;
+  background:rgba(3,10,5,0.75);
+  backdrop-filter:blur(4px);
+">
+  <div style="
+    width:min(420px,92vw);
+    padding:40px 36px;
+    background:rgba(5,20,8,0.95);
+    border:1px solid rgba(61,220,116,0.3);
+    border-radius:20px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.8);
+    text-align:center;
+  ">
     <div class="logo-text">AURA</div>
     <div class="logo-sub">Recovery Systems · v2</div>
-    <form onsubmit="event.preventDefault(); doLogin();" autocomplete="on">
-      <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="username" style="margin-bottom:12px;">
-      <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
-      <button type="submit" style="width:100%; margin-top:16px; padding:12px;">LOGIN TO SYSTEM</button>
+    <form onsubmit="event.preventDefault(); doLogin();" autocomplete="on" style="margin-top:24px;">
+      <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="username" style="margin-bottom:12px; width:100%; box-sizing:border-box;">
+      <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password" style="width:100%; box-sizing:border-box;">
+      <button type="submit" style="width:100%; margin-top:16px; padding:13px; font-size:15px; font-weight:700; letter-spacing:1px;">LOGIN TO SYSTEM</button>
     </form>
-    <div id="loginErr" style="color:#ff8a80; margin-top:14px; font-size:13px; font-weight:600;"></div>
-    <div style="margin-top:24px; font-size:10px; color:var(--muted); letter-spacing:2px;">POWERED BY MR.RANBINDU</div>
+    <div id="loginErr" style="color:#ff8a80; margin-top:14px; font-size:13px; font-weight:600; min-height:20px;"></div>
+    <div style="margin-top:20px; font-size:10px; color:rgba(122,168,134,0.5); letter-spacing:2px;">POWERED BY MR.RANBINDU</div>
   </div>
 </div>
 
@@ -1067,8 +1090,12 @@
 <!-- ─────── MAIN SCRIPT ─────── -->
 <script>
 (function() {
+  // Quick check: show loginPage after 3s if nothing is active
   var safetyTimer = setTimeout(function() {
-    if (document.querySelector('.page.active')) return;
+    // Check if any page is active OR loginPage is showing
+    var anyActive = document.querySelector('.page.active');
+    var loginShowing = document.getElementById('loginPage')?.style.display === 'flex';
+    if (anyActive || loginShowing) return;
     console.warn('⚠️ Aura Safety: Module timeout. Showing login.');
     var loader = document.getElementById('globalLoader');
     if (loader) { loader.classList.remove('show'); loader.style.display = 'none'; }
@@ -1076,10 +1103,7 @@
       p.classList.remove('active'); p.style.cssText = 'display:none !important';
     });
     var loginPage = document.getElementById('loginPage');
-    if (loginPage) {
-      loginPage.classList.add('active');
-      loginPage.style.cssText = 'display:flex !important; z-index:10 !important;';
-    }
+    if (loginPage) loginPage.style.display = 'flex';
     var errEl = document.getElementById('loginErr');
     if (errEl) { errEl.style.color='#ff9800'; errEl.innerText='⚠️ Connecting... retry if needed.'; }
   }, 4500);
@@ -1138,26 +1162,21 @@ async function boot() {
 
   let _done = false;
   const SHOW_LOGIN = setTimeout(() => {
-    if (_done) return;
-    _done = true;
-    loaderHide();
-    goTo('loginPage');
+    if (_done) return; _done = true;
+    loaderHide(); goTo('loginPage');
   }, 5000);
-
   try {
-    app  = initializeApp(FB_CFG);
+    app = initializeApp(FB_CFG);
     auth = getAuth(app);
-    db   = getFirestore(app);
+    db = getFirestore(app);
     const cu = auth.currentUser;
     if (cu) { _done=true; clearTimeout(SHOW_LOGIN); loaderHide(); handleUser(cu); return; }
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, user => {
       clearTimeout(SHOW_LOGIN);
       if (_done && user) { handleUser(user); return; }
       if (_done) return;
-      _done = true;
-      loaderHide();
-      if (user) handleUser(user);
-      else goTo('loginPage');
+      _done = true; loaderHide();
+      if (user) handleUser(user); else goTo('loginPage');
     });
   } catch(e) {
     if (!_done) { _done=true; clearTimeout(SHOW_LOGIN); loaderHide(); goTo('loginPage'); }
@@ -1180,18 +1199,18 @@ function handleUser(user) {
 
   setupDaySelects();
 
-  // Navigate first, data loads after
+  // ★ Navigate IMMEDIATELY - don't wait for data
   if (currentRole === "officer") {
     setupOfficerUI();
     goTo('officerPage');
   } else if (currentRole === "manager") {
     goTo('dashPage');
-    // Show loading state in manager dashboard
-    const mgrStats = document.getElementById('mgrStats');
-    if (mgrStats) mgrStats.innerHTML = '<div style="padding:20px;color:#7aa886;text-align:center;">⏳ Loading data...</div>';
+    const ml = document.getElementById('dashPage');
+    if (ml) ml.insertAdjacentHTML('afterbegin','<div id="mgr_loading" style="text-align:center;padding:80px 20px;color:#3ddc74;font-size:1.1rem;">⏳ Loading dashboard data...</div>');
   } else {
     goTo('staffPage');
-    // Loading state shown in table by loadStaffDataOnce
+    const tb = document.getElementById('staffTableBody');
+    if (tb) tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:60px;color:#3ddc74;font-size:1rem;">⏳ Loading accounts...</td></tr>';
   }
 
   // Subscribe only once - data loads in background
@@ -1249,9 +1268,15 @@ function subscribeData() {
   // ── MANAGER: full real-time ──
   _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+    const ml = document.getElementById('mgr_loading');
+    if (ml) ml.remove();
     renderManagerDash();
     if (isActivePage('ccLogsPage')) renderCCLogs();
     if (isActivePage('fieldPage')) renderFieldPage();
+  }, err => {
+    console.error("Manager data error:", err.code);
+    const msg = document.getElementById('mgrLoadMsg');
+    if (msg) msg.innerHTML = '❌ Data load failed: ' + err.code + '<br><small style="color:#7aa886;">Firebase Console → Firestore → Rules → Publish</small>';
   }));
   _unsubs.push(onSnapshot(collection(db, "phoneDirectory"), snap => {
     snap.forEach(d => { phoneDir[d.id] = d.data(); });
@@ -1270,37 +1295,62 @@ function subscribeData() {
 
 // ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
-  // Show loading state IN TABLE (no loader overlay - that covers the page!)
-  const tb = document.getElementById('staffTableBody');
-  if (tb) tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#7aa886;">⏳ Loading accounts...</td></tr>';
-
-  // Use onSnapshot - real-time and more reliable than getDocs
-  _unsubs.push(onSnapshot(collection(db, "customers"), (snap) => {
+  try {
+    const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    if (!document.getElementById('staffSearch')?.value.trim()) {
-      renderStaffUI();
-    }
-  }, (err) => {
-    console.error("Staff data error:", err.code, err.message);
-    const tb2 = document.getElementById('staffTableBody');
-    if (tb2) tb2.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#ef5350;">❌ Data load failed: ' + err.code + '<br><small>Firebase Rules check කරන්න</small></td></tr>';
-  }));
+    loaderHide();
+    renderStaffUI();
+
+    // After initial load, listen for changes only
+    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+      // Only update locally changed docs (incremental)
+      snap.docChanges().forEach(change => {
+        const d = {id: change.doc.id, ...change.doc.data()};
+        if (change.type === "removed") {
+          masterData = masterData.filter(x => x.id !== d.id);
+        } else {
+          const idx = masterData.findIndex(x => x.id === d.id);
+          if (idx !== -1) masterData[idx] = d;
+          else masterData.push(d);
+        }
+      });
+      if (snap.docChanges().length > 0 && 
+          !document.getElementById('staffSearch')?.value.trim()) {
+        renderStaffUI();
+      }
+    }));
+  } catch(e) {
+    loaderHide();
+    toast("❌ Load failed: " + e.message, "error");
+  }
 }
 
 // ★ OFFICER: only their assigned accounts
-function loadOfficerDataOnce() {
-  // Real-time listener - no getDocs, no loader
-  _unsubs.push(onSnapshot(collection(db, "customers"), (snap) => {
+async function loadOfficerDataOnce() {
+  try {
+    const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     renderOfficerDash();
-  }, (err) => {
-    console.error("Officer data error:", err.code);
-    toast("❌ Data error: " + err.code, "error");
-  }));
 
-  _unsubs.push(onSnapshot(collection(db, "field_visits"), (snap) => {
-    fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
-  }));
+    // Listen for changes
+    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+      snap.docChanges().forEach(change => {
+        const d = {id: change.doc.id, ...change.doc.data()};
+        if (change.type === "removed") masterData = masterData.filter(x => x.id !== d.id);
+        else {
+          const idx = masterData.findIndex(x => x.id === d.id);
+          if (idx !== -1) masterData[idx] = d; else masterData.push(d);
+        }
+      });
+      renderOfficerDash();
+    }));
+
+    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
+      fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
+    }));
+  } catch(e) {
+    toast("❌ " + e.message, "error");
+  }
 }
 
 
@@ -3220,19 +3270,31 @@ window.doLogout = async () => {
 //  NAVIGATION
 // ═══════════════════════════════════════
 window.goTo = (pageId) => {
+  // Hide loader
+  var gl = document.getElementById('globalLoader');
+  if (gl) { gl.style.display='none'; gl.classList.remove('show'); }
+
+  // Hide login overlay
+  var lp = document.getElementById('loginPage');
+  if (lp) lp.style.display = 'none';
+
   // Hide all pages
   document.querySelectorAll('.page').forEach(p => {
     p.classList.remove('active');
-    p.style.cssText = 'display:none !important';
+    p.style.display = 'none';
   });
-  // Show target page
-  const pg = document.getElementById(pageId);
-  if (pg) {
-    pg.classList.add('active');
-    if (pageId === 'loginPage') {
-      pg.style.cssText = 'display:flex !important; z-index:10 !important;';
-    } else {
-      pg.style.cssText = 'display:block !important;';
+
+  if (pageId === 'loginPage') {
+    // Show login overlay - position:fixed, z-index:99999
+    if (lp) lp.style.display = 'flex';
+    var errEl = document.getElementById('loginErr');
+    if (errEl) errEl.innerText = '';
+  } else {
+    // Show page content
+    var pg = document.getElementById(pageId);
+    if (pg) {
+      pg.classList.add('active');
+      pg.style.display = 'block';
     }
     window.scrollTo(0,0);
   }
