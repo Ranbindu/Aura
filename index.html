@@ -716,7 +716,7 @@ async function boot() {
   }
 }
 
-function handleUser(user) {
+async function handleUser(user) {
   const e = user.email.toLowerCase();
   const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
 
@@ -728,9 +728,14 @@ function handleUser(user) {
   else                               { currentRole = "staff"; }
 
   setupDaySelects();
-  // ★ FIX: Only subscribe once (prevent duplicate Firestore listeners)
-  if (!isSystemLoaded) { subscribeData(); isSystemLoaded = true; }
 
+  // Subscribe only once
+  if (!isSystemLoaded) {
+    isSystemLoaded = true;
+    await subscribeData(); // ★ await so data loads before navigate
+  }
+
+  // Navigate to correct page
   if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
   else if (currentRole === "manager")  { goTo('dashPage'); }
   else                                 { goTo('staffPage'); }
@@ -749,7 +754,7 @@ function handleUser(user) {
 let _unsubs = [];
 function unsubAll() { _unsubs.forEach(fn => { try{fn();}catch(e){} }); _unsubs = []; }
 
-function subscribeData() {
+async function subscribeData() {
   unsubAll(); // Clean slate
 
   // ── Shared: Agent mapping (tiny collection) ──
@@ -759,11 +764,11 @@ function subscribeData() {
 
   // ── Role-based customer loading ──
   if (currentRole === "staff") {
-    subscribeStaffData();
+    await subscribeStaffData();
   } else if (currentRole === "officer") {
-    subscribeOfficerData();
+    await subscribeOfficerData();
   } else if (currentRole === "manager") {
-    subscribeManagerData();
+    await subscribeManagerData();
   }
 }
 
@@ -772,55 +777,57 @@ function subscribeData() {
 //  Loads: Red accounts + today's agree date accounts
 // ─────────────────────────────────────
 function subscribeStaffData() {
-  // Load RED accounts (always need follow-up)
-  const qRed = query(collection(db, "customers"),
-    where("listType", "==", "Red")
-  );
-  _unsubs.push(onSnapshot(qRed, snap => {
-    // Merge red accounts into masterData
-    const redIds = new Set();
-    snap.docs.forEach(d => {
-      redIds.add(d.id);
-      const idx = masterData.findIndex(x => x.id === d.id);
-      if (idx !== -1) masterData[idx] = {id: d.id, ...d.data()};
-      else masterData.push({id: d.id, ...d.data()});
-    });
-    // Remove red accounts that are no longer red
-    masterData = masterData.filter(x => x.listType !== "Red" || redIds.has(x.id));
-    if (!document.getElementById("staffSearch").value.trim()) renderStaffUI();
-  }));
+  return new Promise(resolve => {
+    let redDone = false, openDone = false;
+    const checkDone = () => { if (redDone && openDone) resolve(); };
 
-  // Load OPEN accounts (filter client-side for performance)
-  // Simple query = no composite index needed
-  const qOpen = query(collection(db, "customers"),
-    where("listType", "==", "New")
-  );
-  _unsubs.push(onSnapshot(qOpen, snap => {
-    const openIds = new Set();
-    snap.docs.forEach(d => {
-      openIds.add(d.id);
-      const exists = masterData.findIndex(x => x.id === d.id);
-      if (exists !== -1) masterData[exists] = {id: d.id, ...d.data()};
-      else masterData.push({id: d.id, ...d.data()});
-    });
-    // Remove open accounts no longer in query
-    masterData = masterData.filter(x => x.listType !== "New" || openIds.has(x.id));
-    if (!document.getElementById("staffSearch").value.trim()) renderStaffUI();
-  }));
+    // Load RED accounts
+    const qRed = query(collection(db, "customers"), where("listType","==","Red"));
+    _unsubs.push(onSnapshot(qRed, snap => {
+      const redIds = new Set();
+      snap.docs.forEach(d => {
+        redIds.add(d.id);
+        const idx = masterData.findIndex(x => x.id === d.id);
+        if (idx !== -1) masterData[idx] = {id:d.id,...d.data()};
+        else masterData.push({id:d.id,...d.data()});
+      });
+      masterData = masterData.filter(x => x.listType !== "Red" || redIds.has(x.id));
+      if (!redDone) { redDone = true; checkDone(); }
+      if (redDone && openDone && !document.getElementById("staffSearch").value.trim()) renderStaffUI();
+    }));
+
+    // Load OPEN accounts
+    const qOpen = query(collection(db, "customers"), where("listType","==","New"));
+    _unsubs.push(onSnapshot(qOpen, snap => {
+      const openIds = new Set();
+      snap.docs.forEach(d => {
+        openIds.add(d.id);
+        const exists = masterData.findIndex(x => x.id === d.id);
+        if (exists !== -1) masterData[exists] = {id:d.id,...d.data()};
+        else masterData.push({id:d.id,...d.data()});
+      });
+      masterData = masterData.filter(x => x.listType !== "New" || openIds.has(x.id));
+      if (!openDone) { openDone = true; checkDone(); }
+      if (redDone && openDone && !document.getElementById("staffSearch").value.trim()) renderStaffUI();
+    }));
+  });
 }
 
 // ─────────────────────────────────────
 //  OFFICER: Only their assigned accounts
 // ─────────────────────────────────────
 function subscribeOfficerData() {
-  const qOff = query(collection(db, "customers"),
-    where("fieldAgent", "==", currentOfficer),
-    where("listType", "==", "Red")
-  );
-  _unsubs.push(onSnapshot(qOff, snap => {
-    masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    renderOfficerDash();
-  }));
+  return new Promise(resolve => {
+    const qOff = query(collection(db, "customers"),
+      where("fieldAgent", "==", currentOfficer),
+      where("listType", "==", "Red")
+    );
+    _unsubs.push(onSnapshot(qOff, snap => {
+      masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+      resolve();
+      renderOfficerDash();
+    }));
+  });
 }
 
 // ─────────────────────────────────────
