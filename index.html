@@ -1084,50 +1084,61 @@ window.TD = TD;
 // ═══════════════════════════════════════
 //  BOOT
 // ═══════════════════════════════════════
+// Firebase config (hardcoded for speed & reliability)
+const FB_CFG = {
+  apiKey: "AIzaSyCkvMk3DQt5Bq3rK_bA-GThbxB4wOXNq1g",
+  authDomain: "aura-7bc62.firebaseapp.com",
+  projectId: "aura-7bc62",
+  storageBucket: "aura-7bc62.firebasestorage.app",
+  messagingSenderId: "791728658552",
+  appId: "1:791728658552:web:7f62baa17d44e40dc5b58d"
+};
+
 async function boot() {
   loader("Connecting to Aura Secure Vault...");
+
+  // ★ Hard timeout - if ANYTHING takes >10s, show login anyway
+  const hardTimeout = setTimeout(() => {
+    console.warn("Boot timeout - showing login");
+    loaderHide();
+    goTo('loginPage');
+  }, 10000);
+
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
-    const r = await fetch(CLOUD_URL, { signal: controller.signal });
-    clearTimeout(timeout);
-    const cfg = await r.json();
+    // Try to get config from worker (for security)
+    // If worker slow/blocked, fall back to local config instantly
+    let cfg = FB_CFG;
+    try {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(), 4000); // 4s max for worker
+      const r = await fetch(CLOUD_URL, { signal: controller.signal });
+      if (r.ok) cfg = await r.json();
+    } catch(fetchErr) {
+      console.warn("Worker unreachable, using local config");
+    }
+
     app  = initializeApp(cfg);
     auth = getAuth(app);
     db   = getFirestore(app);
-    await setPersistence(auth, browserLocalPersistence);
 
-    onAuthStateChanged(auth, user => {
+    // Don't await setPersistence - can cause hangs
+    setPersistence(auth, browserLocalPersistence).catch(()=>{});
+
+    // Auth state - this MUST fire within seconds
+    const unsubAuth = onAuthStateChanged(auth, user => {
+      clearTimeout(hardTimeout);
+      unsubAuth(); // unsubscribe after first call
       loaderHide();
       if (user) { handleUser(user); }
       else      { goTo('loginPage'); }
     });
+
   } catch(e) {
-    console.warn("Cloud fetch failed, using cached config:", e.message);
-    // Fallback: use hardcoded Firebase config if worker unreachable
-    try {
-      const fallbackCfg = {
-        apiKey: "AIzaSyCkvMk3DQt5Bq3rK_bA-GThbxB4wOXNq1g",
-        authDomain: "aura-7bc62.firebaseapp.com",
-        projectId: "aura-7bc62",
-        storageBucket: "aura-7bc62.firebasestorage.app",
-        messagingSenderId: "791728658552",
-        appId: "1:791728658552:web:7f62baa17d44e40dc5b58d"
-      };
-      app  = initializeApp(fallbackCfg);
-      auth = getAuth(app);
-      db   = getFirestore(app);
-      await setPersistence(auth, browserLocalPersistence);
-      onAuthStateChanged(auth, user => {
-        loaderHide();
-        if (user) { handleUser(user); }
-        else      { goTo('loginPage'); }
-      });
-    } catch(e2) {
-      loaderHide();
-      toast("❌ Connection failed. Check internet.", "error");
-      setTimeout(() => goTo('loginPage'), 1500);
-    }
+    clearTimeout(hardTimeout);
+    console.error("Boot error:", e);
+    loaderHide();
+    goTo('loginPage');
+    toast("⚠️ Connecting with limited mode.", "info");
   }
 }
 
