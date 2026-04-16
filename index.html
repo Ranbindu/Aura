@@ -1348,7 +1348,7 @@ async function loadStaffDataOnce() {
 }
 
 // ★ OFFICER: only their assigned accounts
-async async function loadOfficerDataOnce() {
+async function loadOfficerDataOnce() {
   try {
     const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
