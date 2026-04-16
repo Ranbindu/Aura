@@ -7,19 +7,6 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<script>
-// Force clear any old service workers and caches
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(reg => reg.unregister());
-  });
-}
-if ('caches' in window) {
-  caches.keys().then(names => {
-    names.forEach(name => caches.delete(name));
-  });
-}
-</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f2518">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
@@ -40,7 +27,7 @@ if ('caches' in window) {
   body{
     background-color: #050d07;
     background-image: 
-      linear-gradient(135deg, rgba(4,12,6,0.78) 0%, rgba(5,18,10,0.75) 100%),
+      linear-gradient(135deg, rgba(4,12,6,0.70) 0%, rgba(5,18,10,0.65) 100%),
       url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1920&auto=format&fit=crop');
     background-repeat: no-repeat;
     background-position: center center;
@@ -49,18 +36,10 @@ if ('caches' in window) {
   }
 
   /* ── LAYOUT ── */
-  .page{display:none;}
-  .page.active{
-    display:block;
-    position:relative;
-    z-index:10;
-    min-height:100vh;
-    animation:fadeUp .35s ease;
-    /* Ensure content visible above forest background */
-    isolation:isolate;
-  }
+  .page{display:none; animation:fadeUp .35s ease;}
+  .page.active{display:block;}
   @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-  .wrap{max-width:1480px; margin:0 auto; padding:20px 16px; position:relative; z-index:10;}
+  .wrap{max-width:1480px; margin:0 auto; padding:20px 16px;}
   .glass{
     background: rgba(5,15,8,0.55);
     border: 1px solid rgba(61,220,116,0.22);
@@ -165,28 +144,24 @@ if ('caches' in window) {
   /* ── LOGIN ── */
   #loginPage{
     display:none;
-    align-items:center;
-    justify-content:center;
-    min-height:100vh;
+    align-items:center; 
+    justify-content:center; 
+    min-height:100vh; 
     padding:20px;
   }
   #loginPage.active{
     display:flex !important;
-    position:fixed !important;
-    inset:0 !important;
-    z-index:500 !important;
-    background:transparent !important;
+    z-index: 10 !important;
+    position: relative !important;
   }
   .login-box{
     width:100%; max-width:420px; padding:48px 40px; text-align:center;
-    background: rgba(3,12,5,0.82);
+    background: rgba(3,12,5,0.60);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
-    border: 1px solid rgba(61,220,116,0.3);
+    border: 1px solid rgba(61,220,116,0.2);
     border-radius: 24px;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.1);
-    position:relative;
-    z-index:501;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08);
   }
   .logo-text{font-size:4.5rem; font-weight:900; line-height:1;
     background:linear-gradient(135deg,var(--green),#2196f3,#9c27b0);
@@ -244,15 +219,6 @@ if ('caches' in window) {
     border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg)}}
   #loaderMsg{color:var(--green); font-weight:600; font-size:14px;}
-
-  /* ── ALL PAGES: ensure content visible ── */
-  #staffPage, #dashPage, #officerPage, #importPage, #progressPage,
-  #ccLogsPage, #fieldPage, #trackPage, #promoCenterPage, 
-  #bmIssuePage, #chatPage, #historyPage {
-    background: transparent;
-    position: relative;
-    z-index: 10;
-  }
 
   /* ── MANAGER DASHBOARD ── */
   .mgr-grid{display:grid; grid-template-columns:300px 1fr; gap:20px;}
@@ -328,7 +294,7 @@ if ('caches' in window) {
     inset: 0;
     background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%);
     pointer-events: none;
-    z-index: 1;
+    z-index: 0;
   }
   .page, #toastContainer {
     position: relative;
@@ -376,16 +342,8 @@ if ('caches' in window) {
       <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
       <button type="submit" style="width:100%; margin-top:16px; padding:12px;">LOGIN TO SYSTEM</button>
     </form>
-    <div id="currentUserBar" style="display:none; margin-top:16px; padding:12px; background:rgba(61,220,116,0.1); border:1px solid rgba(61,220,116,0.3); border-radius:10px; font-size:12px;">
-      <div style="color:var(--muted);">Currently logged in as:</div>
-      <div id="currentUserEmail" style="color:var(--green); font-weight:700; margin:4px 0;"></div>
-      <button onclick="doLogout()" style="padding:5px 14px; font-size:11px; margin-top:6px; background:rgba(239,83,80,0.8);">Switch User / Logout</button>
-    </div>
-    <form style="display:none">
-    </form>
     <div id="loginErr" style="color:#ff8a80; margin-top:14px; font-size:13px; font-weight:600;"></div>
     <div style="margin-top:24px; font-size:10px; color:var(--muted); letter-spacing:2px;">POWERED BY MR.RANBINDU</div>
-    <div style="margin-top:8px; font-size:10px; color:rgba(122,168,134,0.4);">For multiple users: use different browsers or incognito</div>
   </div>
 </div>
 
@@ -1124,8 +1082,21 @@ if ('caches' in window) {
     }
     var errEl = document.getElementById('loginErr');
     if (errEl) { errEl.style.color='#ff9800'; errEl.innerText='⚠️ Connecting... retry if needed.'; }
-  }, 2500); // Reduced: show login faster if module slow
+  }, 4500);
   window._aura_safety_timer = safetyTimer;
+})();
+</script>
+<script>
+(function() {
+  var t = setTimeout(function() {
+    if (document.querySelector('.page.active')) return;
+    console.warn('Aura Safety: showing login');
+    var l = document.getElementById('globalLoader');
+    if (l) { l.style.display='none'; }
+    var lp = document.getElementById('loginPage');
+    if (lp) { lp.classList.add('active'); lp.style.cssText='display:flex !important;position:fixed !important;inset:0 !important;z-index:500 !important;align-items:center !important;justify-content:center !important;'; }
+  }, 2500);
+  window._aura_safety_timer = t;
 })();
 </script>
 <script type="module">
@@ -1206,21 +1177,8 @@ async function boot() {
       console.log("🔥 Auth state:", user ? "LOGGED IN: " + user.email : "NOT LOGGED IN");
       clearTimeout(SHOW_LOGIN);
       loaderHide();
-      if (user) {
-        // Show current user in login bar (in case someone wants to switch)
-        const bar = document.getElementById('currentUserBar');
-        const emailEl = document.getElementById('currentUserEmail');
-        if (bar && emailEl) {
-          emailEl.innerText = user.email;
-          bar.style.display = 'block';
-        }
-        handleUser(user);
-      } else {
-        // Hide switch bar
-        const bar = document.getElementById('currentUserBar');
-        if (bar) bar.style.display = 'none';
-        goTo('loginPage');
-      }
+      if (user) handleUser(user);
+      else goTo('loginPage');
     });
 
   } catch(e) {
@@ -1249,12 +1207,7 @@ function handleUser(user) {
   // ★ Navigate IMMEDIATELY - don't wait for data
   if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
   else if (currentRole === "manager")  { goTo('dashPage'); }
-  else { 
-    goTo('staffPage');
-    // Show empty UI immediately so page looks active
-    const tbody = document.getElementById('staffTableBody');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color:var(--muted);">⏳ Loading today's accounts...</td></tr>';
-  }
+  else                                 { goTo('staffPage'); }
 
   // Subscribe only once - data loads in background
   if (!isSystemLoaded) {
@@ -1330,34 +1283,65 @@ function subscribeData() {
   }));
 }
 
-// ★ STAFF: Real-time listener (simpler, more reliable)
+// ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
-  // ★ NO loader here - staffPage already showing
-  // Just load data quietly in background
-  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+  try {
+    loader("Loading today's targets...");
+    const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    if (!document.getElementById('staffSearch')?.value.trim()) {
-      renderStaffUI();
-    }
-  }, err => {
-    console.error("Staff data error:", err);
-    toast("❌ Data load failed. Check Firebase rules.", "error");
-  }));
+    loaderHide();
+    renderStaffUI();
+
+    // After initial load, listen for changes only
+    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+      // Only update locally changed docs (incremental)
+      snap.docChanges().forEach(change => {
+        const d = {id: change.doc.id, ...change.doc.data()};
+        if (change.type === "removed") {
+          masterData = masterData.filter(x => x.id !== d.id);
+        } else {
+          const idx = masterData.findIndex(x => x.id === d.id);
+          if (idx !== -1) masterData[idx] = d;
+          else masterData.push(d);
+        }
+      });
+      if (snap.docChanges().length > 0 && 
+          !document.getElementById('staffSearch')?.value.trim()) {
+        renderStaffUI();
+      }
+    }));
+  } catch(e) {
+    loaderHide();
+    toast("❌ Load failed: " + e.message, "error");
+  }
 }
 
-// ★ OFFICER: Real-time listener
-function loadOfficerDataOnce() {
-  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+// ★ OFFICER: only their assigned accounts
+async function loadOfficerDataOnce() {
+  try {
+    const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     renderOfficerDash();
-  }, err => {
-    console.error("Officer data error:", err);
-    toast("❌ " + err.message, "error");
-  }));
 
-  _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
-    fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
-  }));
+    // Listen for changes
+    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+      snap.docChanges().forEach(change => {
+        const d = {id: change.doc.id, ...change.doc.data()};
+        if (change.type === "removed") masterData = masterData.filter(x => x.id !== d.id);
+        else {
+          const idx = masterData.findIndex(x => x.id === d.id);
+          if (idx !== -1) masterData[idx] = d; else masterData.push(d);
+        }
+      });
+      renderOfficerDash();
+    }));
+
+    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
+      fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
+    }));
+  } catch(e) {
+    toast("❌ " + e.message, "error");
+  }
 }
 
 
@@ -3287,9 +3271,9 @@ window.goTo = (pageId) => {
   if (pg) {
     pg.classList.add('active');
     if (pageId === 'loginPage') {
-      pg.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; z-index:500 !important; align-items:center !important; justify-content:center !important;';
+      pg.style.cssText = 'display:flex !important; z-index:10 !important;';
     } else {
-      pg.style.cssText = 'display:block !important; position:relative !important; z-index:10 !important; min-height:100vh !important;';
+      pg.style.cssText = 'display:block !important;';
     }
     window.scrollTo(0,0);
   }
