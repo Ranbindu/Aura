@@ -2038,9 +2038,18 @@ window.doLogout = async () => {
 //  NAVIGATION
 // ═══════════════════════════════════════
 window.goTo = (pageId) => {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  // ★ FIX: Use inline styles to override any CSS specificity issues
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none'; // Force hide - beats any CSS specificity
+  });
   const pg = document.getElementById(pageId);
-  if (pg) { pg.classList.add('active'); window.scrollTo(0,0); }
+  if (pg) {
+    pg.classList.add('active');
+    // Restore correct display based on page type
+    pg.style.display = pageId === 'loginPage' ? 'flex' : 'block';
+    window.scrollTo(0,0);
+  }
 };
 function isActivePage(id) {
   return document.getElementById(id)?.classList.contains('active');
