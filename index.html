@@ -233,6 +233,12 @@
     padding:16px; margin-bottom:14px; box-shadow:var(--shadow);
   }
 
+  /* ── CHAT ── */
+  #chatMessages::-webkit-scrollbar { width: 4px; }
+  #chatMessages::-webkit-scrollbar-track { background: transparent; }
+  #chatMessages::-webkit-scrollbar-thumb { background: rgba(61,220,116,0.3); border-radius:99px; }
+  #chatInput { font-family: inherit; }
+  
   /* ── MAP ── */
   #map{height:440px; border-radius:var(--radius); border:2px solid var(--green); z-index:1;}
   .leaflet-popup-content-wrapper{background:rgba(12,24,16,.97); color:#fff;
@@ -333,6 +339,10 @@
         <button onclick="goTo('bmIssuePage'); renderBMIssues()" style="background:linear-gradient(135deg,#1a0030,#6a1b9a); width:100%; margin-bottom:8px; padding:9px 16px;">💼 BM Issue Management</button>
         <button onclick="downloadPhoneDir()" class="btn-teal" style="width:100%; margin-bottom:8px;">📥 Download Phonebook</button>
         <button onclick="goTo('historyPage'); renderHistoryPage();" style="background:linear-gradient(135deg,#37474f,#546e7a); width:100%; margin-bottom:8px; padding:9px 16px;">📅 Monthly History</button>
+        <button onclick="goTo('chatPage'); initChat();" style="background:linear-gradient(135deg,#1a237e,#283593); width:100%; margin-bottom:8px; padding:9px 16px; position:relative;">
+          💬 Team Chat
+          <span id="chatUnreadBadge" style="display:none; position:absolute; top:6px; right:12px; background:var(--red); color:#fff; border-radius:99px; padding:1px 7px; font-size:10px; font-weight:900;">0</span>
+        </button>
 
         <div class="card" style="margin-top:16px; text-align:center;">
           <div style="display:flex; justify-content:space-around;">
@@ -467,6 +477,32 @@
     </div>
     <div id="histEmptyMsg" style="text-align:center; padding:60px; color:var(--muted); font-size:16px;">
       ← Select a month to view history
+    </div>
+  </div>
+</div>
+
+<!-- ─────── TEAM CHAT PAGE ─────── -->
+<div id="chatPage" class="page">
+  <div class="wrap" style="max-width:900px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 style="color:#90caf9;">💬 Team Chat</h2>
+      <button id="chatBackBtn" onclick="history.back() || goTo('dashPage')" class="btn-sm">← Back</button>
+    </div>
+
+    <!-- Chat Box -->
+    <div class="glass" style="display:flex; flex-direction:column; height:70vh;">
+      <!-- Messages Area -->
+      <div id="chatMessages" style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px;">
+        <div style="text-align:center; color:var(--muted); font-size:12px; padding:20px;">Loading messages...</div>
+      </div>
+
+      <!-- Input Area -->
+      <div style="border-top:1px solid var(--border); padding:14px; display:flex; gap:10px; align-items:flex-end; background:rgba(0,0,0,0.3); border-radius:0 0 var(--radius) var(--radius);">
+        <textarea id="chatInput" placeholder="Type your message... (Enter to send)" rows="2"
+          style="flex:1; resize:none; border-radius:10px; padding:10px; font-size:13px; margin:0;"
+          onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMsg();}"></textarea>
+        <button onclick="sendChatMsg()" style="padding:10px 20px; margin:0; white-space:nowrap;">Send 📤</button>
+      </div>
     </div>
   </div>
 </div>
@@ -698,7 +734,7 @@
         </div>
         <input type="text" id="promoSearch" onkeyup="renderPromo()" placeholder="🔍 Search name or phone...">
         <div class="tbl-wrap" style="max-height:320px; overflow-y:auto; margin-top:12px; border-radius:10px; border:1px solid var(--border);">
-          <table style="margin:0;"><thead><tr><th>Name</th><th>Phone</th><th>Send</th></tr></thead>
+          <table style="margin:0;" id="promoTable"><thead><tr><th>Name</th><th>Phone</th><th>Send</th><th id="quickColHeader"></th></tr></thead>
           <tbody id="promoBody"></tbody></table>
         </div>
       </div>
@@ -745,6 +781,10 @@
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
         <input type="text" id="staffSearch" onkeyup="searchStaffTable()" placeholder="🔍 Search Account No..." style="width:260px;">
+        <button onclick="goTo('chatPage'); initChat();" style="background:linear-gradient(135deg,#1a237e,#283593); padding:5px 14px; font-size:11px; border-radius:20px; position:relative;">
+          💬 Chat
+          <span id="staffChatBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:var(--red); color:#fff; border-radius:99px; padding:1px 6px; font-size:9px; font-weight:900;">!</span>
+        </button>
         <button onclick="doLogout()" class="btn-red btn-sm">Logout</button>
       </div>
     </div>
@@ -789,6 +829,11 @@
           <h2 style="margin:0; font-size:1.4rem;">Welcome,</h2>
           <h1 id="offName" style="color:var(--yellow); font-size:1.8rem; margin:0;">Officer</h1>
         </div>
+        <button onclick="goTo('chatPage'); initChat();" style="background:linear-gradient(135deg,#1a237e,#283593); padding:5px 14px; font-size:11px; border-radius:20px; position:relative;">
+          💬 Chat
+          <span id="staffChatBadge" style="display:none; position:absolute; top:-4px; right:-4px; background:var(--red); color:#fff; border-radius:99px; padding:1px 6px; font-size:9px; font-weight:900;">!</span>
+        </button>
+        <button onclick="goTo('chatPage'); initChat();" style="background:linear-gradient(135deg,#1a237e,#283593); padding:5px 12px; font-size:11px; border-radius:20px; margin:0;">💬</button>
         <button onclick="doLogout()" class="btn-red btn-sm">Logout</button>
       </div>
       <div style="font-size:12px; color:#a5d6a7; margin-top:6px;" id="offDate">—</div>
@@ -1040,6 +1085,9 @@ function subscribeStaffData() {
       updatePromoNotification();
     }));
 
+    // Chat notifications
+    subscribeChatNotifications();
+
     // Load OPEN accounts
     const qOpen = query(collection(db, "customers"), where("listType","==","New"));
     _unsubs.push(onSnapshot(qOpen, snap => {
@@ -1089,6 +1137,9 @@ async function subscribeManagerData() {
     promoTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
     if (isActivePage("promoCenterPage")) renderPromoTaskList();
   }));
+
+  // Chat notifications for manager
+  subscribeChatNotifications();
 
   // BM Issues
   _unsubs.push(onSnapshot(collection(db, "bm_issues"), snap => {
@@ -1602,6 +1653,18 @@ window.renderTracking = renderTracking;
 function renderPromo() {
   const search = (document.getElementById('promoSearch')?.value || "").toLowerCase().trim();
   let html = "", count = 0;
+
+  // Show active task banner in quick-send header
+  const activeTask = promoTasks.find(t => t.status==='active' && t.date===SYS_TODAY);
+  const quickHeader = document.getElementById('quickColHeader');
+  if (quickHeader) {
+    if (activeTask) {
+      const priIcon = activeTask.priority==='urgent'?'🔴':activeTask.priority==='info'?'🟢':'🟡';
+      quickHeader.innerHTML = `<span style="color:var(--orange);">${priIcon} Task Active</span>`;
+    } else {
+      quickHeader.innerText = '';
+    }
+  }
   for (const [key, data] of Object.entries(phoneDir)) {
     if (!data.phone || data.phone.length < 9) continue;
     const name  = data.name || "Customer";
@@ -1609,15 +1672,21 @@ function renderPromo() {
     if (search && !name.toLowerCase().includes(search) && !phone.includes(search)) continue;
     count++;
     const safeN = name.replace(/'/g, "\\'");
-    html += `<tr style="border-bottom:1px solid var(--border);">
-      <td style="text-align:left; font-size:12px; font-weight:600;">${name}</td>
-      <td style="font-size:12px; color:var(--muted);">${phone}</td>
-      <td style="text-align:center;">
+    // Check if there's an active task for quick-send
+    const activeTask = promoTasks.find(t => t.status==='active' && t.date===SYS_TODAY);
+    html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.06);" id="promoRow_${count}">
+      <td style="text-align:left; font-size:12px; font-weight:600; padding:10px 8px;">${name}</td>
+      <td style="font-size:12px; color:var(--muted); padding:10px 8px;">${phone}</td>
+      <td style="text-align:center; padding:8px;">
         <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
-          <button class="btn-xs btn-wa" onclick="sendPromoWA('${phone}','${safeN}')" style="width:70px; padding:4px 8px;">💬 WA</button>
-          <button class="btn-xs btn-blue" onclick="sendPromoSMS('${phone}','${safeN}')" style="width:70px; padding:4px 8px;">📱 SMS</button>
+          <button class="btn-xs btn-wa" onclick="sendPromoWA('${phone}','${safeN}')" style="width:72px; padding:4px 8px;">💬 WA</button>
+          <button class="btn-xs btn-blue" onclick="sendPromoSMS('${phone}','${safeN}')" style="width:72px; padding:4px 8px;">📱 SMS</button>
         </div>
       </td>
+      ${activeTask ? `<td style="padding:8px;">
+        <button class="btn-xs" style="background:var(--orange); width:72px; padding:4px 8px; font-size:10px;"
+          onclick="quickTaskSend('${phone}','${safeN}','${count}')">⚡ Quick</button>
+      </td>` : '<td></td>'}
     </tr>`;
   }
   const tb = document.getElementById('promoBody');
@@ -1823,6 +1892,145 @@ window.exportHistoryExcel = () => {
 };
 
 // ═══════════════════════════════════════
+//  TEAM CHAT SYSTEM
+// ═══════════════════════════════════════
+
+let chatUnsubFn = null;
+let lastChatSeen = 0;
+let chatUserName = "";
+
+window.initChat = () => {
+  // Set display name based on role
+  if (currentRole === "manager") chatUserName = "Branch Manager";
+  else if (currentRole === "officer") chatUserName = currentOfficer;
+  else chatUserName = "Call Center";
+
+  // Update back button
+  const backBtn = document.getElementById('chatBackBtn');
+  if (backBtn) {
+    if (currentRole === "manager") backBtn.onclick = () => goTo('dashPage');
+    else if (currentRole === "officer") backBtn.onclick = () => goTo('officerPage');
+    else backBtn.onclick = () => goTo('staffPage');
+  }
+
+  // Subscribe to chat messages
+  if (chatUnsubFn) chatUnsubFn(); // unsubscribe old
+  const qChat = query(
+    collection(db, "team_chat"),
+    orderBy("timestamp", "asc"),
+    limit(100)
+  );
+  chatUnsubFn = onSnapshot(qChat, snap => {
+    renderChatMessages(snap.docs.map(d => ({id:d.id,...d.data()})));
+    // Mark as seen
+    lastChatSeen = Date.now();
+    hideChatBadge();
+  });
+};
+
+// Subscribe to chat for notifications (background)
+function subscribeChatNotifications() {
+  const qChat = query(collection(db, "team_chat"), orderBy("timestamp", "desc"), limit(5));
+  _unsubs.push(onSnapshot(qChat, snap => {
+    if (!isActivePage('chatPage') && snap.docs.length > 0) {
+      const latest = snap.docs[0].data();
+      if (latest.timestamp > lastChatSeen && latest.sender !== chatUserName) {
+        showChatBadge();
+      }
+    }
+  }));
+}
+
+function showChatBadge() {
+  ['chatUnreadBadge','staffChatBadge'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.display = 'inline'; el.innerText = '!'; }
+  });
+}
+function hideChatBadge() {
+  ['chatUnreadBadge','staffChatBadge'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+function renderChatMessages(msgs) {
+  const box = document.getElementById('chatMessages');
+  if (!box) return;
+  if (!msgs.length) {
+    box.innerHTML = '<div style="text-align:center; color:var(--muted); padding:40px; font-size:13px;">No messages yet. Start the conversation! 👋</div>';
+    return;
+  }
+
+  let html = '';
+  let lastDate = '';
+  msgs.forEach(m => {
+    const isMe = m.sender === chatUserName;
+    const msgDate = m.dateStr || '';
+    if (msgDate && msgDate !== lastDate) {
+      lastDate = msgDate;
+      html += `<div style="text-align:center; margin:8px 0;">
+        <span style="background:rgba(0,0,0,0.5); color:var(--muted); font-size:11px; padding:3px 12px; border-radius:99px;">${msgDate}</span>
+      </div>`;
+    }
+
+    const roleColor = m.role === 'manager' ? '#ffd600'
+                    : m.role === 'officer' ? '#4caf50'
+                    : '#90caf9';
+    const roleIcon  = m.role === 'manager' ? '👔'
+                    : m.role === 'officer' ? '🌾'
+                    : '📞';
+
+    html += `<div style="display:flex; flex-direction:column; align-items:${isMe?'flex-end':'flex-start'}; margin-bottom:4px;">
+      ${!isMe ? `<span style="font-size:10px; color:${roleColor}; margin-bottom:3px; margin-left:10px;">${roleIcon} ${m.sender}</span>` : ''}
+      <div style="
+        max-width:72%;
+        background:${isMe ? 'linear-gradient(135deg,rgba(27,94,32,0.85),rgba(46,125,50,0.75))' : 'rgba(0,0,0,0.55)'};
+        backdrop-filter:blur(10px);
+        border:1px solid ${isMe ? 'rgba(61,220,116,0.3)' : 'rgba(255,255,255,0.1)'};
+        border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};
+        padding:10px 14px;
+        font-size:13px;
+        line-height:1.5;
+        white-space:pre-wrap;
+        word-break:break-word;
+      ">${escapeHtml(m.message)}</div>
+      <span style="font-size:10px; color:var(--muted); margin-top:2px; ${isMe?'margin-right:6px':'margin-left:10px'};">${m.timeStr || ''}</span>
+    </div>`;
+  });
+
+  box.innerHTML = html;
+  // Scroll to bottom
+  box.scrollTop = box.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+window.sendChatMsg = async () => {
+  const input = document.getElementById('chatInput');
+  const msg = (input?.value || '').trim();
+  if (!msg) return;
+
+  const now = new Date();
+  try {
+    await addDoc(collection(db, "team_chat"), {
+      sender:    chatUserName,
+      role:      currentRole,
+      message:   msg,
+      timestamp: Date.now(),
+      dateStr:   SYS_TODAY,
+      timeStr:   now.toLocaleTimeString('en-LK', {hour:'2-digit', minute:'2-digit'})
+    });
+    input.value = '';
+    input.focus();
+  } catch(e) {
+    toast("❌ Send failed: " + e.message, "error");
+  }
+};
+
+// ═══════════════════════════════════════
 //  PROMO TASK SYSTEM
 // ═══════════════════════════════════════
 
@@ -1895,11 +2103,25 @@ window.sendPromoTask = async () => {
       status: 'active',
       date: SYS_TODAY,
       createdAt: new Date().toISOString(),
-      createdBy: 'Branch Manager'
+      createdBy: 'Branch Manager',
+      totalContacts: Object.keys(phoneDir).length,
+      sentCount: 0
     });
     closeAllModals();
     document.getElementById('taskMsgInput').value = '';
-    toast("✅ Task sent to Call Center!", "success");
+    toast(`✅ Task sent! Call Center will see it instantly.`, "success");
+
+    // Also send as team chat notification
+    await addDoc(collection(db, "team_chat"), {
+      sender: "Branch Manager",
+      role: "manager",
+      message: `📢 NEW PROMO TASK:\n${msg}`,
+      timestamp: Date.now(),
+      dateStr: SYS_TODAY,
+      timeStr: new Date().toLocaleTimeString('en-LK', {hour:'2-digit', minute:'2-digit'}),
+      isTask: true,
+      priority
+    });
   } catch(e) {
     toast("❌ " + e.message, "error");
   }
@@ -1942,6 +2164,34 @@ window.cancelTask = async (taskId) => {
     await updateDoc(doc(db, "promo_tasks", taskId), { status: 'cancelled' });
     toast("Task cancelled.", "info");
   } catch(e) { toast("❌ " + e.message, "error"); }
+};
+
+// Call Center: Quick send task message to customer
+window.quickTaskSend = async (phone, name, rowNum) => {
+  const activeTask = promoTasks.find(t => t.status==='active' && t.date===SYS_TODAY);
+  if (!activeTask) { toast("No active task!", "error"); return; }
+
+  const msg = `හිතවත් ${name},\n\n${activeTask.message}\n\n- සිංගර් ගලෙන්බිඳුනුවැව`;
+  let fp = phone.replace(/[^0-9]/g,'');
+  if (fp.startsWith('0')) fp = '94' + fp.substring(1);
+
+  // Open WhatsApp
+  window.open(`https://web.whatsapp.com/send?phone=${fp}&text=${encodeURIComponent(msg)}`, '_blank');
+
+  // Mark row as sent
+  const row = document.getElementById('promoRow_' + rowNum);
+  if (row) {
+    row.style.opacity = '0.45';
+    row.style.textDecoration = 'line-through';
+    const btn = row.querySelector('button[onclick*="quickTaskSend"]');
+    if (btn) { btn.innerText = '✅ Sent'; btn.disabled = true; btn.style.background='var(--green2)'; }
+  }
+
+  // Update sent count on task
+  try {
+    const newCount = (activeTask.sentCount || 0) + 1;
+    await updateDoc(doc(db, "promo_tasks", activeTask.id), { sentCount: newCount });
+  } catch(e) {}
 };
 
 // ═══════════════════════════════════════
