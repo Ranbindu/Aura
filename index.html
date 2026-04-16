@@ -136,7 +136,8 @@
   .prog-fill{height:100%; background:linear-gradient(90deg,var(--green2),var(--green)); border-radius:99px; transition:width .6s ease;}
 
   /* ── LOGIN ── */
-  #loginPage{display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px;}
+  #loginPage{align-items:center; justify-content:center; min-height:100vh; padding:20px;}
+  #loginPage.active{display:flex !important;}
   .login-box{
     width:100%; max-width:420px; padding:48px 40px; text-align:center;
     background: rgba(3,12,5,0.60);
@@ -190,7 +191,7 @@
 
   /* ── LOADING SPINNER ── */
   #globalLoader{
-    display:none; position:fixed; inset:0; 
+    display:flex; position:fixed; inset:0; 
     background: rgba(0,0,0,0.78);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
@@ -295,8 +296,12 @@
 
 <!-- ─────── GLOBAL LOADER ─────── -->
 <div id="globalLoader">
-  <div class="spinner"></div>
-  <div id="loaderMsg">Connecting to Aura Secure Vault...</div>
+  <div style="text-align:center;">
+    <div style="font-size:3.5rem; font-weight:900; background:linear-gradient(135deg,#3ddc74,#2196f3,#9c27b0); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:4px; margin-bottom:8px;">AURA</div>
+    <div style="font-size:10px; color:#7aa886; letter-spacing:8px; text-transform:uppercase; margin-bottom:32px;">Recovery Systems</div>
+    <div class="spinner"></div>
+    <div id="loaderMsg" style="margin-top:16px; color:#3ddc74; font-size:13px; font-weight:600; letter-spacing:.5px;">Connecting to Aura Secure Vault...</div>
+  </div>
 </div>
 
 <!-- ─────── TOAST CONTAINER ─────── -->
@@ -306,7 +311,7 @@
 <div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
 
 <!-- ─────── LOGIN PAGE ─────── -->
-<div id="loginPage" class="page active">
+<div id="loginPage" class="page">
   <div class="glass login-box">
     <div class="logo-text">AURA</div>
     <div class="logo-sub">Recovery Systems · v2</div>
