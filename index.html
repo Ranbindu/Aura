@@ -737,39 +737,62 @@
 
 <!-- ─────── PROMO CENTER ─────── -->
 <div id="promoCenterPage" class="page">
-  <div class="wrap" style="max-width:1200px;">
+  <div class="wrap" style="max-width:1100px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
       <h2 style="color:var(--yellow);">📢 Promotion Center</h2>
-      <div style="display:flex; gap:10px;">
-        <button onclick="openModal('createTaskModal')" style="background:linear-gradient(135deg,var(--orange),#e65100); padding:8px 18px;">🔔 Send Task to Call Center</button>
-        <button onclick="goTo('dashPage')" class="btn-sm">← Back</button>
+      <button onclick="goTo('dashPage')" class="btn-sm">← Back</button>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px;">
+      
+      <!-- LEFT: Create & Send Task -->
+      <div class="glass" style="padding:24px;">
+        <h3 style="color:var(--green); margin-bottom:6px;">📝 Create Promo Message</h3>
+        <p style="font-size:12px; color:var(--muted); margin-bottom:14px; line-height:1.6;">
+          Message ෙකේ type කරලා Call Center ෙකේ ෙකේ forward කරන්න.<br>
+          Call Center ෙකේ ෙකේ ෙකේ ෙකේ ෙකේ ෙකේ ෙකේ ෙකේ customer ෙකේ ෙකේ ෙකේ ෙකේ ෙකේ send කරනවා.
+        </p>
+        <textarea id="promoMsgTpl" rows="6" 
+          placeholder="ඔබගේ promotional message මෙහි ලියන්න...&#10;(eg: නව අවුරුදු special offers! Singer Galenbindunuwewa ෙකේ ෙකේ ෙකේ ෙකේ ෙකේ ෙකේ ෙකේ ෙකේ...)"
+          style="width:100%; font-size:13px; line-height:1.6;"></textarea>
+        
+        <label style="margin-top:14px;">Priority Level:</label>
+        <select id="promoPriorityMain" style="margin-top:6px; margin-bottom:16px;">
+          <option value="normal">🟡 Normal</option>
+          <option value="urgent">🔴 Urgent</option>
+          <option value="info">🟢 Information Only</option>
+        </select>
+
+        <button onclick="sendTaskFromPromo()" 
+          style="width:100%; background:linear-gradient(135deg,var(--orange),#e65100); font-size:14px; padding:13px;">
+          📤 Forward to Call Center
+        </button>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+          <button onclick="downloadPhoneDir()" class="btn-teal" style="font-size:11px;">📥 Download DB</button>
+          <button onclick="copyAllNumbers()" class="btn-purple" style="font-size:11px;">📋 Copy Numbers</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Sent Tasks History -->
+      <div class="glass" style="padding:24px;">
+        <h3 style="color:var(--orange); margin-bottom:14px;">📋 Task History (<span id="promoTaskCount">0</span>)</h3>
+        <div id="promoTaskListBody" style="max-height:380px; overflow-y:auto;">
+          <div style="color:var(--muted); font-size:13px; text-align:center; padding:40px;">No tasks sent yet.</div>
+        </div>
       </div>
     </div>
-    <!-- Active Tasks List -->
-    <div id="promoTaskListSection" style="margin-bottom:20px; display:none;">
-      <h3 style="color:var(--orange); margin-bottom:10px;">📋 Active Tasks (<span id="promoTaskCount">0</span>)</h3>
-      <div id="promoTaskListBody"></div>
-    </div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-      <div class="glass" style="padding:22px;">
-        <h3 style="color:var(--green); margin-bottom:14px;">1. Create Promo Message</h3>
-        <p style="font-size:12px; color:var(--muted); line-height:1.6; margin-bottom:12px;">ඔබ ටයිප් කරන message එකට customer නම සහ branch නාමය automatically add වෙනවා.</p>
-        <textarea id="promoMsgTpl" rows="6" placeholder="ඔබගේ message මෙහි ලියන්න...&#10;(eg: නව අවුරුදු special offers අදම ලබාගන්න!)" style="width:100%;"></textarea>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px;">
-          <button onclick="downloadPhoneDir()" class="btn-teal">📥 Download DB</button>
-          <button onclick="copyAllNumbers()" class="btn-purple">📋 Copy Numbers</button>
-        </div>
+
+    <!-- Phonebook (read-only for manager - no send buttons) -->
+    <div class="glass" style="padding:22px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 style="color:var(--blue);">👥 Customer Phonebook (<span id="promoCount">0</span> contacts)</h3>
+        <input type="text" id="promoSearch" onkeyup="renderPromo()" placeholder="🔍 Search..." style="width:240px; margin:0;">
       </div>
-      <div class="glass" style="padding:22px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-          <h3 style="color:var(--blue);">2. Phonebook (<span id="promoCount">0</span> contacts)</h3>
-        </div>
-        <input type="text" id="promoSearch" onkeyup="renderPromo()" placeholder="🔍 Search name or phone...">
-        <div class="tbl-wrap" style="max-height:320px; overflow-y:auto; margin-top:12px; border-radius:10px; border:1px solid var(--border);">
-          <table style="margin:0;" id="promoTable"><thead><tr><th>Name</th><th>Phone</th><th>Send</th><th id="quickColHeader"></th></tr></thead>
-          <tbody id="promoBody"></tbody></table>
-        </div>
-      </div>
+      <div class="tbl-wrap" style="max-height:280px; overflow-y:auto; border-radius:10px; border:1px solid var(--border);">
+        <table style="margin:0;"><thead><tr><th>Name</th><th>Phone</th><th>Status</th></tr></thead>
+        <tbody id="promoBody"></tbody>
+      </table>
     </div>
   </div>
 </div>
@@ -1717,18 +1740,6 @@ window.renderTracking = renderTracking;
 function renderPromo() {
   const search = (document.getElementById('promoSearch')?.value || "").toLowerCase().trim();
   let html = "", count = 0;
-
-  // Show active task banner in quick-send header
-  const activeTask = promoTasks.find(t => t.status==='active' && t.date===SYS_TODAY);
-  const quickHeader = document.getElementById('quickColHeader');
-  if (quickHeader) {
-    if (activeTask) {
-      const priIcon = activeTask.priority==='urgent'?'🔴':activeTask.priority==='info'?'🟢':'🟡';
-      quickHeader.innerHTML = `<span style="color:var(--orange);">${priIcon} Task Active</span>`;
-    } else {
-      quickHeader.innerText = '';
-    }
-  }
   for (const [key, data] of Object.entries(phoneDir)) {
     if (!data.phone || data.phone.length < 9) continue;
     const name  = data.name || "Customer";
@@ -1736,21 +1747,11 @@ function renderPromo() {
     if (search && !name.toLowerCase().includes(search) && !phone.includes(search)) continue;
     count++;
     const safeN = name.replace(/'/g, "\\'");
-    // Check if there's an active task for quick-send
-    const activeTask = promoTasks.find(t => t.status==='active' && t.date===SYS_TODAY);
-    html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.06);" id="promoRow_${count}">
-      <td style="text-align:left; font-size:12px; font-weight:600; padding:10px 8px;">${name}</td>
-      <td style="font-size:12px; color:var(--muted); padding:10px 8px;">${phone}</td>
-      <td style="text-align:center; padding:8px;">
-        <div style="display:flex; flex-direction:column; gap:4px; align-items:center;">
-          <button class="btn-xs btn-wa" onclick="sendPromoWA('${phone}','${safeN}')" style="width:72px; padding:4px 8px;">💬 WA</button>
-          <button class="btn-xs btn-blue" onclick="sendPromoSMS('${phone}','${safeN}')" style="width:72px; padding:4px 8px;">📱 SMS</button>
-        </div>
-      </td>
-      ${activeTask ? `<td style="padding:8px;">
-        <button class="btn-xs" style="background:var(--orange); width:72px; padding:4px 8px; font-size:10px;"
-          onclick="quickTaskSend('${phone}','${safeN}','${count}')">⚡ Quick</button>
-      </td>` : '<td></td>'}
+    // Manager view: read-only phonebook, no send buttons
+    html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+      <td style="font-size:12px; font-weight:600; padding:9px 8px;">${name}</td>
+      <td style="font-size:12px; color:var(--muted); padding:9px 8px;">${phone}</td>
+      <td style="font-size:11px; color:var(--muted); padding:9px 8px; text-align:center;">—</td>
     </tr>`;
   }
   const tb = document.getElementById('promoBody');
@@ -2335,24 +2336,88 @@ function renderPromoTaskList() {
   if (cnt) cnt.innerText = promoTasks.length;
 
   let html = '';
-  [...promoTasks].reverse().forEach(t => {
-    const statusColor = t.status === 'completed' ? 'var(--green)' : 'var(--orange)';
-    const statusTxt   = t.status === 'completed'
-      ? `✅ Completed by ${t.completedBy || 'Staff'}`
-      : '⏳ Pending';
-    const priorityIcon = t.priority === 'urgent' ? '🔴' : t.priority === 'info' ? '🟢' : '🟡';
-    html += `<div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px; border-left:4px solid ${statusColor};">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-        <span style="font-size:12px; color:var(--muted);">${priorityIcon} ${t.date || ''} | ${t.createdBy || 'Manager'}</span>
-        <span style="font-size:11px; color:${statusColor}; font-weight:700;">${statusTxt}</span>
+  if (!promoTasks.length) {
+    body.innerHTML = '<div style="color:var(--muted); font-size:13px; text-align:center; padding:40px;">No tasks sent yet.</div>';
+    return;
+  }
+  [...promoTasks].sort((a,b) => (b.createdAt||'').localeCompare(a.createdAt||'')).forEach(t => {
+    const isActive   = t.status === 'active';
+    const isCancelled= t.status === 'cancelled';
+    const statusColor = isActive ? 'var(--orange)' : isCancelled ? 'var(--muted)' : 'var(--green)';
+    const statusTxt   = isActive
+      ? `⏳ Active — ${t.sentCount||0} / ${t.totalContacts||'?'} sent`
+      : isCancelled ? '❌ Cancelled'
+      : `✅ Done — ${t.sentCount||0} sent`;
+    const priIcon = t.priority==='urgent'?'🔴':t.priority==='info'?'🟢':'🟡';
+    const pct = t.totalContacts > 0 ? Math.round(((t.sentCount||0)/t.totalContacts)*100) : 0;
+    
+    html += `<div style="background:rgba(0,0,0,0.35); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; border-left:4px solid ${statusColor};">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; gap:8px;">
+        <span style="font-size:11px; color:var(--muted);">${priIcon} ${t.date||''}</span>
+        <span style="font-size:11px; color:${statusColor}; font-weight:700; white-space:nowrap;">${statusTxt}</span>
       </div>
-      <div style="font-size:13px; color:var(--text);">${(t.message||'').substring(0,150)}</div>
-      ${t.status === 'active' ? `<button onclick="cancelTask('${t.id}')" class="btn-xs btn-red" style="margin-top:8px;">❌ Cancel Task</button>` : ''}
+      <div style="font-size:13px; color:var(--text); margin-bottom:${isActive?'10px':'0'}; line-height:1.5;">${escapeHtml((t.message||'').substring(0,120))}${(t.message||'').length>120?'...':''}</div>
+      ${isActive ? `
+        <div style="background:rgba(255,255,255,0.08); border-radius:99px; height:6px; overflow:hidden; margin-bottom:8px;">
+          <div style="height:100%; background:var(--orange); width:${pct}%; border-radius:99px; transition:width .4s;"></div>
+        </div>
+        <button onclick="cancelTask('${t.id}')" class="btn-xs btn-red" style="margin-top:0; font-size:10px;">❌ Cancel</button>
+      ` : ''}
     </div>`;
   });
   body.innerHTML = html;
 }
 window.renderPromoTaskList = renderPromoTaskList;
+
+// Manager: Send task from Promo Center main button
+window.sendTaskFromPromo = async () => {
+  const msg = document.getElementById('promoMsgTpl')?.value.trim();
+  const priority = document.getElementById('promoPriorityMain')?.value || 'normal';
+  
+  if (!msg) { 
+    toast("❌ Message ලියන්න!", "error"); 
+    document.getElementById('promoMsgTpl')?.focus();
+    return; 
+  }
+
+  const btn = document.querySelector('[onclick="sendTaskFromPromo()"]');
+  if (btn) { btn.disabled = true; btn.innerText = "⏳ Sending..."; }
+
+  try {
+    const taskRef = await addDoc(collection(db, "promo_tasks"), {
+      message: msg,
+      priority,
+      status: 'active',
+      date: SYS_TODAY,
+      createdAt: new Date().toISOString(),
+      createdBy: 'Branch Manager',
+      totalContacts: Object.keys(phoneDir).length,
+      sentCount: 0
+    });
+
+    // Also notify via team chat
+    await addDoc(collection(db, "team_chat"), {
+      sender: "Branch Manager",
+      role: "manager",
+      message: `📢 NEW PROMO TASK:\n${msg}`,
+      timestamp: Date.now(),
+      dateStr: SYS_TODAY,
+      timeStr: new Date().toLocaleTimeString('en-LK', {hour:'2-digit', minute:'2-digit'}),
+      isTask: true,
+      priority
+    });
+
+    // Clear form
+    if (document.getElementById('promoMsgTpl')) document.getElementById('promoMsgTpl').value = '';
+    toast(`✅ Task forwarded to Call Center! They will send to ${Object.keys(phoneDir).length} customers.`, "success");
+    renderPromoTaskList();
+
+  } catch(e) {
+    toast("❌ " + e.message, "error");
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerText = "📤 Forward to Call Center"; }
+  }
+};
 
 // Manager: Cancel a task
 window.cancelTask = async (taskId) => {
