@@ -665,7 +665,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, updateDoc, doc, setDoc, getDocs, addDoc, query, orderBy, where, limit, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ═══════════════════════════════════════
 //  CONFIG
@@ -739,41 +739,161 @@ function handleUser(user) {
 // ═══════════════════════════════════════
 //  DATA SUBSCRIPTIONS (real-time)
 // ═══════════════════════════════════════
-function subscribeData() {
-  // Phonebook
-  onSnapshot(collection(db, "phoneDirectory"), snap => {
-    snap.forEach(d => { phoneDir[d.id] = d.data(); });
-    if (currentRole === "manager") renderPromo();
-  });
+// ═══════════════════════════════════════
+//  SMART DATA LOADING — Role-Based
+//  ★ FIX: Never load full collection at once
+//  Each role gets ONLY what they need
+// ═══════════════════════════════════════
 
-  // Agent mapping
-  onSnapshot(collection(db, "agent_mapping"), snap => {
+// Unsubscribe functions (to avoid memory leaks)
+let _unsubs = [];
+function unsubAll() { _unsubs.forEach(fn => { try{fn();}catch(e){} }); _unsubs = []; }
+
+function subscribeData() {
+  unsubAll(); // Clean slate
+
+  // ── Shared: Agent mapping (tiny collection) ──
+  _unsubs.push(onSnapshot(collection(db, "agent_mapping"), snap => {
     snap.forEach(d => { agentMap[d.id] = d.data().fieldAgent; });
-  });
+  }));
+
+  // ── Role-based customer loading ──
+  if (currentRole === "staff") {
+    subscribeStaffData();
+  } else if (currentRole === "officer") {
+    subscribeOfficerData();
+  } else if (currentRole === "manager") {
+    subscribeManagerData();
+  }
+}
+
+// ─────────────────────────────────────
+//  STAFF: Today's pigeon-hole only
+//  Loads: Red accounts + today's agree date accounts
+// ─────────────────────────────────────
+function subscribeStaffData() {
+  // Load RED accounts (always need follow-up)
+  const qRed = query(collection(db, "customers"),
+    where("listType", "==", "Red")
+  );
+  _unsubs.push(onSnapshot(qRed, snap => {
+    // Merge red accounts into masterData
+    const redIds = new Set();
+    snap.docs.forEach(d => {
+      redIds.add(d.id);
+      const idx = masterData.findIndex(x => x.id === d.id);
+      if (idx !== -1) masterData[idx] = {id: d.id, ...d.data()};
+      else masterData.push({id: d.id, ...d.data()});
+    });
+    // Remove red accounts that are no longer red
+    masterData = masterData.filter(x => x.listType !== "Red" || redIds.has(x.id));
+    if (!document.getElementById("staffSearch").value.trim()) renderStaffUI();
+  }));
+
+  // Load OPEN accounts (filter client-side for performance)
+  // Simple query = no composite index needed
+  const qOpen = query(collection(db, "customers"),
+    where("listType", "==", "New")
+  );
+  _unsubs.push(onSnapshot(qOpen, snap => {
+    const openIds = new Set();
+    snap.docs.forEach(d => {
+      openIds.add(d.id);
+      const exists = masterData.findIndex(x => x.id === d.id);
+      if (exists !== -1) masterData[exists] = {id: d.id, ...d.data()};
+      else masterData.push({id: d.id, ...d.data()});
+    });
+    // Remove open accounts no longer in query
+    masterData = masterData.filter(x => x.listType !== "New" || openIds.has(x.id));
+    if (!document.getElementById("staffSearch").value.trim()) renderStaffUI();
+  }));
+}
+
+// ─────────────────────────────────────
+//  OFFICER: Only their assigned accounts
+// ─────────────────────────────────────
+function subscribeOfficerData() {
+  const qOff = query(collection(db, "customers"),
+    where("fieldAgent", "==", currentOfficer),
+    where("listType", "==", "Red")
+  );
+  _unsubs.push(onSnapshot(qOff, snap => {
+    masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+    renderOfficerDash();
+  }));
+}
+
+// ─────────────────────────────────────
+//  MANAGER: Summary stats + on-demand full load
+// ─────────────────────────────────────
+async function subscribeManagerData() {
+  // Phonebook (for promo center - load lazily)
+  _unsubs.push(onSnapshot(collection(db, "phoneDirectory"), snap => {
+    snap.forEach(d => { phoneDir[d.id] = d.data(); });
+    if (isActivePage("promoCenterPage")) renderPromo();
+  }));
 
   // BM Issues
-  onSnapshot(collection(db, "bm_issues"), snap => {
+  _unsubs.push(onSnapshot(collection(db, "bm_issues"), snap => {
     bmIssues = snap.docs.map(d => ({id: d.id, ...d.data()}));
     renderBMStats();
-    if (isActivePage('bmIssuePage')) renderBMIssues();
-  });
+    if (isActivePage("bmIssuePage")) renderBMIssues();
+  }));
 
   // Field visits
-  onSnapshot(collection(db, "field_visits"), snap => {
+  _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
     fieldVisits = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    if (isActivePage('trackPage')) renderTracking();
-  });
+    if (isActivePage("trackPage")) renderTracking();
+  }));
 
-  // Master customers — the heart of the system
-  onSnapshot(collection(db, "customers"), snap => {
-    // ★ PERFORMANCE: batch-process snapshot changes
-    masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
+  // ★ Manager gets FULL data — but loaded smartly
+  // First: load today's actionable accounts fast
+  await loadManagerSummary();
 
-    if      (currentRole === "manager")  { renderManagerDash(); if(isActivePage('ccLogsPage')) renderCCLogs(); if(isActivePage('fieldPage')) renderFieldPage(); }
-    else if (currentRole === "officer")  { renderOfficerDash(); }
-    else if (currentRole === "staff")    { if (!document.getElementById('staffSearch').value.trim()) renderStaffUI(); }
-  });
+  // Then: background load everything else
+  setTimeout(() => loadManagerFull(), 800);
 }
+
+// Manager: fast summary from Red + today's Open
+async function loadManagerSummary() {
+  try {
+    const [redSnap, todaySnap] = await Promise.all([
+      getDocs(query(collection(db, "customers"), where("listType","==","Red"))),
+      getDocs(query(collection(db, "customers"), where("listType","==","New")))
+    ]);
+    masterData = [
+      ...redSnap.docs.map(d => ({id:d.id,...d.data()})),
+      ...todaySnap.docs.map(d => ({id:d.id,...d.data()}))
+    ];
+    // Deduplicate
+    const seen = new Set();
+    masterData = masterData.filter(d => { if(seen.has(d.id)) return false; seen.add(d.id); return true; });
+    renderManagerDash();
+    if (isActivePage("ccLogsPage")) renderCCLogs();
+    if (isActivePage("fieldPage")) renderFieldPage();
+  } catch(e) { console.error("Summary load failed:", e); }
+}
+
+// Manager: full real-time listener (background)
+function loadManagerFull() {
+  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderManagerDash();
+    if (isActivePage("ccLogsPage")) renderCCLogs();
+    if (isActivePage("fieldPage")) renderFieldPage();
+  }));
+}
+
+// ★ Public function: force reload full data (for manager pages needing everything)
+window.loadFullDataIfNeeded = async () => {
+  if (masterData.length > 50) return; // Already loaded
+  loader("Loading full data...");
+  try {
+    const snap = await getDocs(collection(db, "customers"));
+    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+    loaderHide();
+  } catch(e) { loaderHide(); }
+};
 
 // ═══════════════════════════════════════
 //  UTILITY: getPhone
@@ -973,6 +1093,12 @@ window.updateProgress = updateProgress;
 //  CALL CENTER LOGS (MANAGER VIEW)
 // ═══════════════════════════════════════
 function renderCCLogs() {
+  if (currentRole === "manager" && masterData.length < 2) {
+    // Data still loading - show spinner and retry
+    document.getElementById('ccLogsBody').innerHTML = "<tr><td colspan='8' style='text-align:center; padding:30px; color:var(--muted);'>⏳ Loading data... please wait.</td></tr>";
+    setTimeout(renderCCLogs, 1200);
+    return;
+  }
   const filterDay    = parseInt(document.getElementById('ccDayFilter')?.value) || TD;
   const statusFilter = document.getElementById('logStatusFilter')?.value || "ALL";
   const agentFilter  = document.getElementById('ccAgentFilter')?.value || "ALL";
@@ -1070,6 +1196,10 @@ window.exportCCtoExcel = exportCCtoExcel;
 //  FIELD PAGE
 // ═══════════════════════════════════════
 function renderFieldPage() {
+  if (currentRole === "manager" && masterData.length < 2) {
+    setTimeout(renderFieldPage, 1200);
+    return;
+  }
   const stats = {
     "Group Sale":  { tAmt:0, cAmt:0, tAcc:0, cAcc:0 },
     "Heenpahana": { tAmt:0, cAmt:0, tAcc:0, cAcc:0 },
