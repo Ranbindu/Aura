@@ -1278,65 +1278,46 @@ function subscribeData() {
   }));
 }
 
-// ★ STAFF: getDocs once (faster than onSnapshot for large collections)
+// ★ STAFF: Real-time listener (simpler, more reliable)
 async function loadStaffDataOnce() {
-  try {
-    loader("Loading today's targets...");
-    const snap = await getDocs(collection(db, "customers"));
-    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+  loader("Loading today's targets...");
+  
+  // Timeout - if data doesn't load in 8s, show empty UI
+  const loadTimeout = setTimeout(() => {
     loaderHide();
     renderStaffUI();
+    toast("⚠️ Slow connection - showing available data", "info");
+  }, 8000);
 
-    // After initial load, listen for changes only
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      // Only update locally changed docs (incremental)
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") {
-          masterData = masterData.filter(x => x.id !== d.id);
-        } else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d;
-          else masterData.push(d);
-        }
-      });
-      if (snap.docChanges().length > 0 && 
-          !document.getElementById('staffSearch')?.value.trim()) {
-        renderStaffUI();
-      }
-    }));
-  } catch(e) {
+  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+    clearTimeout(loadTimeout);
+    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     loaderHide();
-    toast("❌ Load failed: " + e.message, "error");
-  }
+    if (!document.getElementById('staffSearch')?.value.trim()) {
+      renderStaffUI();
+    }
+  }, err => {
+    clearTimeout(loadTimeout);
+    loaderHide();
+    console.error("Staff data error:", err);
+    toast("❌ Data load failed: " + err.message, "error");
+    renderStaffUI();
+  }));
 }
 
-// ★ OFFICER: only their assigned accounts
-async function loadOfficerDataOnce() {
-  try {
-    const snap = await getDocs(collection(db, "customers"));
+// ★ OFFICER: Real-time listener
+function loadOfficerDataOnce() {
+  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     renderOfficerDash();
+  }, err => {
+    console.error("Officer data error:", err);
+    toast("❌ " + err.message, "error");
+  }));
 
-    // Listen for changes
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") masterData = masterData.filter(x => x.id !== d.id);
-        else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d; else masterData.push(d);
-        }
-      });
-      renderOfficerDash();
-    }));
-
-    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
-      fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
-    }));
-  } catch(e) {
-    toast("❌ " + e.message, "error");
-  }
+  _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
+    fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
+  }));
 }
 
 
