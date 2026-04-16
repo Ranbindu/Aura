@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Aura ERP v2 — Recovery System</title>
+<script>
+// ★ KILL ALL SERVICE WORKERS - prevent caching issues
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => {
+      reg.unregister();
+      console.log('SW unregistered:', reg.scope);
+    });
+  });
+}
+// Clear caches
+if ('caches' in window) {
+  caches.keys().then(names => names.forEach(n => caches.delete(n)));
+}
+</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -1236,12 +1251,14 @@ function handleUser(user) {
   else if (currentRole === "manager")  { goTo('dashPage'); }
   else { 
     goTo('staffPage');
-    // Show loading state immediately so page isn't blank
+    // Show loading state immediately
     const tb = document.getElementById('staffTableBody');
-    if (tb) tb.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:60px; color:var(--muted);">
-      <div class="spinner" style="margin:0 auto 16px;"></div>
-      Loading today's accounts...
-    </td></tr>`;
+    if (tb) tb.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:60px; color:var(--muted);">⏳ Loading...</td></tr>';
+    // Force staffPage visible
+    const sp = document.getElementById('staffPage');
+    if (sp) {
+      sp.style.cssText = 'display:block !important; position:relative !important; z-index:10 !important; min-height:100vh !important;';
+    }
   }
 
   // Subscribe only once - data loads in background
@@ -2150,9 +2167,12 @@ window.initChat = () => {
 
   // Subscribe chat messages
   if (chatUnsubFn) chatUnsubFn();
-  const qChat = query(collection(db, "team_chat"), orderBy("timestamp", "asc"), limit(100));
-  chatUnsubFn = onSnapshot(qChat, snap => {
-    renderChatMessages(snap.docs.map(d => ({id:d.id,...d.data()})));
+  // No orderBy = no index needed, sort client-side
+  chatUnsubFn = onSnapshot(collection(db, "team_chat"), snap => {
+    const msgs = snap.docs.map(d => ({id:d.id,...d.data()}))
+      .sort((a,b) => (a.timestamp||0) - (b.timestamp||0))
+      .slice(-100); // last 100
+    renderChatMessages(msgs);
     lastChatSeen = Date.now();
     hideChatBadge();
   });
@@ -2332,16 +2352,14 @@ window.sendChatMsg = async () => {
 // Background chat notifications
 function subscribeChatNotifications() {
   try {
-    _unsubs.push(onSnapshot(
-      query(collection(db, "team_chat"), orderBy("timestamp", "desc"), limit(5)),
-      snap => {
-        if (isActivePage('chatPage')) return;
-        const docs = snap.docs.map(d => d.data());
-        if (docs.length > 0 && docs[0].timestamp > lastChatSeen && docs[0].sender !== chatUserName) {
-          showChatBadge();
-        }
+    _unsubs.push(onSnapshot(collection(db, "team_chat"), snap => {
+      if (isActivePage('chatPage')) return;
+      const docs = snap.docs.map(d => d.data())
+        .sort((a,b) => (b.timestamp||0)-(a.timestamp||0));
+      if (docs.length > 0 && docs[0].timestamp > lastChatSeen && docs[0].sender !== chatUserName) {
+        showChatBadge();
       }
-    ));
+    }));
   } catch(e) { console.warn("Chat notify error:", e); }
 }
 
