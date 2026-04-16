@@ -3249,22 +3249,25 @@ window.goTo = (pageId) => {
   if (lp) lp.style.display = 'none';
 
   // Hide all pages
-  document.querySelectorAll('.page').forEach(p => {
+  document.querySelectorAll('.page').forEach(function(p) {
     p.classList.remove('active');
     p.style.display = 'none';
   });
 
   if (pageId === 'loginPage') {
-    // Show login overlay - position:fixed, z-index:99999
     if (lp) lp.style.display = 'flex';
     var errEl = document.getElementById('loginErr');
     if (errEl) errEl.innerText = '';
   } else {
-    // Show page content
     var pg = document.getElementById(pageId);
     if (pg) {
       pg.classList.add('active');
+      // Force ALL styles inline - no CSS class dependency
       pg.style.display = 'block';
+      pg.style.background = '#050d07';
+      pg.style.minHeight = '100vh';
+      pg.style.width = '100%';
+      pg.style.position = 'relative';
     }
     window.scrollTo(0,0);
   }
