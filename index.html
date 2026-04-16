@@ -7,6 +7,19 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<script>
+// Force clear any old service workers and caches
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+}
+if ('caches' in window) {
+  caches.keys().then(names => {
+    names.forEach(name => caches.delete(name));
+  });
+}
+</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f2518">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
@@ -36,10 +49,16 @@
   }
 
   /* ── LAYOUT ── */
-  .page{display:none; animation:fadeUp .35s ease;}
-  .page.active{display:block;}
+  .page{display:none;}
+  .page.active{
+    display:block;
+    position:relative;
+    z-index:10;
+    min-height:100vh;
+    animation:fadeUp .35s ease;
+  }
   @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
-  .wrap{max-width:1480px; margin:0 auto; padding:20px 16px;}
+  .wrap{max-width:1480px; margin:0 auto; padding:20px 16px; position:relative; z-index:10;}
   .glass{
     background: rgba(5,15,8,0.55);
     border: 1px solid rgba(61,220,116,0.22);
@@ -144,24 +163,28 @@
   /* ── LOGIN ── */
   #loginPage{
     display:none;
-    align-items:center; 
-    justify-content:center; 
-    min-height:100vh; 
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
     padding:20px;
   }
   #loginPage.active{
     display:flex !important;
-    z-index: 10 !important;
-    position: relative !important;
+    position:fixed !important;
+    inset:0 !important;
+    z-index:500 !important;
+    background:transparent !important;
   }
   .login-box{
     width:100%; max-width:420px; padding:48px 40px; text-align:center;
-    background: rgba(3,12,5,0.60);
+    background: rgba(3,12,5,0.82);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
-    border: 1px solid rgba(61,220,116,0.2);
+    border: 1px solid rgba(61,220,116,0.3);
     border-radius: 24px;
-    box-shadow: 0 24px 64px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.1);
+    position:relative;
+    z-index:501;
   }
   .logo-text{font-size:4.5rem; font-weight:900; line-height:1;
     background:linear-gradient(135deg,var(--green),#2196f3,#9c27b0);
@@ -294,7 +317,7 @@
     inset: 0;
     background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.45) 100%);
     pointer-events: none;
-    z-index: 0;
+    z-index: 1;
   }
   .page, #toastContainer {
     position: relative;
@@ -342,8 +365,16 @@
       <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password">
       <button type="submit" style="width:100%; margin-top:16px; padding:12px;">LOGIN TO SYSTEM</button>
     </form>
+    <div id="currentUserBar" style="display:none; margin-top:16px; padding:12px; background:rgba(61,220,116,0.1); border:1px solid rgba(61,220,116,0.3); border-radius:10px; font-size:12px;">
+      <div style="color:var(--muted);">Currently logged in as:</div>
+      <div id="currentUserEmail" style="color:var(--green); font-weight:700; margin:4px 0;"></div>
+      <button onclick="doLogout()" style="padding:5px 14px; font-size:11px; margin-top:6px; background:rgba(239,83,80,0.8);">Switch User / Logout</button>
+    </div>
+    <form style="display:none">
+    </form>
     <div id="loginErr" style="color:#ff8a80; margin-top:14px; font-size:13px; font-weight:600;"></div>
     <div style="margin-top:24px; font-size:10px; color:var(--muted); letter-spacing:2px;">POWERED BY MR.RANBINDU</div>
+    <div style="margin-top:8px; font-size:10px; color:rgba(122,168,134,0.4);">For multiple users: use different browsers or incognito</div>
   </div>
 </div>
 
@@ -1082,7 +1113,7 @@
     }
     var errEl = document.getElementById('loginErr');
     if (errEl) { errEl.style.color='#ff9800'; errEl.innerText='⚠️ Connecting... retry if needed.'; }
-  }, 4500);
+  }, 2500); // Reduced: show login faster if module slow
   window._aura_safety_timer = safetyTimer;
 })();
 </script>
@@ -1164,8 +1195,21 @@ async function boot() {
       console.log("🔥 Auth state:", user ? "LOGGED IN: " + user.email : "NOT LOGGED IN");
       clearTimeout(SHOW_LOGIN);
       loaderHide();
-      if (user) handleUser(user);
-      else goTo('loginPage');
+      if (user) {
+        // Show current user in login bar (in case someone wants to switch)
+        const bar = document.getElementById('currentUserBar');
+        const emailEl = document.getElementById('currentUserEmail');
+        if (bar && emailEl) {
+          emailEl.innerText = user.email;
+          bar.style.display = 'block';
+        }
+        handleUser(user);
+      } else {
+        // Hide switch bar
+        const bar = document.getElementById('currentUserBar');
+        if (bar) bar.style.display = 'none';
+        goTo('loginPage');
+      }
     });
 
   } catch(e) {
@@ -1270,65 +1314,46 @@ function subscribeData() {
   }));
 }
 
-// ★ STAFF: getDocs once (faster than onSnapshot for large collections)
+// ★ STAFF: Real-time listener (simpler, more reliable)
 async function loadStaffDataOnce() {
-  try {
-    loader("Loading today's targets...");
-    const snap = await getDocs(collection(db, "customers"));
-    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+  loader("Loading today's targets...");
+  
+  // Timeout - if data doesn't load in 8s, show empty UI
+  const loadTimeout = setTimeout(() => {
     loaderHide();
     renderStaffUI();
+    toast("⚠️ Slow connection - showing available data", "info");
+  }, 8000);
 
-    // After initial load, listen for changes only
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      // Only update locally changed docs (incremental)
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") {
-          masterData = masterData.filter(x => x.id !== d.id);
-        } else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d;
-          else masterData.push(d);
-        }
-      });
-      if (snap.docChanges().length > 0 && 
-          !document.getElementById('staffSearch')?.value.trim()) {
-        renderStaffUI();
-      }
-    }));
-  } catch(e) {
+  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+    clearTimeout(loadTimeout);
+    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     loaderHide();
-    toast("❌ Load failed: " + e.message, "error");
-  }
+    if (!document.getElementById('staffSearch')?.value.trim()) {
+      renderStaffUI();
+    }
+  }, err => {
+    clearTimeout(loadTimeout);
+    loaderHide();
+    console.error("Staff data error:", err);
+    toast("❌ Data load failed: " + err.message, "error");
+    renderStaffUI();
+  }));
 }
 
-// ★ OFFICER: only their assigned accounts
-async function loadOfficerDataOnce() {
-  try {
-    const snap = await getDocs(collection(db, "customers"));
+// ★ OFFICER: Real-time listener
+function loadOfficerDataOnce() {
+  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     renderOfficerDash();
+  }, err => {
+    console.error("Officer data error:", err);
+    toast("❌ " + err.message, "error");
+  }));
 
-    // Listen for changes
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") masterData = masterData.filter(x => x.id !== d.id);
-        else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d; else masterData.push(d);
-        }
-      });
-      renderOfficerDash();
-    }));
-
-    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
-      fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
-    }));
-  } catch(e) {
-    toast("❌ " + e.message, "error");
-  }
+  _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
+    fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
+  }));
 }
 
 
@@ -3258,9 +3283,9 @@ window.goTo = (pageId) => {
   if (pg) {
     pg.classList.add('active');
     if (pageId === 'loginPage') {
-      pg.style.cssText = 'display:flex !important; z-index:10 !important;';
+      pg.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; z-index:500 !important; align-items:center !important; justify-content:center !important;';
     } else {
-      pg.style.cssText = 'display:block !important;';
+      pg.style.cssText = 'display:block !important; position:relative !important; z-index:5 !important;';
     }
     window.scrollTo(0,0);
   }
