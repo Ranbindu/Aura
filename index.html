@@ -718,7 +718,9 @@ async function boot() {
   }
 }
 
-async function handleUser(user) {
+function handleUser(user) {
+  // ★ SIMPLE FIX: Navigate first, load data after
+  // No await needed - pages show loading state while data comes in
   const e = user.email.toLowerCase();
   const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
 
@@ -731,16 +733,16 @@ async function handleUser(user) {
 
   setupDaySelects();
 
-  // Subscribe only once
-  if (!isSystemLoaded) {
-    isSystemLoaded = true;
-    await subscribeData(); // ★ await so data loads before navigate
-  }
-
-  // Navigate to correct page
+  // ★ Navigate IMMEDIATELY - don't wait for data
   if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
   else if (currentRole === "manager")  { goTo('dashPage'); }
   else                                 { goTo('staffPage'); }
+
+  // Subscribe only once - data loads in background
+  if (!isSystemLoaded) {
+    isSystemLoaded = true;
+    subscribeData(); // No await - fire and forget
+  }
 }
 
 // ═══════════════════════════════════════
@@ -756,22 +758,18 @@ async function handleUser(user) {
 let _unsubs = [];
 function unsubAll() { _unsubs.forEach(fn => { try{fn();}catch(e){} }); _unsubs = []; }
 
-async function subscribeData() {
+function subscribeData() {
   unsubAll(); // Clean slate
 
-  // ── Shared: Agent mapping (tiny collection) ──
+  // ── Shared: Agent mapping ──
   _unsubs.push(onSnapshot(collection(db, "agent_mapping"), snap => {
     snap.forEach(d => { agentMap[d.id] = d.data().fieldAgent; });
   }));
 
-  // ── Role-based customer loading ──
-  if (currentRole === "staff") {
-    await subscribeStaffData();
-  } else if (currentRole === "officer") {
-    await subscribeOfficerData();
-  } else if (currentRole === "manager") {
-    await subscribeManagerData();
-  }
+  // ── Role-based loading ──
+  if      (currentRole === "staff")   { subscribeStaffData(); }
+  else if (currentRole === "officer") { subscribeOfficerData(); }
+  else if (currentRole === "manager") { subscribeManagerData(); }
 }
 
 // ─────────────────────────────────────
@@ -2013,8 +2011,8 @@ window.doLogin = async () => {
 
   try {
     const cred = await signInWithEmailAndPassword(auth, email, pass);
-    if (err) err.innerText = "✅ Authenticated! Loading...";
-    await handleUser(cred.user);
+    if (err) err.innerText = "✅ Loading dashboard...";
+    handleUser(cred.user); // No await - navigates immediately
   } catch(e) {
     console.error("Login error:", e);
     if (e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found') {
