@@ -142,8 +142,18 @@
   .prog-fill{height:100%; background:linear-gradient(90deg,var(--green2),var(--green)); border-radius:99px; transition:width .6s ease;}
 
   /* ── LOGIN ── */
-  #loginPage{align-items:center; justify-content:center; min-height:100vh; padding:20px;}
-  #loginPage.active{display:flex !important;}
+  #loginPage{
+    display:none;
+    align-items:center; 
+    justify-content:center; 
+    min-height:100vh; 
+    padding:20px;
+  }
+  #loginPage.active{
+    display:flex !important;
+    z-index: 10 !important;
+    position: relative !important;
+  }
   .login-box{
     width:100%; max-width:420px; padding:48px 40px; text-align:center;
     background: rgba(3,12,5,0.60);
@@ -3216,16 +3226,20 @@ window.doLogout = async () => {
 //  NAVIGATION
 // ═══════════════════════════════════════
 window.goTo = (pageId) => {
-  // ★ FIX: Use inline styles to override any CSS specificity issues
+  // Hide all pages
   document.querySelectorAll('.page').forEach(p => {
     p.classList.remove('active');
-    p.style.display = 'none'; // Force hide - beats any CSS specificity
+    p.style.cssText = 'display:none !important';
   });
+  // Show target page
   const pg = document.getElementById(pageId);
   if (pg) {
     pg.classList.add('active');
-    // Restore correct display based on page type
-    pg.style.display = pageId === 'loginPage' ? 'flex' : 'block';
+    if (pageId === 'loginPage') {
+      pg.style.cssText = 'display:flex !important; z-index:10 !important;';
+    } else {
+      pg.style.cssText = 'display:block !important;';
+    }
     window.scrollTo(0,0);
   }
 };
