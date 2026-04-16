@@ -272,7 +272,7 @@
     pointer-events: none;
     z-index: 0;
   }
-  .page, #globalLoader, #toastContainer, .modal-overlay, .modal {
+  .page, #toastContainer {
     position: relative;
     z-index: 1;
   }
@@ -2766,6 +2766,8 @@ function openModal(id) {
   document.getElementById(id)?.classList.add('open');
   document.getElementById('modalOverlay')?.classList.add('open');
 }
+window.openModal = openModal; // ★ expose to HTML onclick
+
 window.closeAllModals = () => {
   document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
   document.getElementById('modalOverlay')?.classList.remove('open');
