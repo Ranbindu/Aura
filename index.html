@@ -483,25 +483,57 @@
 
 <!-- ─────── TEAM CHAT PAGE ─────── -->
 <div id="chatPage" class="page">
-  <div class="wrap" style="max-width:900px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-      <h2 style="color:#90caf9;">💬 Team Chat</h2>
-      <button id="chatBackBtn" onclick="history.back() || goTo('dashPage')" class="btn-sm">← Back</button>
+  <div style="max-width:820px; margin:0 auto; padding:16px; display:flex; flex-direction:column; height:100vh; box-sizing:border-box;">
+    
+    <!-- Header -->
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-shrink:0;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div style="background:linear-gradient(135deg,#1a237e,#3949ab); width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; box-shadow:0 4px 15px rgba(0,0,0,0.5); flex-shrink:0;">💬</div>
+        <div>
+          <h2 style="margin:0; color:#90caf9; font-size:1.25rem; letter-spacing:-.5px;">Aura Team Chat</h2>
+          <div style="font-size:11px; color:var(--muted); margin-top:2px;">All members · Real-time</div>
+        </div>
+      </div>
+      <button id="chatBackBtn" class="btn-sm btn-blue" style="flex-shrink:0;">← Back</button>
+    </div>
+
+    <!-- Member Pills -->
+    <div style="display:flex; gap:6px; margin-bottom:12px; flex-shrink:0; flex-wrap:wrap;">
+      <div style="background:rgba(255,214,0,0.14); border:1px solid rgba(255,214,0,0.35); border-radius:99px; padding:4px 12px; font-size:11px; color:var(--yellow); display:flex; align-items:center; gap:5px;">
+        <span style="width:6px; height:6px; background:var(--yellow); border-radius:50%; display:inline-block;"></span> Branch Manager
+      </div>
+      <div style="background:rgba(61,220,116,0.12); border:1px solid rgba(61,220,116,0.28); border-radius:99px; padding:4px 12px; font-size:11px; color:var(--green); display:flex; align-items:center; gap:5px;">
+        <span style="width:6px; height:6px; background:var(--green); border-radius:50%; display:inline-block;"></span> Call Center
+      </div>
+      <div style="background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.28); border-radius:99px; padding:4px 12px; font-size:11px; color:var(--blue); display:flex; align-items:center; gap:5px;">
+        <span style="width:6px; height:6px; background:var(--blue); border-radius:50%; display:inline-block;"></span> Amila
+      </div>
+      <div style="background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.28); border-radius:99px; padding:4px 12px; font-size:11px; color:var(--blue); display:flex; align-items:center; gap:5px;">
+        <span style="width:6px; height:6px; background:var(--blue); border-radius:50%; display:inline-block;"></span> Rohan
+      </div>
+      <div style="background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.28); border-radius:99px; padding:4px 12px; font-size:11px; color:var(--blue); display:flex; align-items:center; gap:5px;">
+        <span style="width:6px; height:6px; background:var(--blue); border-radius:50%; display:inline-block;"></span> Heenpahana
+      </div>
+      <div style="background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.28); border-radius:99px; padding:4px 12px; font-size:11px; color:var(--blue); display:flex; align-items:center; gap:5px;">
+        <span style="width:6px; height:6px; background:var(--blue); border-radius:50%; display:inline-block;"></span> Group Sale
+      </div>
     </div>
 
     <!-- Chat Box -->
-    <div class="glass" style="display:flex; flex-direction:column; height:70vh;">
-      <!-- Messages Area -->
-      <div id="chatMessages" style="flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px;">
-        <div style="text-align:center; color:var(--muted); font-size:12px; padding:20px;">Loading messages...</div>
-      </div>
+    <div class="glass" style="flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0;">
+      
+      <!-- Messages -->
+      <div id="chatMessages" style="flex:1; overflow-y:auto; padding:18px 20px; display:flex; flex-direction:column; gap:6px; min-height:0;"></div>
 
-      <!-- Input Area -->
-      <div style="border-top:1px solid var(--border); padding:14px; display:flex; gap:10px; align-items:flex-end; background:rgba(0,0,0,0.3); border-radius:0 0 var(--radius) var(--radius);">
-        <textarea id="chatInput" placeholder="Type your message... (Enter to send)" rows="2"
-          style="flex:1; resize:none; border-radius:10px; padding:10px; font-size:13px; margin:0;"
-          onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMsg();}"></textarea>
-        <button onclick="sendChatMsg()" style="padding:10px 20px; margin:0; white-space:nowrap;">Send 📤</button>
+      <!-- Typing + Send -->
+      <div style="border-top:1px solid var(--border); padding:12px 16px; display:flex; gap:10px; align-items:flex-end; background:rgba(0,0,0,0.35); border-radius:0 0 var(--radius) var(--radius); flex-shrink:0;">
+        <div style="flex:1; position:relative;">
+          <textarea id="chatInput" rows="2"
+            placeholder="Type a message... (Enter = Send, Shift+Enter = New line)"
+            style="width:100%; resize:none; border-radius:12px; padding:10px 14px; font-size:13px; margin:0; background:rgba(0,0,0,0.45); border:1px solid rgba(255,255,255,0.14); color:#fff; font-family:inherit; box-sizing:border-box;"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChatMsg();}"></textarea>
+        </div>
+        <button onclick="sendChatMsg()" style="padding:10px 22px; margin:0; border-radius:30px; white-space:nowrap; flex-shrink:0; height:44px;">Send 📤</button>
       </div>
     </div>
   </div>
@@ -788,15 +820,47 @@
         <button onclick="doLogout()" class="btn-red btn-sm">Logout</button>
       </div>
     </div>
-    <!-- 🔔 Promo Task Notification Banner -->
-    <div id="promoTaskBanner" style="display:none; background:linear-gradient(135deg,rgba(255,145,0,.25),rgba(255,214,0,.15)); border:2px solid var(--orange); border-radius:12px; padding:14px 18px; margin-bottom:14px; cursor:pointer;" onclick="showPromoTaskModal()">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span style="font-size:1.8rem;">🔔</span>
-        <div>
+    <!-- 🔔 Promo Task Banner — Call Center Special Task -->
+    <div id="promoTaskBanner" style="display:none; background:linear-gradient(135deg,rgba(255,145,0,.2),rgba(255,214,0,.1)); border:2px solid var(--orange); border-radius:14px; padding:16px 18px; margin-bottom:14px;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+        <span style="font-size:2rem;">📢</span>
+        <div style="flex:1;">
           <div style="font-weight:700; color:var(--yellow); font-size:14px;">Special Task from Branch Manager!</div>
-          <div id="promoTaskPreview" style="font-size:12px; color:#ccc; margin-top:3px;">Click to view task details</div>
+          <div id="promoTaskPreview" style="font-size:12px; color:#ccc; margin-top:4px; line-height:1.5;"></div>
         </div>
-        <span style="margin-left:auto; background:var(--orange); color:#000; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700;">VIEW</span>
+        <button onclick="renderPromoSendList()" style="background:var(--orange); color:#000; padding:6px 14px; border-radius:20px; font-size:11px; font-weight:700; border:none; cursor:pointer; margin:0;">📋 VIEW &amp; SEND ↓</button>
+      </div>
+      <!-- Quick Send Stats -->
+      <div style="display:flex; gap:12px; font-size:12px; border-top:1px solid rgba(255,145,0,0.3); padding-top:10px;">
+        <span style="color:var(--muted);">📊 Total contacts: <b id="taskTotalContacts" style="color:var(--text);">0</b></span>
+        <span style="color:var(--muted);">✅ Sent: <b id="taskSentCount" style="color:var(--green);">0</b></span>
+        <span style="color:var(--muted);">⏳ Remaining: <b id="taskRemainingCount" style="color:var(--orange);">0</b></span>
+      </div>
+    </div>
+
+    <!-- Promo Send Section (embedded in staff page) -->
+    <div id="promoSendSection" style="display:none; margin-bottom:16px;">
+      <div class="glass" style="padding:16px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <h3 style="margin:0; color:var(--orange);">📢 Send Task Message to Customers</h3>
+          <button onclick="document.getElementById('promoSendSection').style.display='none'" class="btn-xs btn-red">✕ Close</button>
+        </div>
+        <div id="promoSendMsg" style="background:rgba(0,0,0,0.4); padding:12px; border-radius:10px; font-size:12px; margin-bottom:12px; border:1px solid var(--border); white-space:pre-wrap; max-height:80px; overflow-y:auto;"></div>
+        <!-- Filter -->
+        <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap; align-items:center;">
+          <input type="text" id="promoSendSearch" oninput="renderPromoSendList()" placeholder="🔍 Search name or phone..." style="flex:1; min-width:200px; margin:0;">
+          <select id="promoSendFilter" onchange="renderPromoSendList()" style="width:160px; margin:0;">
+            <option value="ALL">All Contacts</option>
+            <option value="UNSENT">⏳ Not Sent Yet</option>
+            <option value="SENT">✅ Already Sent</option>
+          </select>
+        </div>
+        <div style="max-height:300px; overflow-y:auto; border:1px solid var(--border); border-radius:10px;">
+          <table style="margin:0;">
+            <thead><tr><th>Name</th><th>Phone</th><th>WA</th><th>SMS</th><th>Status</th></tr></thead>
+            <tbody id="promoSendBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -1908,9 +1972,11 @@ window.initChat = () => {
   // Update back button
   const backBtn = document.getElementById('chatBackBtn');
   if (backBtn) {
-    if (currentRole === "manager") backBtn.onclick = () => goTo('dashPage');
-    else if (currentRole === "officer") backBtn.onclick = () => goTo('officerPage');
-    else backBtn.onclick = () => goTo('staffPage');
+    backBtn.onclick = () => {
+      if (currentRole === "manager") goTo('dashPage');
+      else if (currentRole === "officer") goTo('officerPage');
+      else goTo('staffPage');
+    };
   }
 
   // Subscribe to chat messages
@@ -1957,51 +2023,77 @@ function hideChatBadge() {
 function renderChatMessages(msgs) {
   const box = document.getElementById('chatMessages');
   if (!box) return;
+
   if (!msgs.length) {
-    box.innerHTML = '<div style="text-align:center; color:var(--muted); padding:40px; font-size:13px;">No messages yet. Start the conversation! 👋</div>';
+    box.innerHTML = `<div style="text-align:center; color:var(--muted); padding:60px 20px; font-size:13px;">
+      <div style="font-size:2.5rem; margin-bottom:12px;">💬</div>
+      No messages yet. Start the conversation!
+    </div>`;
     return;
   }
 
+  const wasAtBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
   let html = '';
   let lastDate = '';
+
   msgs.forEach(m => {
     const isMe = m.sender === chatUserName;
     const msgDate = m.dateStr || '';
+
+    // Date divider
     if (msgDate && msgDate !== lastDate) {
       lastDate = msgDate;
-      html += `<div style="text-align:center; margin:8px 0;">
-        <span style="background:rgba(0,0,0,0.5); color:var(--muted); font-size:11px; padding:3px 12px; border-radius:99px;">${msgDate}</span>
+      html += `<div style="text-align:center; margin:12px 0 8px;">
+        <span style="background:rgba(0,0,0,0.55); color:var(--muted); font-size:11px; padding:4px 14px; border-radius:99px; border:1px solid rgba(255,255,255,0.08);">${msgDate}</span>
       </div>`;
     }
 
-    const roleColor = m.role === 'manager' ? '#ffd600'
-                    : m.role === 'officer' ? '#4caf50'
-                    : '#90caf9';
-    const roleIcon  = m.role === 'manager' ? '👔'
-                    : m.role === 'officer' ? '🌾'
-                    : '📞';
+    // Role styling
+    const isManager  = m.role === 'manager';
+    const isOfficer  = m.role === 'officer';
+    const roleColor  = isManager ? '#ffd600' : isOfficer ? '#66bb6a' : '#90caf9';
+    const roleIcon   = isManager ? '👔' : isOfficer ? '🌾' : '📞';
+    const isTaskMsg  = m.isTask;
 
-    html += `<div style="display:flex; flex-direction:column; align-items:${isMe?'flex-end':'flex-start'}; margin-bottom:4px;">
-      ${!isMe ? `<span style="font-size:10px; color:${roleColor}; margin-bottom:3px; margin-left:10px;">${roleIcon} ${m.sender}</span>` : ''}
+    // Task messages get special styling
+    if (isTaskMsg) {
+      const priColor = m.priority==='urgent' ? '#ef5350' : m.priority==='info' ? '#66bb6a' : '#ffd600';
+      const priLabel = m.priority==='urgent' ? '🔴 URGENT' : m.priority==='info' ? '🟢 Info' : '🟡 Normal';
+      html += `<div style="margin:8px 0; background:rgba(255,145,0,0.12); border:1px solid rgba(255,145,0,0.35); border-radius:14px; padding:14px 16px;">
+        <div style="font-size:11px; color:var(--orange); font-weight:700; margin-bottom:6px;">📢 PROMO TASK · ${priLabel} · ${m.timeStr||''}</div>
+        <div style="font-size:13px; white-space:pre-wrap; color:var(--text); line-height:1.6;">${escapeHtml((m.message||'').replace('📢 NEW PROMO TASK:\n',''))}</div>
+      </div>`;
+      return;
+    }
+
+    html += `<div style="display:flex; flex-direction:column; align-items:${isMe?'flex-end':'flex-start'}; margin-bottom:2px;">
+      ${!isMe ? `<span style="font-size:10px; color:${roleColor}; margin-bottom:3px; margin-left:12px; font-weight:600;">${roleIcon} ${escapeHtml(m.sender||'')}</span>` : ''}
       <div style="
-        max-width:72%;
-        background:${isMe ? 'linear-gradient(135deg,rgba(27,94,32,0.85),rgba(46,125,50,0.75))' : 'rgba(0,0,0,0.55)'};
+        max-width:75%;
+        background:${isMe
+          ? 'linear-gradient(135deg,rgba(27,94,32,0.88),rgba(46,125,50,0.78))'
+          : isManager
+            ? 'rgba(40,30,0,0.65)'
+            : isOfficer
+              ? 'rgba(0,30,15,0.65)'
+              : 'rgba(0,0,0,0.55)'
+        };
         backdrop-filter:blur(10px);
-        border:1px solid ${isMe ? 'rgba(61,220,116,0.3)' : 'rgba(255,255,255,0.1)'};
-        border-radius:${isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px'};
+        border:1px solid ${isMe ? 'rgba(61,220,116,0.32)' : isManager ? 'rgba(255,214,0,0.2)' : 'rgba(255,255,255,0.1)'};
+        border-radius:${isMe ? '18px 18px 4px 18px' : '18px 18px 18px 4px'};
         padding:10px 14px;
         font-size:13px;
-        line-height:1.5;
+        line-height:1.55;
         white-space:pre-wrap;
         word-break:break-word;
-      ">${escapeHtml(m.message)}</div>
-      <span style="font-size:10px; color:var(--muted); margin-top:2px; ${isMe?'margin-right:6px':'margin-left:10px'};">${m.timeStr || ''}</span>
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      ">${escapeHtml(m.message||'')}</div>
+      <span style="font-size:10px; color:var(--muted); margin-top:3px; ${isMe?'margin-right:8px':'margin-left:12px'};">${m.timeStr||''}</span>
     </div>`;
   });
 
   box.innerHTML = html;
-  // Scroll to bottom
-  box.scrollTop = box.scrollHeight;
+  if (wasAtBottom) box.scrollTop = box.scrollHeight;
 }
 
 function escapeHtml(str) {
@@ -2035,27 +2127,131 @@ window.sendChatMsg = async () => {
 // ═══════════════════════════════════════
 
 // Staff: Show notification if active tasks exist
+let sentContactKeys = new Set(); // track which contacts staff has sent to
+
 function updatePromoNotification() {
   const banner = document.getElementById('promoTaskBanner');
   if (!banner) return;
 
-  const today = SYS_TODAY;
   const activeTasks = promoTasks.filter(t =>
-    t.status === 'active' && (!t.date || t.date === today)
+    t.status === 'active' && (!t.date || t.date === SYS_TODAY)
   );
 
   if (activeTasks.length > 0) {
     banner.style.display = 'block';
     const latest = activeTasks[activeTasks.length - 1];
+    const priIcon = latest.priority==='urgent' ? '🔴' : latest.priority==='info' ? '🟢' : '🟡';
+    
     const prev = document.getElementById('promoTaskPreview');
-    if (prev) {
-      const priorityIcon = latest.priority === 'urgent' ? '🔴' : latest.priority === 'info' ? '🟢' : '🟡';
-      prev.innerText = `${priorityIcon} ${(latest.message || '').substring(0, 80)}...`;
-    }
+    if (prev) prev.innerHTML = `${priIcon} <b>${(latest.message||'').substring(0,100)}${latest.message?.length>100?'...':''}`;
+
+    // Stats
+    const total = Object.keys(phoneDir).length;
+    const sent  = sentContactKeys.size;
+    const setEl = (id, v) => { const el=document.getElementById(id); if(el) el.innerText=v; };
+    setEl('taskTotalContacts', total);
+    setEl('taskSentCount',     sent);
+    setEl('taskRemainingCount',total - sent);
+
+    // Update promo send section message
+    const msgEl = document.getElementById('promoSendMsg');
+    if (msgEl) msgEl.innerText = latest.message || '';
+
+    // Show send section if it exists
+    const sendSec = document.getElementById('promoSendSection');
+    if (sendSec && sendSec.style.display !== 'none') renderPromoSendList();
+
   } else {
     banner.style.display = 'none';
+    document.getElementById('promoSendSection').style.display = 'none';
   }
 }
+
+// Render the per-customer send list for the active task
+window.renderPromoSendList = () => {
+  const activeTask = promoTasks.find(t => t.status==='active' && (!t.date||t.date===SYS_TODAY));
+  if (!activeTask) return;
+
+  // Show section
+  const sendSec = document.getElementById('promoSendSection');
+  if (sendSec) sendSec.style.display = 'block';
+
+  const search  = (document.getElementById('promoSendSearch')?.value || '').toLowerCase();
+  const filter  = document.getElementById('promoSendFilter')?.value || 'ALL';
+  let html = '';
+  let count = 0;
+
+  for (const [key, data] of Object.entries(phoneDir)) {
+    if (!data.phone || data.phone.length < 9) continue;
+    const name  = data.name || 'Customer';
+    const phone = data.phone;
+    const isSent = sentContactKeys.has(key);
+
+    if (search && !name.toLowerCase().includes(search) && !phone.includes(search)) continue;
+    if (filter === 'UNSENT' && isSent) continue;
+    if (filter === 'SENT' && !isSent) continue;
+    count++;
+
+    const safeN = name.replace(/'/g, "\'");
+    const statusBadge = isSent
+      ? `<td><span style="color:var(--green); font-size:11px; font-weight:700;">✅ Sent</span></td>`
+      : `<td></td>`;
+
+    html += `<tr id="taskRow_${key}" style="${isSent?'opacity:0.45;':''}border-bottom:1px solid rgba(255,255,255,0.05);">
+      <td style="font-size:12px; font-weight:600; padding:8px;">${name}</td>
+      <td style="font-size:12px; color:var(--muted); padding:8px;">${phone}</td>
+      <td style="padding:6px;">
+        <button class="btn-xs btn-wa" onclick="sendTaskToCustomer('${key}','${phone}','${safeN}','WA')" ${isSent?'disabled':''} style="width:40px;">WA</button>
+      </td>
+      <td style="padding:6px;">
+        <button class="btn-xs btn-blue" onclick="sendTaskToCustomer('${key}','${phone}','${safeN}','SMS')" ${isSent?'disabled':''} style="width:44px;">SMS</button>
+      </td>
+      ${statusBadge}
+    </tr>`;
+  }
+
+  const tb = document.getElementById('promoSendBody');
+  if (tb) tb.innerHTML = html || '<tr><td colspan="5" style="text-align:center; color:var(--muted); padding:20px;">No contacts found.</td></tr>';
+};
+
+// Send task message to one customer
+window.sendTaskToCustomer = async (key, phone, name, type) => {
+  const activeTask = promoTasks.find(t => t.status==='active' && (!t.date||t.date===SYS_TODAY));
+  if (!activeTask) return;
+
+  const msg = `හිතවත් ${name},\n\n${activeTask.message}\n\n- සිංගර් ගලෙන්බිඳුනුවැව`;
+  let fp = phone.replace(/[^0-9]/g,'');
+
+  if (type === 'WA') {
+    if (fp.startsWith('0')) fp = '94' + fp.substring(1);
+    window.open(`https://web.whatsapp.com/send?phone=${fp}&text=${encodeURIComponent(msg)}`, '_blank');
+  } else {
+    if (fp.startsWith('0')) fp = '+94' + fp.substring(1);
+    window.location.href = `sms:${fp}?body=${encodeURIComponent(msg)}`;
+  }
+
+  // Mark as sent
+  sentContactKeys.add(key);
+
+  // Update row UI
+  const row = document.getElementById('taskRow_' + key);
+  if (row) {
+    row.style.opacity = '0.45';
+    row.querySelectorAll('button').forEach(b => { b.disabled = true; });
+    const lastTd = row.querySelector('td:last-child');
+    if (lastTd) lastTd.innerHTML = '<span style="color:var(--green); font-size:11px; font-weight:700;">✅ Sent</span>';
+  }
+
+  // Update task sent count in Firestore
+  try {
+    await updateDoc(doc(db, "promo_tasks", activeTask.id), {
+      sentCount: (activeTask.sentCount||0) + 1
+    });
+  } catch(e) {}
+
+  // Update stats
+  updatePromoNotification();
+};
 
 // Staff: Open task modal
 window.showPromoTaskModal = () => {
