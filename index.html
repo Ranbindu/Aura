@@ -312,7 +312,7 @@
 <body>
 
 <!-- ─────── GLOBAL LOADER ─────── -->
-<div id="globalLoader">
+<div id="globalLoader" style="display:flex;">
   <div style="text-align:center; animation:fadeUp .5s ease;">
     <div style="font-size:4.5rem; font-weight:900; 
       background:linear-gradient(135deg,#3ddc74,#2196f3,#9c27b0); 
@@ -1065,6 +1065,27 @@
 </div>
 
 <!-- ─────── MAIN SCRIPT ─────── -->
+<script>
+(function() {
+  var safetyTimer = setTimeout(function() {
+    if (document.querySelector('.page.active')) return;
+    console.warn('⚠️ Aura Safety: Module timeout. Showing login.');
+    var loader = document.getElementById('globalLoader');
+    if (loader) { loader.classList.remove('show'); loader.style.display = 'none'; }
+    document.querySelectorAll('.page').forEach(function(p) {
+      p.classList.remove('active'); p.style.cssText = 'display:none !important';
+    });
+    var loginPage = document.getElementById('loginPage');
+    if (loginPage) {
+      loginPage.classList.add('active');
+      loginPage.style.cssText = 'display:flex !important; z-index:10 !important;';
+    }
+    var errEl = document.getElementById('loginErr');
+    if (errEl) { errEl.style.color='#ff9800'; errEl.innerText='⚠️ Connecting... retry if needed.'; }
+  }, 4500);
+  window._aura_safety_timer = safetyTimer;
+})();
+</script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -1112,13 +1133,14 @@ const FB_CFG = {
 async function boot() {
   loader("Connecting to Aura Secure Vault...");
 
-  // ★ ALWAYS show login after 3s max - no matter what
-  // Show login in 2s MAX no matter what
+  // Cancel safety net (module loaded OK)
+  if (window._aura_safety_timer) clearTimeout(window._aura_safety_timer);
+
   const SHOW_LOGIN = setTimeout(() => {
     console.log("⏰ Timeout - showing login");
     loaderHide();
     goTo('loginPage');
-  }, 2000);
+  }, 1500);
 
   try {
     console.log("🔥 Aura boot starting...");
