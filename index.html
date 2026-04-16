@@ -1295,62 +1295,31 @@ function subscribeData() {
 
 // ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
-  try {
-    const snap = await getDocs(collection(db, "customers"));
+  // Direct onSnapshot - no loader overlay, page always visible
+  _unsubs.push(onSnapshot(collection(db, "customers"), (snap) => {
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    loaderHide();
-    renderStaffUI();
-
-    // After initial load, listen for changes only
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      // Only update locally changed docs (incremental)
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") {
-          masterData = masterData.filter(x => x.id !== d.id);
-        } else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d;
-          else masterData.push(d);
-        }
-      });
-      if (snap.docChanges().length > 0 && 
-          !document.getElementById('staffSearch')?.value.trim()) {
-        renderStaffUI();
-      }
-    }));
-  } catch(e) {
-    loaderHide();
-    toast("❌ Load failed: " + e.message, "error");
-  }
+    if (!document.getElementById('staffSearch')?.value.trim()) {
+      renderStaffUI();
+    }
+  }, (err) => {
+    console.error("Staff data:", err.code);
+    const tb = document.getElementById('staffTableBody');
+    if(tb) tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:#ef5350;">❌ ' + err.code + ' - Firebase rules check කරන්න!</td></tr>';
+  }));
 }
 
 // ★ OFFICER: only their assigned accounts
 async function loadOfficerDataOnce() {
-  try {
-    const snap = await getDocs(collection(db, "customers"));
+  _unsubs.push(onSnapshot(collection(db, "customers"), (snap) => {
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     renderOfficerDash();
-
-    // Listen for changes
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") masterData = masterData.filter(x => x.id !== d.id);
-        else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d; else masterData.push(d);
-        }
-      });
-      renderOfficerDash();
-    }));
-
-    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
-      fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
-    }));
-  } catch(e) {
-    toast("❌ " + e.message, "error");
-  }
+  }, (err) => {
+    console.error("Officer data:", err.code);
+    toast("❌ Data error: " + err.code, "error");
+  }));
+  _unsubs.push(onSnapshot(collection(db, "field_visits"), (snap) => {
+    fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
+  }, ()=>{}));
 }
 
 
@@ -1460,6 +1429,7 @@ function isRisk(d) {
 //  MANAGER DASHBOARD RENDER
 // ═══════════════════════════════════════
 function renderManagerDash() {
+  const _ml = document.getElementById('mgr_loading'); if(_ml) _ml.remove();
   let total = 0, risk = 0, red = 0;
   let totalMonthly = 0, riskAmt = 0, redAmt = 0, totalArr = 0, collected = 0, todayDone = 0;
 
