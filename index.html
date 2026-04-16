@@ -5,11 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Aura ERP v2 — Recovery System</title>
 <script>
-// Kill SW cache
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.getRegistrations().then(r=>r.forEach(s=>s.unregister()));
+  navigator.serviceWorker.getRegistrations().then(function(r){
+    r.forEach(function(s){ s.unregister(); });
+  });
 }
-if('caches' in window) caches.keys().then(k=>k.forEach(n=>caches.delete(n)));
+if('caches' in window){
+  caches.keys().then(function(k){ k.forEach(function(n){ caches.delete(n); }); });
+}
 </script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -43,17 +46,19 @@ if('caches' in window) caches.keys().then(k=>k.forEach(n=>caches.delete(n)));
   }
 
   /* ── LAYOUT ── */
-  .page{display:none;}
+  .page{display:none; animation:fadeUp .35s ease;}
   .page.active{
     display:block;
-    animation:fadeUp .35s ease;
-    background: rgba(3,10,5,0.88);
-    min-height:100vh;
-    position:relative;
-    z-index:10;
+    background: rgba(4, 12, 6, 0.92);
+    min-height: 100vh;
+    position: relative;
+    z-index: 10;
   }
   #loginPage.active{
-    background:transparent!important;
+    background: transparent !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
   }
   @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
   .wrap{max-width:1480px; margin:0 auto; padding:20px 16px;}
@@ -161,22 +166,21 @@ if('caches' in window) caches.keys().then(k=>k.forEach(n=>caches.delete(n)));
   /* ── LOGIN ── */
   #loginPage{
     display:none;
-    align-items:center;
-    justify-content:center;
-    min-height:100vh;
+    align-items:center; 
+    justify-content:center; 
+    min-height:100vh; 
     padding:20px;
-    position:fixed;
-    inset:0;
-    z-index:9999;
   }
   #loginPage.active{
     display:flex !important;
-    z-index: 10 !important;
-    position: relative !important;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999 !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
   .login-box{
     width:100%; max-width:420px; padding:48px 40px; text-align:center;
-    position:relative; z-index:10000;
     background: rgba(3,12,5,0.60);
     backdrop-filter: blur(28px) saturate(1.5);
     -webkit-backdrop-filter: blur(28px) saturate(1.5);
@@ -1099,28 +1103,12 @@ if('caches' in window) caches.keys().then(k=>k.forEach(n=>caches.delete(n)));
     var loginPage = document.getElementById('loginPage');
     if (loginPage) {
       loginPage.classList.add('active');
-      loginPage.style.cssText = 'display:flex !important; z-index:10 !important;';
+      loginPage.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; z-index:9999 !important; align-items:center !important; justify-content:center !important;';
     }
     var errEl = document.getElementById('loginErr');
     if (errEl) { errEl.style.color='#ff9800'; errEl.innerText='⚠️ Connecting... retry if needed.'; }
   }, 4500);
   window._aura_safety_timer = safetyTimer;
-})();
-</script>
-<script>
-(function(){
-  var t = setTimeout(function(){
-    // Hide loader
-    var l=document.getElementById('globalLoader');
-    if(l){l.style.display='none';}
-    // Show login
-    var lp=document.getElementById('loginPage');
-    if(lp){
-      lp.style.cssText='display:flex!important;position:fixed!important;inset:0!important;z-index:9999!important;align-items:center!important;justify-content:center!important;background:rgba(0,0,0,0.7)!important;';
-    }
-    console.warn('Safety: showing login');
-  }, 3000);
-  window._aura_safety = t;
 })();
 </script>
 <script type="module">
@@ -1169,48 +1157,48 @@ const FB_CFG = {
 
 async function boot() {
   loader("Connecting to Aura Secure Vault...");
-  if(window._aura_safety) clearTimeout(window._aura_safety);
+  if (window._aura_safety_timer) clearTimeout(window._aura_safety_timer);
 
-  let done=false;
-  const SHOW_LOGIN = setTimeout(()=>{
-    if(done) return;
-    done=true;
+  let bootDone = false;
+
+  const SHOW_LOGIN = setTimeout(() => {
+    if (bootDone) return;
+    bootDone = true;
     loaderHide();
     goTo('loginPage');
-  }, 2000);
+  }, 4000);
 
   try {
-    console.log("🔥 Aura boot starting...");
     app  = initializeApp(FB_CFG);
     auth = getAuth(app);
     db   = getFirestore(app);
-    console.log("🔥 Firebase initialized");
 
-    // Check cached session
     const cachedUser = auth.currentUser;
     if (cachedUser) {
+      bootDone = true;
       clearTimeout(SHOW_LOGIN);
       loaderHide();
       handleUser(cachedUser);
       return;
     }
 
-    // Wait for Firebase to check session
-    console.log("🔥 Waiting for auth state...");
     onAuthStateChanged(auth, (user) => {
       clearTimeout(SHOW_LOGIN);
-      if(done && user){ handleUser(user); return; }
-      if(done) return;
-      done=true;
+      if (bootDone && user) { handleUser(user); return; }
+      if (bootDone) return;
+      bootDone = true;
       loaderHide();
-      if(user) handleUser(user);
+      if (user) handleUser(user);
       else goTo('loginPage');
     });
 
   } catch(e) {
-    clearTimeout(SHOW_LOGIN);
-    loaderHide();
-    goTo('loginPage');
+    if (!bootDone) {
+      bootDone = true;
+      clearTimeout(SHOW_LOGIN);
+      loaderHide();
+      goTo('loginPage');
+    }
   }
 }
 
@@ -1312,7 +1300,7 @@ function subscribeData() {
 // ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
   try {
-    // loading silently
+    // No loader overlay - staffPage already visible
     const snap = await getDocs(collection(db, "customers"));
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     loaderHide();
@@ -3287,27 +3275,23 @@ window.doLogout = async () => {
 //  NAVIGATION
 // ═══════════════════════════════════════
 window.goTo = (pageId) => {
-  // Hide loader
-  var gl=document.getElementById('globalLoader');
-  if(gl){gl.style.display='none';gl.classList.remove('show');}
   // Hide all pages
-  document.querySelectorAll('.page').forEach(p=>{
+  document.querySelectorAll('.page').forEach(p => {
     p.classList.remove('active');
-    p.style.cssText='display:none!important';
+    p.style.cssText = 'display:none !important';
   });
   // Show target page
-  var pg=document.getElementById(pageId);
-  if(pg){
+  const pg = document.getElementById(pageId);
+  if (pg) {
     pg.classList.add('active');
-    if(pageId==='loginPage'){
-      pg.style.cssText='display:flex!important;position:fixed!important;inset:0!important;z-index:9999!important;align-items:center!important;justify-content:center!important;';
+    if (pageId === 'loginPage') {
+      pg.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; z-index:9999 !important; align-items:center !important; justify-content:center !important;';
     } else {
-      pg.style.cssText='display:block!important;position:relative!important;z-index:10!important;min-height:100vh!important;background:rgba(3,10,5,0.88)!important;';
+      pg.style.cssText = 'display:block !important; background:rgba(4,12,6,0.92) !important; min-height:100vh !important; position:relative !important; z-index:10 !important;';
     }
     window.scrollTo(0,0);
   }
 };
-
 function isActivePage(id) {
   return document.getElementById(id)?.classList.contains('active');
 }
@@ -3351,17 +3335,26 @@ window.closeAllModals = () => {
 //  LOADER / TOAST
 // ═══════════════════════════════════════
 function loader(msg) {
-  var el=document.getElementById('globalLoader');
-  var mg=document.getElementById('loaderMsg');
-  if(el){el.classList.add('show');el.style.display='flex';}
-  if(mg&&msg) mg.innerText=msg;
+  const el = document.getElementById('globalLoader');
+  const mg = document.getElementById('loaderMsg');
+  if (el) { 
+    el.classList.add('show'); 
+    el.style.display = 'flex'; // Force show
+  }
+  if (mg && msg) mg.innerText = msg;
 }
-
 function loaderHide() {
-  var el=document.getElementById('globalLoader');
-  if(el){el.classList.remove('show');el.style.display='none';}
+  const el = document.getElementById('globalLoader');
+  if (el) {
+    el.classList.remove('show');
+    el.style.display = 'none';
+  }
+  // Also ensure login page is not covered
+  const lp = document.getElementById('loginPage');
+  if (lp && lp.classList.contains('active')) {
+    lp.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; z-index:9999 !important; align-items:center !important; justify-content:center !important;';
+  }
 }
-
 window.toast = (msg, type="info") => {
   const c = document.getElementById('toastContainer');
   if (!c) return;
