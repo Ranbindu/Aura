@@ -334,7 +334,7 @@
 
 <!-- ─────── LOGIN PAGE ─────── -->
 <div id="loginPage" class="page">
-  <div class="glass login-box">
+  <div class="glass login-box" style="position:relative; z-index:600;">
     <div class="logo-text">AURA</div>
     <div class="logo-sub">Recovery Systems · v2</div>
     <form onsubmit="event.preventDefault(); doLogin();" autocomplete="on">
@@ -1232,7 +1232,15 @@ function handleUser(user) {
   // ★ Navigate IMMEDIATELY - don't wait for data
   if      (currentRole === "officer")  { setupOfficerUI(); goTo('officerPage'); }
   else if (currentRole === "manager")  { goTo('dashPage'); }
-  else                                 { goTo('staffPage'); }
+  else { 
+    goTo('staffPage');
+    // Show loading state immediately so page isn't blank
+    const tb = document.getElementById('staffTableBody');
+    if (tb) tb.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:60px; color:var(--muted);">
+      <div class="spinner" style="margin:0 auto 16px;"></div>
+      Loading today's accounts...
+    </td></tr>`;
+  }
 
   // Subscribe only once - data loads in background
   if (!isSystemLoaded) {
@@ -1310,35 +1318,16 @@ function subscribeData() {
 
 // ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
-  try {
-    loader("Loading today's targets...");
-    const snap = await getDocs(collection(db, "customers"));
+  // Use onSnapshot - no loader overlay, page already visible
+  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    loaderHide();
-    renderStaffUI();
-
-    // After initial load, listen for changes only
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      // Only update locally changed docs (incremental)
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") {
-          masterData = masterData.filter(x => x.id !== d.id);
-        } else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d;
-          else masterData.push(d);
-        }
-      });
-      if (snap.docChanges().length > 0 && 
-          !document.getElementById('staffSearch')?.value.trim()) {
-        renderStaffUI();
-      }
-    }));
-  } catch(e) {
-    loaderHide();
-    toast("❌ Load failed: " + e.message, "error");
-  }
+    if (!document.getElementById('staffSearch')?.value.trim()) {
+      renderStaffUI();
+    }
+  }, err => {
+    console.error("Staff load error:", err.code, err.message);
+    toast("❌ Data error: " + err.code, "error");
+  }));
 }
 
 // ★ OFFICER: only their assigned accounts
@@ -3354,19 +3343,24 @@ window.doLogout = async () => {
 //  NAVIGATION
 // ═══════════════════════════════════════
 window.goTo = (pageId) => {
+  // Always hide loader first
+  const gl = document.getElementById('globalLoader');
+  if (gl) { gl.style.display='none'; gl.classList.remove('show'); }
+
   // Hide all pages
   document.querySelectorAll('.page').forEach(p => {
     p.classList.remove('active');
     p.style.cssText = 'display:none !important';
   });
+
   // Show target page
   const pg = document.getElementById(pageId);
   if (pg) {
     pg.classList.add('active');
     if (pageId === 'loginPage') {
-      pg.style.cssText = 'display:flex !important; z-index:10 !important;';
+      pg.style.cssText = 'display:flex !important; position:fixed !important; inset:0 !important; z-index:500 !important; align-items:center !important; justify-content:center !important;';
     } else {
-      pg.style.cssText = 'display:block !important;';
+      pg.style.cssText = 'display:block !important; min-height:100vh !important;';
     }
     window.scrollTo(0,0);
   }
