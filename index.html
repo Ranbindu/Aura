@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Aura ERP v2 — Recovery System</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f2518">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
@@ -1099,15 +1102,19 @@ async function boot() {
   loader("Connecting to Aura Secure Vault...");
 
   // ★ ALWAYS show login after 3s max - no matter what
+  // Show login in 2s MAX no matter what
   const SHOW_LOGIN = setTimeout(() => {
+    console.log("⏰ Timeout - showing login");
     loaderHide();
     goTo('loginPage');
-  }, 3000);
+  }, 2000);
 
   try {
+    console.log("🔥 Aura boot starting...");
     app  = initializeApp(FB_CFG);
     auth = getAuth(app);
     db   = getFirestore(app);
+    console.log("🔥 Firebase initialized");
 
     // Check cached session
     const cachedUser = auth.currentUser;
@@ -1119,7 +1126,9 @@ async function boot() {
     }
 
     // Wait for Firebase to check session
+    console.log("🔥 Waiting for auth state...");
     onAuthStateChanged(auth, (user) => {
+      console.log("🔥 Auth state:", user ? "LOGGED IN: " + user.email : "NOT LOGGED IN");
       clearTimeout(SHOW_LOGIN);
       loaderHide();
       if (user) handleUser(user);
