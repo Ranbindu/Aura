@@ -1085,6 +1085,7 @@ window.TD = TD;
 //  BOOT
 // ═══════════════════════════════════════
 // Firebase config (hardcoded for speed & reliability)
+// ★ Firebase config
 const FB_CFG = {
   apiKey: "AIzaSyCkvMk3DQt5Bq3rK_bA-GThbxB4wOXNq1g",
   authDomain: "aura-7bc62.firebaseapp.com",
@@ -1097,50 +1098,41 @@ const FB_CFG = {
 async function boot() {
   loader("Connecting to Aura Secure Vault...");
 
-  // ★ Hard timeout - if ANYTHING takes >10s, show login anyway
-  const hardTimeout = setTimeout(() => {
-    console.warn("Boot timeout - showing login");
+  // ★ ALWAYS show login after 3s max - no matter what
+  const SHOW_LOGIN = setTimeout(() => {
     loaderHide();
     goTo('loginPage');
-  }, 10000);
+  }, 3000);
 
   try {
-    // Try to get config from worker (for security)
-    // If worker slow/blocked, fall back to local config instantly
-    let cfg = FB_CFG;
-    try {
-      const controller = new AbortController();
-      setTimeout(() => controller.abort(), 4000); // 4s max for worker
-      const r = await fetch(CLOUD_URL, { signal: controller.signal });
-      if (r.ok) cfg = await r.json();
-    } catch(fetchErr) {
-      console.warn("Worker unreachable, using local config");
-    }
-
-    app  = initializeApp(cfg);
+    app  = initializeApp(FB_CFG);
     auth = getAuth(app);
     db   = getFirestore(app);
 
-    // Don't await setPersistence - can cause hangs
-    setPersistence(auth, browserLocalPersistence).catch(()=>{});
-
-    // Auth state - this MUST fire within seconds
-    const unsubAuth = onAuthStateChanged(auth, user => {
-      clearTimeout(hardTimeout);
-      unsubAuth(); // unsubscribe after first call
+    // Check cached session
+    const cachedUser = auth.currentUser;
+    if (cachedUser) {
+      clearTimeout(SHOW_LOGIN);
       loaderHide();
-      if (user) { handleUser(user); }
-      else      { goTo('loginPage'); }
+      handleUser(cachedUser);
+      return;
+    }
+
+    // Wait for Firebase to check session
+    onAuthStateChanged(auth, (user) => {
+      clearTimeout(SHOW_LOGIN);
+      loaderHide();
+      if (user) handleUser(user);
+      else goTo('loginPage');
     });
 
   } catch(e) {
-    clearTimeout(hardTimeout);
-    console.error("Boot error:", e);
+    clearTimeout(SHOW_LOGIN);
     loaderHide();
     goTo('loginPage');
-    toast("⚠️ Connecting with limited mode.", "info");
   }
 }
+
 
 function handleUser(user) {
   // ★ SIMPLE FIX: Navigate first, load data after
@@ -1183,51 +1175,117 @@ let _unsubs = [];
 function unsubAll() { _unsubs.forEach(fn => { try{fn();}catch(e){} }); _unsubs = []; }
 
 function subscribeData() {
-  unsubAll(); // Clean slate
+  unsubAll();
 
-  // ── Agent mapping ──
+  // ── Shared small collections (tiny data) ──
   _unsubs.push(onSnapshot(collection(db, "agent_mapping"), snap => {
     snap.forEach(d => { agentMap[d.id] = d.data().fieldAgent; });
   }));
-
-  // ── ALL roles: load full customers collection (no WHERE = no index needed) ──
-  // Client-side filtering avoids Firestore composite index requirements
-  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-    masterData = snap.docs.map(d => ({id: d.id, ...d.data()}));
-    if      (currentRole === "manager") { renderManagerDash(); if(isActivePage('ccLogsPage')) renderCCLogs(); if(isActivePage('fieldPage')) renderFieldPage(); }
-    else if (currentRole === "officer") { renderOfficerDash(); }
-    else if (currentRole === "staff")   { if(!document.getElementById('staffSearch')?.value.trim()) renderStaffUI(); }
+  _unsubs.push(onSnapshot(collection(db, "promo_tasks"), snap => {
+    promoTasks = snap.docs.map(d => ({id:d.id,...d.data()}));
+    updatePromoNotification();
+    if (isActivePage("promoCenterPage")) renderPromoTaskList();
   }));
 
-  // ── Manager extras ──
-  if (currentRole === "manager" || currentRole === "staff" || currentRole === "officer") {
+  // ── STAFF / CALL CENTER: minimal load ──
+  // Only load what's needed for TODAY - small packet!
+  if (currentRole === "staff") {
+    // getDocs once (not real-time) - much faster than onSnapshot for large data
+    loadStaffDataOnce();
+
+    // Only listen to phonebook for call center
     _unsubs.push(onSnapshot(collection(db, "phoneDirectory"), snap => {
       snap.forEach(d => { phoneDir[d.id] = d.data(); });
-      if (isActivePage("promoCenterPage")) renderPromo();
     }));
-    _unsubs.push(onSnapshot(collection(db, "bm_issues"), snap => {
-      bmIssues = snap.docs.map(d => ({id: d.id, ...d.data()}));
-      renderBMStats();
-      if (isActivePage("bmIssuePage")) renderBMIssues();
-    }));
-    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
-      fieldVisits = snap.docs.map(d => ({id: d.id, ...d.data()}));
-      if (isActivePage("trackPage")) renderTracking();
-    }));
-    _unsubs.push(onSnapshot(collection(db, "promo_tasks"), snap => {
-      promoTasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
-      updatePromoNotification();
-      if (isActivePage("promoCenterPage")) renderPromoTaskList();
-    }));
-    _unsubs.push(onSnapshot(collection(db, "team_chat"), snap => {
-      if (!isActivePage('chatPage')) {
-        const msgs = snap.docs.map(d => d.data());
-        if (msgs.length > 0) {
-          const latest = msgs[msgs.length-1];
-          if (latest.timestamp > lastChatSeen && latest.sender !== chatUserName) showChatBadge();
+    return; // Staff doesn't need other collections
+  }
+
+  // ── FIELD OFFICER: only their accounts ──
+  if (currentRole === "officer") {
+    loadOfficerDataOnce();
+    return;
+  }
+
+  // ── MANAGER: full real-time ──
+  _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderManagerDash();
+    if (isActivePage('ccLogsPage')) renderCCLogs();
+    if (isActivePage('fieldPage')) renderFieldPage();
+  }));
+  _unsubs.push(onSnapshot(collection(db, "phoneDirectory"), snap => {
+    snap.forEach(d => { phoneDir[d.id] = d.data(); });
+    if (isActivePage("promoCenterPage")) renderPromo();
+  }));
+  _unsubs.push(onSnapshot(collection(db, "bm_issues"), snap => {
+    bmIssues = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderBMStats();
+    if (isActivePage("bmIssuePage")) renderBMIssues();
+  }));
+  _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
+    fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
+    if (isActivePage("trackPage")) renderTracking();
+  }));
+}
+
+// ★ STAFF: getDocs once (faster than onSnapshot for large collections)
+async function loadStaffDataOnce() {
+  try {
+    loader("Loading today's targets...");
+    const snap = await getDocs(collection(db, "customers"));
+    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+    loaderHide();
+    renderStaffUI();
+
+    // After initial load, listen for changes only
+    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+      // Only update locally changed docs (incremental)
+      snap.docChanges().forEach(change => {
+        const d = {id: change.doc.id, ...change.doc.data()};
+        if (change.type === "removed") {
+          masterData = masterData.filter(x => x.id !== d.id);
+        } else {
+          const idx = masterData.findIndex(x => x.id === d.id);
+          if (idx !== -1) masterData[idx] = d;
+          else masterData.push(d);
         }
+      });
+      if (snap.docChanges().length > 0 && 
+          !document.getElementById('staffSearch')?.value.trim()) {
+        renderStaffUI();
       }
     }));
+  } catch(e) {
+    loaderHide();
+    toast("❌ Load failed: " + e.message, "error");
+  }
+}
+
+// ★ OFFICER: only their assigned accounts
+async function loadOfficerDataOnce() {
+  try {
+    const snap = await getDocs(collection(db, "customers"));
+    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderOfficerDash();
+
+    // Listen for changes
+    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
+      snap.docChanges().forEach(change => {
+        const d = {id: change.doc.id, ...change.doc.data()};
+        if (change.type === "removed") masterData = masterData.filter(x => x.id !== d.id);
+        else {
+          const idx = masterData.findIndex(x => x.id === d.id);
+          if (idx !== -1) masterData[idx] = d; else masterData.push(d);
+        }
+      });
+      renderOfficerDash();
+    }));
+
+    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
+      fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
+    }));
+  } catch(e) {
+    toast("❌ " + e.message, "error");
   }
 }
 
