@@ -932,14 +932,9 @@ function subscribeStaffData() {
     // Load RED accounts
     const qRed = query(collection(db, "customers"), where("listType","==","Red"));
     _unsubs.push(onSnapshot(qRed, snap => {
-      const redIds = new Set();
-      snap.docs.forEach(d => {
-        redIds.add(d.id);
-        const idx = masterData.findIndex(x => x.id === d.id);
-        if (idx !== -1) masterData[idx] = {id:d.id,...d.data()};
-        else masterData.push({id:d.id,...d.data()});
-      });
-      masterData = masterData.filter(x => x.listType !== "Red" || redIds.has(x.id));
+      const newRed = snap.docs.map(d => ({id:d.id,...d.data()}));
+      masterData = masterData.filter(x => x.listType !== "Red");
+      masterData = [...masterData, ...newRed];
       if (!redDone) { redDone = true; checkDone(); }
       if (redDone && openDone && !document.getElementById("staffSearch").value.trim()) renderStaffUI();
     }));
@@ -953,14 +948,9 @@ function subscribeStaffData() {
     // Load OPEN accounts
     const qOpen = query(collection(db, "customers"), where("listType","==","New"));
     _unsubs.push(onSnapshot(qOpen, snap => {
-      const openIds = new Set();
-      snap.docs.forEach(d => {
-        openIds.add(d.id);
-        const exists = masterData.findIndex(x => x.id === d.id);
-        if (exists !== -1) masterData[exists] = {id:d.id,...d.data()};
-        else masterData.push({id:d.id,...d.data()});
-      });
-      masterData = masterData.filter(x => x.listType !== "New" || openIds.has(x.id));
+      const newOpen = snap.docs.map(d => ({id:d.id,...d.data()}));
+      masterData = masterData.filter(x => x.listType !== "New");
+      masterData = [...masterData, ...newOpen];
       if (!openDone) { openDone = true; checkDone(); }
       if (redDone && openDone && !document.getElementById("staffSearch").value.trim()) renderStaffUI();
     }));
@@ -2514,6 +2504,37 @@ window.uploadExcel = async (ev, type) => {
 
       loaderHide();
       toast(`✅ ${type} upload complete! ${done} records processed.`, "success");
+
+      // ★ FORCE FRESH RELOAD after upload - don't wait for snapshot
+      loader("🔄 Refreshing system data...");
+      try {
+        // Clear and reload masterData from Firestore immediately
+        masterData = [];
+        const [redSnap, openSnap] = await Promise.all([
+          getDocs(query(collection(db, "customers"), where("listType","==","Red"))),
+          getDocs(query(collection(db, "customers"), where("listType","==","New")))
+        ]);
+        const seen = new Set();
+        const fresh = [
+          ...redSnap.docs.map(d => ({id:d.id,...d.data()})),
+          ...openSnap.docs.map(d => ({id:d.id,...d.data()}))
+        ].filter(d => { if(seen.has(d.id)) return false; seen.add(d.id); return true; });
+        masterData = fresh;
+        loaderHide();
+        toast(`✅ System refreshed! ${fresh.length} accounts loaded.`, "success");
+        // Re-render current page
+        if (currentRole === "manager") {
+          renderManagerDash();
+          if (isActivePage('ccLogsPage')) renderCCLogs();
+          if (isActivePage('fieldPage')) renderFieldPage();
+        } else if (currentRole === "staff") {
+          renderStaffUI();
+        }
+      } catch(refreshErr) {
+        loaderHide();
+        console.warn("Auto-refresh failed:", refreshErr);
+        toast("⚠️ Upload done. Please refresh page to see new data.", "info");
+      }
 
     } catch(err) {
       loaderHide();
