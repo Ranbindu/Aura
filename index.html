@@ -1133,44 +1133,27 @@ async function boot() {
   // Cancel safety net (module loaded OK)
   if (window._aura_safety_timer) clearTimeout(window._aura_safety_timer);
 
-  let _bootDone = false;
-  const SHOW_LOGIN = setTimeout(() => {
-    if (_bootDone) return;
-    _bootDone = true;
-    loaderHide();
-    goTo('loginPage');
-  }, 5000);
-
   try {
-    console.log("🔥 Aura boot starting...");
     app  = initializeApp(FB_CFG);
     auth = getAuth(app);
     db   = getFirestore(app);
-    console.log("🔥 Firebase initialized");
 
-    // Check cached session
+    // Check cached session immediately
     const cachedUser = auth.currentUser;
     if (cachedUser) {
-      clearTimeout(SHOW_LOGIN);
       loaderHide();
       handleUser(cachedUser);
       return;
     }
 
-    // Wait for Firebase to check session
-    console.log("🔥 Waiting for auth state...");
+    // Wait for auth state (fires within 1-2 seconds)
     onAuthStateChanged(auth, (user) => {
-      clearTimeout(SHOW_LOGIN);
-      if (_bootDone && user) { handleUser(user); return; }
-      if (_bootDone) return;
-      _bootDone = true;
       loaderHide();
       if (user) handleUser(user);
       else goTo('loginPage');
     });
 
   } catch(e) {
-    clearTimeout(SHOW_LOGIN);
     loaderHide();
     goTo('loginPage');
   }
@@ -1285,58 +1268,43 @@ function subscribeData() {
 
 // ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
-  try {
-    const snap = await getDocs(collection(db, "customers"));
-    hidePageLoader();
-    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    renderStaffUI();
-
-    // After initial load, listen for changes only
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      // Only update locally changed docs (incremental)
-      snap.docChanges().forEach(change => {
-        const d = {id: change.doc.id, ...change.doc.data()};
-        if (change.type === "removed") {
-          masterData = masterData.filter(x => x.id !== d.id);
-        } else {
-          const idx = masterData.findIndex(x => x.id === d.id);
-          if (idx !== -1) masterData[idx] = d;
-          else masterData.push(d);
-        }
-      });
-      if (snap.docChanges().length > 0 && 
-          !document.getElementById('staffSearch')?.value.trim()) {
+  // onSnapshot is more reliable than getDocs - auto-retries on connection issues
+  const unsub = onSnapshot(collection(db, "customers"), 
+    (snap) => {
+      hidePageLoader(); // Hide loading screen when first data arrives
+      masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
+      if (!document.getElementById('staffSearch')?.value.trim()) {
         renderStaffUI();
       }
-    }));
-  } catch(e) {
-    loaderHide();
-    toast("❌ Load failed: " + e.message, "error");
-  }
+    }, 
+    (err) => {
+      hidePageLoader();
+      console.error("Staff data error:", err.code);
+      const tb = document.getElementById('staffTableBody');
+      if (tb) tb.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:#ef5350;">❌ ${err.code}<br><small style="color:#7aa886;">Firebase Rules check කරන්න: allow read, write: if request.auth != null</small></td></tr>`;
+    }
+  );
+  _unsubs.push(unsub);
 }
+
 
 // ★ OFFICER: only their assigned accounts
 async function loadOfficerDataOnce() {
-  try {
-    const snap = await getDocs(collection(db, "customers"));
-    hidePageLoader();
-    masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-    renderOfficerDash();
-    _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-      snap.docChanges().forEach(change => {
-        const d = {id:change.doc.id,...change.doc.data()};
-        if(change.type==="removed") masterData=masterData.filter(x=>x.id!==d.id);
-        else { const i=masterData.findIndex(x=>x.id===d.id); if(i!==-1) masterData[i]=d; else masterData.push(d); }
-      });
+  _unsubs.push(onSnapshot(collection(db, "customers"),
+    (snap) => {
+      hidePageLoader();
+      masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
       renderOfficerDash();
-    }));
-    _unsubs.push(onSnapshot(collection(db, "field_visits"), snap => {
-      fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()}));
-    }));
-  } catch(e) {
-    hidePageLoader();
-    toast("❌ " + e.message, "error");
-  }
+    },
+    (err) => {
+      hidePageLoader();
+      toast("❌ Data error: " + err.code, "error");
+    }
+  ));
+  _unsubs.push(onSnapshot(collection(db, "field_visits"),
+    (snap) => { fieldVisits = snap.docs.map(d => ({id:d.id,...d.data()})); },
+    () => {}
+  ));
 }
 
 
