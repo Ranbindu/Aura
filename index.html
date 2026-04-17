@@ -1161,8 +1161,6 @@ async function boot() {
 
 
 function handleUser(user) {
-  // ★ SIMPLE FIX: Navigate first, load data after
-  // No await needed - pages show loading state while data comes in
   const e = user.email.toLowerCase();
   const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
 
@@ -1175,25 +1173,27 @@ function handleUser(user) {
 
   setupDaySelects();
 
-  // Navigate + show loading screen
   if (currentRole === "officer") {
     setupOfficerUI();
     goTo('officerPage');
-    showPageLoader('Officer Dashboard ලෝඩ් වෙනවා...');
+    const res = document.getElementById('offSearchResult');
+    if (res) res.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);"><div class="spinner" style="margin:0 auto 16px;"></div>Data loading...</div>';
   } else if (currentRole === "manager") {
     goTo('dashPage');
-    showPageLoader('Manager Dashboard ලෝඩ් වෙනවා...');
   } else {
     goTo('staffPage');
-    showPageLoader('Call Center Data ලෝඩ් වෙනවා...');
+    const tb = document.getElementById('staffTableBody');
+    if (tb) tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:50px 20px;"><div class="spinner" style="margin:0 auto 16px;"></div><div style="color:var(--muted);font-size:13px;">⏳ Data loading, please wait...</div></td></tr>';
+    const badge = document.getElementById('staffTargetBadge');
+    if (badge) badge.innerText = '...';
   }
 
-  // Subscribe only once - data loads in background
   if (!isSystemLoaded) {
     isSystemLoaded = true;
-    subscribeData(); // No await - fire and forget
+    subscribeData();
   }
 }
+
 
 // ═══════════════════════════════════════
 //  DATA SUBSCRIPTIONS (real-time)
@@ -1242,13 +1242,11 @@ function subscribeData() {
 
   // ── MANAGER: full real-time ──
   _unsubs.push(onSnapshot(collection(db, "customers"), snap => {
-    hidePageLoader();
     masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
     renderManagerDash();
     if (isActivePage('ccLogsPage')) renderCCLogs();
     if (isActivePage('fieldPage')) renderFieldPage();
   }, err => {
-    hidePageLoader();
     toast("❌ Data error: " + err.code, "error");
   }));
   _unsubs.push(onSnapshot(collection(db, "phoneDirectory"), snap => {
@@ -1268,20 +1266,18 @@ function subscribeData() {
 
 // ★ STAFF: getDocs once (faster than onSnapshot for large collections)
 async function loadStaffDataOnce() {
-  // onSnapshot is more reliable than getDocs - auto-retries on connection issues
-  const unsub = onSnapshot(collection(db, "customers"), 
+  const unsub = onSnapshot(collection(db, "customers"),
     (snap) => {
-      hidePageLoader(); // Hide loading screen when first data arrives
       masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-      if (!document.getElementById('staffSearch')?.value.trim()) {
-        renderStaffUI();
-      }
-    }, 
+      if (isActivePage('staffPage')) renderStaffUI();
+    },
     (err) => {
-      hidePageLoader();
       console.error("Staff data error:", err.code);
       const tb = document.getElementById('staffTableBody');
-      if (tb) tb.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:#ef5350;">❌ ${err.code}<br><small style="color:#7aa886;">Firebase Rules check කරන්න: allow read, write: if request.auth != null</small></td></tr>`;
+      if (tb) tb.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:#ef5350;">
+        ❌ ${err.code}<br>
+        <small style="color:#7aa886;margin-top:8px;display:block;">Firebase Rules check කරන්න: allow read, write: if request.auth != null</small>
+      </td></tr>`;
     }
   );
   _unsubs.push(unsub);
@@ -1292,13 +1288,17 @@ async function loadStaffDataOnce() {
 async function loadOfficerDataOnce() {
   _unsubs.push(onSnapshot(collection(db, "customers"),
     (snap) => {
-      hidePageLoader();
       masterData = snap.docs.map(d => ({id:d.id,...d.data()}));
-      renderOfficerDash();
+      if (isActivePage('officerPage')) {
+        renderOfficerDash();
+        const res = document.getElementById('offSearchResult');
+        if (res && res.querySelector('.spinner')) res.innerHTML = '';
+      }
     },
     (err) => {
-      hidePageLoader();
       toast("❌ Data error: " + err.code, "error");
+      const res = document.getElementById('offSearchResult');
+      if (res) res.innerHTML = `<div style="color:#ef5350;padding:20px;text-align:center;">❌ ${err.code}</div>`;
     }
   ));
   _unsubs.push(onSnapshot(collection(db, "field_visits"),
@@ -1306,7 +1306,6 @@ async function loadOfficerDataOnce() {
     () => {}
   ));
 }
-
 
 // ═══════════════════════════════════════
 //  UTILITY: getPhone
@@ -3255,25 +3254,8 @@ function isActivePage(id) {
 }
 
 // Full-screen loading overlay for page transitions
-window.showPageLoader = (msg) => {
-  let el = document.getElementById('_pageLoader');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = '_pageLoader';
-    document.body.appendChild(el);
-  }
-  el.style.cssText = 'position:fixed;inset:0;z-index:9000;background:#0d1f10;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;';
-  el.innerHTML = `
-    <div style="font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,#3ddc74,#2196f3,#9c27b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 15px rgba(61,220,116,0.4));">AURA</div>
-    <div style="width:44px;height:44px;border:4px solid rgba(61,220,116,.2);border-top-color:#3ddc74;border-radius:50%;animation:spin .8s linear infinite;"></div>
-    <div style="color:#3ddc74;font-size:14px;font-weight:600;letter-spacing:.5px;">${msg || 'Loading...'}</div>
-    <div style="font-size:11px;color:rgba(122,168,134,0.5);letter-spacing:2px;">AURA ERP v2</div>
-  `;
-};
-window.hidePageLoader = () => {
-  const el = document.getElementById('_pageLoader');
-  if (el) { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }
-};
+window.showPageLoader = (msg) => { console.log('[Aura] Page loading:', msg); };
+window.hidePageLoader = () => {};
 
 
 // ═══════════════════════════════════════
