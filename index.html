@@ -31,13 +31,22 @@
   }
 
   /* ── LAYOUT ── */
-  .page{display:none; animation:fadeUp .35s ease;}
+  .page{
+    display:none;
+  }
   .page.active{
     display:block;
     background:#0d1f10;
     min-height:100vh;
+    width:100%;
     position:relative;
     z-index:10;
+    animation:fadeUp .3s ease;
+  }
+  /* Chat page needs flex + full height */
+  #chatPage.active {
+    display:flex;
+    flex-direction:column;
   }
   @keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
   .wrap{max-width:1480px; margin:0 auto; padding:20px 16px; background:#0d1f10;}
@@ -310,20 +319,56 @@
 <div class="modal-overlay" id="modalOverlay" onclick="closeAllModals()"></div>
 
 <!-- ─────── LOGIN PAGE ─────── -->
-<div id="loginPage" style="display:flex;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);">
-  <div style="width:min(380px,90vw);padding:40px 32px;background:#ffffff;border-radius:20px;box-shadow:0 0 60px rgba(0,0,0,0.9);text-align:center;">
-    <div style="font-size:3.5rem;font-weight:900;background:linear-gradient(135deg,#1b5e20,#2196f3,#9c27b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:4px;margin-bottom:4px;">AURA</div>
-    <div style="font-size:11px;letter-spacing:6px;color:#666;margin-bottom:28px;text-transform:uppercase;">Recovery Systems · v2</div>
+<div id="loginPage" style="display:flex;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(0,0,0,0.92) 0%,rgba(5,20,10,0.88) 100%);backdrop-filter:blur(20px);">
+  <!-- Decorative circles -->
+  <div style="position:absolute;width:400px;height:400px;background:radial-gradient(circle,rgba(61,220,116,0.08) 0%,transparent 70%);top:-100px;left:-100px;pointer-events:none;"></div>
+  <div style="position:absolute;width:300px;height:300px;background:radial-gradient(circle,rgba(33,150,243,0.06) 0%,transparent 70%);bottom:-50px;right:-50px;pointer-events:none;"></div>
+
+  <div style="
+    width:min(400px,92vw);
+    padding:44px 40px;
+    background:rgba(5,25,10,0.75);
+    backdrop-filter:blur(32px) saturate(1.8);
+    -webkit-backdrop-filter:blur(32px) saturate(1.8);
+    border:1px solid rgba(61,220,116,0.25);
+    border-radius:24px;
+    box-shadow:0 0 0 1px rgba(61,220,116,0.08), 0 32px 80px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.07);
+    text-align:center;
+    position:relative;
+  ">
+    <!-- Logo -->
+    <div style="font-size:3.8rem;font-weight:900;background:linear-gradient(135deg,#3ddc74,#2196f3,#9c27b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:6px;margin-bottom:4px;filter:drop-shadow(0 0 20px rgba(61,220,116,0.35));">AURA</div>
+    <div style="font-size:10px;letter-spacing:8px;color:rgba(122,168,134,0.7);margin-bottom:8px;text-transform:uppercase;font-weight:600;">Recovery Systems</div>
+    <div style="width:40px;height:2px;background:linear-gradient(90deg,transparent,rgba(61,220,116,0.6),transparent);margin:0 auto 28px;"></div>
+
+    <!-- Form -->
     <form onsubmit="event.preventDefault(); doLogin();" autocomplete="on">
-      <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="username" 
-        style="width:100%;box-sizing:border-box;margin-bottom:12px;padding:12px 16px;border:2px solid #ddd;border-radius:10px;font-size:14px;background:#f8f8f8;color:#333;">
-      <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password"
-        style="width:100%;box-sizing:border-box;padding:12px 16px;border:2px solid #ddd;border-radius:10px;font-size:14px;background:#f8f8f8;color:#333;">
-      <button type="submit" style="width:100%;margin-top:16px;padding:14px;font-size:15px;font-weight:700;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;border:none;border-radius:30px;cursor:pointer;letter-spacing:1px;">LOGIN TO SYSTEM</button>
-    <div style="margin-top:10px;font-size:11px;color:#888;">Press Enter to login</div>
+      <div style="position:relative;margin-bottom:14px;">
+        <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(61,220,116,0.6);font-size:16px;pointer-events:none;">✉</div>
+        <input type="email" id="loginEmail" placeholder="Email Address" autocomplete="username" 
+          style="width:100%;box-sizing:border-box;padding:13px 14px 13px 40px;border:1px solid rgba(61,220,116,0.2);border-radius:12px;font-size:14px;background:rgba(0,0,0,0.4);color:#e8f5e9;backdrop-filter:blur(8px);transition:border-color .2s;outline:none;"
+          onfocus="this.style.borderColor='rgba(61,220,116,0.6)'" onblur="this.style.borderColor='rgba(61,220,116,0.2)'">
+      </div>
+      <div style="position:relative;margin-bottom:20px;">
+        <div style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(61,220,116,0.6);font-size:16px;pointer-events:none;">🔒</div>
+        <input type="password" id="loginPass" placeholder="Password" autocomplete="current-password"
+          style="width:100%;box-sizing:border-box;padding:13px 14px 13px 40px;border:1px solid rgba(61,220,116,0.2);border-radius:12px;font-size:14px;background:rgba(0,0,0,0.4);color:#e8f5e9;backdrop-filter:blur(8px);transition:border-color .2s;outline:none;"
+          onfocus="this.style.borderColor='rgba(61,220,116,0.6)'" onblur="this.style.borderColor='rgba(61,220,116,0.2)'">
+      </div>
+      <button type="submit" style="
+        width:100%;padding:14px;font-size:14px;font-weight:700;
+        background:linear-gradient(135deg,#1b5e20,#2e7d32,#388e3c);
+        color:#fff;border:1px solid rgba(61,220,116,0.3);border-radius:30px;cursor:pointer;
+        letter-spacing:1.5px;text-transform:uppercase;
+        box-shadow:0 4px 20px rgba(61,220,116,0.2),inset 0 1px 0 rgba(255,255,255,0.1);
+        transition:all .2s;
+      " onmouseover="this.style.filter='brightness(1.15)'" onmouseout="this.style.filter='none'">
+        🔓 LOGIN TO SYSTEM
+      </button>
     </form>
-    <div id="loginErr" style="color:#d32f2f;margin-top:14px;font-size:13px;font-weight:600;min-height:20px;"></div>
-    <div style="margin-top:16px;font-size:10px;color:#aaa;letter-spacing:2px;">POWERED BY MR.RANBINDU</div>
+
+    <div id="loginErr" style="color:#ff8a80;margin-top:14px;font-size:13px;font-weight:600;min-height:20px;letter-spacing:.3px;"></div>
+    <div style="margin-top:20px;font-size:9px;color:rgba(122,168,134,0.35);letter-spacing:3px;text-transform:uppercase;">Powered by Mr.Ranbindu · Aura ERP v2</div>
   </div>
 </div>
 
@@ -349,7 +394,7 @@
         <button onclick="downloadPhoneDir()" class="btn-teal" style="width:100%; margin-bottom:8px;">📥 Download Phonebook</button>
         <button onclick="goTo('historyPage'); renderHistoryPage();" style="background:linear-gradient(135deg,#37474f,#546e7a); width:100%; margin-bottom:8px; padding:9px 16px;">📅 Monthly History</button>
         <button onclick="goTo('chatPage'); initChat();" style="background:linear-gradient(135deg,#1a237e,#283593); width:100%; margin-bottom:8px; padding:9px 16px; position:relative;">
-          💬 Team Chat
+          📋 Task Allocation
           <span id="chatUnreadBadge" style="display:none; position:absolute; top:6px; right:12px; background:var(--red); color:#fff; border-radius:99px; padding:1px 7px; font-size:10px; font-weight:900;">0</span>
         </button>
 
@@ -499,8 +544,8 @@
       <div style="display:flex; align-items:center; gap:12px;">
         <div style="background:linear-gradient(135deg,#1a237e,#3949ab); width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; box-shadow:0 4px 15px rgba(0,0,0,0.5); flex-shrink:0;">💬</div>
         <div>
-          <h2 style="margin:0; color:#90caf9; font-size:1.25rem; letter-spacing:-.5px;">Aura Team Chat</h2>
-          <div style="font-size:11px; color:var(--muted); margin-top:2px;">All members · Real-time</div>
+          <h2 style="margin:0; color:#90caf9; font-size:1.25rem; letter-spacing:-.5px;">Aura Task Allocation</h2>
+          <div style="font-size:11px; color:var(--muted); margin-top:2px;">Manager · Call Center · Field Officers · Real-time</div>
         </div>
       </div>
       <button id="chatBackBtn" class="btn-sm btn-blue" style="flex-shrink:0;">← Back</button>
@@ -512,7 +557,7 @@
         <span style="width:6px; height:6px; background:var(--yellow); border-radius:50%; display:inline-block;"></span> Branch Manager
       </div>
       <div style="background:rgba(61,220,116,0.12); border:1px solid rgba(61,220,116,0.28); border-radius:99px; padding:4px 12px; font-size:11px; color:var(--green); display:flex; align-items:center; gap:5px;">
-        <span style="width:6px; height:6px; background:var(--green); border-radius:50%; display:inline-block;"></span> Call Center
+        <span style="width:6px; height:6px; background:var(--green); border-radius:50%; display:inline-block;"></span> 📞 Call Center
       </div>
       <div style="background:rgba(33,150,243,0.12); border:1px solid rgba(33,150,243,0.28); border-radius:99px; padding:4px 12px; font-size:11px; color:var(--blue); display:flex; align-items:center; gap:5px;">
         <span style="width:6px; height:6px; background:var(--blue); border-radius:50%; display:inline-block;"></span> Amila
@@ -1153,7 +1198,13 @@ async function boot() {
 
 function handleUser(user) {
   const e = user.email.toLowerCase();
-  const isManager = e.includes('bmgb') || e.includes('manager') || e.includes('admin') || e.includes('bm');
+  // ★ STRICT manager detection - avoid false matches like ibrahim@, lamborghini@
+  const isManager = e.includes('bmgb') || 
+                    e.includes('manager') || 
+                    e.includes('admin') || 
+                    e.startsWith('bm') ||           // bm@..., bm_galenbindunuwewa@...
+                    e.startsWith('branch') ||        // branchmanager@...
+                    e.includes('singerbm');          // singerbm@...
 
   if      (e === 'amila@gmail.com')  { currentRole = "officer"; currentOfficer = "Amila"; }
   else if (e === 'rohan@gmail.com')  { currentRole = "officer"; currentOfficer = "Rohan"; }
@@ -3255,32 +3306,40 @@ window.doLogout = async () => {
 //  NAVIGATION
 // ═══════════════════════════════════════
 window.goTo = (pageId) => {
-  // Hide loader
+  // Hide global loader
   const gl = document.getElementById('globalLoader');
-  if (gl) { gl.style.display='none'; gl.classList.remove('show'); }
-  // Hide loginPage
+  if (gl) { gl.style.display = 'none'; gl.classList.remove('show'); }
+
+  // Hide login overlay
   const lp = document.getElementById('loginPage');
   if (lp) lp.style.display = 'none';
-  // Hide all pages
+
+  // Hide ALL pages cleanly
   document.querySelectorAll('.page').forEach(p => {
     p.classList.remove('active');
-    p.style.cssText = 'display:none !important';
+    p.style.display = 'none';
   });
-  // Show target
+
   if (pageId === 'loginPage') {
     if (lp) lp.style.display = 'flex';
     const e = document.getElementById('loginErr');
     if (e) e.innerText = '';
-    // Also hide any page loader
-    const pl = document.getElementById('_pageLoader');
-    if (pl) pl.remove();
   } else {
     const pg = document.getElementById(pageId);
     if (pg) {
+      // chatPage needs flex layout for its internal flex children
+      pg.style.display = (pageId === 'chatPage') ? 'flex' : 'block';
+      if (pageId === 'chatPage') {
+        pg.style.flexDirection = 'column';
+        pg.style.height = '100vh';
+      }
+      pg.style.background = '#0d1f10';
+      pg.style.minHeight = '100vh';
+      pg.style.position = 'relative';
+      pg.style.zIndex = '10';
       pg.classList.add('active');
-      pg.style.cssText = 'display:block !important; background:#0d1f10 !important; min-height:100vh !important; width:100% !important; position:relative !important; z-index:50 !important; isolation:isolate !important;';
     }
-    window.scrollTo(0,0);
+    window.scrollTo(0, 0);
   }
 };
 
