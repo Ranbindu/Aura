@@ -1198,6 +1198,7 @@ async function boot() {
 
 function handleUser(user) {
   const e = user.email.toLowerCase();
+  console.log('🔥 handleUser:', e);
   // ★ STRICT manager detection - avoid false matches like ibrahim@, lamborghini@
   const isManager = e.includes('bmgb') || 
                     e.includes('manager') || 
@@ -1206,10 +1207,11 @@ function handleUser(user) {
                     e.startsWith('branch') ||        // branchmanager@...
                     e.includes('singerbm');          // singerbm@...
 
-  if      (e === 'amila@gmail.com')  { currentRole = "officer"; currentOfficer = "Amila"; }
-  else if (e === 'rohan@gmail.com')  { currentRole = "officer"; currentOfficer = "Rohan"; }
-  else if (e === 'heen@gmail.com')   { currentRole = "officer"; currentOfficer = "Heenpahana"; }
-  else if (e === 'group@gmail.com')  { currentRole = "officer"; currentOfficer = "Group Sale"; }
+  // ★ OFFICER detection - check email contains name (flexible)
+  if      (e.includes('amila'))                    { currentRole = "officer"; currentOfficer = "Amila"; }
+  else if (e.includes('rohan'))                    { currentRole = "officer"; currentOfficer = "Rohan"; }
+  else if (e.includes('heenpahana') || e.includes('heen'))  { currentRole = "officer"; currentOfficer = "Heenpahana"; }
+  else if (e.includes('group'))                    { currentRole = "officer"; currentOfficer = "Group Sale"; }
   else if (isManager)                { currentRole = "manager"; }
   else                               { currentRole = "staff"; }
 
@@ -1218,12 +1220,14 @@ function handleUser(user) {
   if (currentRole === "officer") {
     setupOfficerUI();
     goTo('officerPage');
+    console.log('🔥 Officer page activated:', document.getElementById('officerPage')?.style.display);
     const res = document.getElementById('offSearchResult');
     if (res) res.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);"><div class="spinner" style="margin:0 auto 16px;"></div>Data loading...</div>';
   } else if (currentRole === "manager") {
     goTo('dashPage');
   } else {
     goTo('staffPage');
+    console.log('🔥 Staff page activated:', document.getElementById('staffPage')?.style.display);
     const tb = document.getElementById('staffTableBody');
     if (tb) tb.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:50px 20px;"><div class="spinner" style="margin:0 auto 16px;"></div><div style="color:var(--muted);font-size:13px;">⏳ Data loading, please wait...</div></td></tr>';
     const badge = document.getElementById('staffTargetBadge');
@@ -3306,38 +3310,39 @@ window.doLogout = async () => {
 //  NAVIGATION
 // ═══════════════════════════════════════
 window.goTo = (pageId) => {
-  // Hide global loader
+  // 1. Hide global loader
   const gl = document.getElementById('globalLoader');
   if (gl) { gl.style.display = 'none'; gl.classList.remove('show'); }
 
-  // Hide login overlay
+  // 2. Hide login overlay
   const lp = document.getElementById('loginPage');
   if (lp) lp.style.display = 'none';
 
-  // Hide ALL pages cleanly
-  document.querySelectorAll('.page').forEach(p => {
+  // 3. Hide ALL pages using cssText (most reliable)
+  document.querySelectorAll('.page').forEach(function(p) {
     p.classList.remove('active');
-    p.style.display = 'none';
+    p.style.cssText = 'display:none!important;';
   });
 
   if (pageId === 'loginPage') {
-    if (lp) lp.style.display = 'flex';
+    if (lp) { lp.style.display = 'flex'; lp.style.cssText = 'display:flex!important;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(0,0,0,0.92) 0%,rgba(5,20,10,0.88) 100%);backdrop-filter:blur(20px);'; }
     const e = document.getElementById('loginErr');
     if (e) e.innerText = '';
   } else {
     const pg = document.getElementById(pageId);
     if (pg) {
-      // chatPage needs flex layout for its internal flex children
-      pg.style.display = (pageId === 'chatPage') ? 'flex' : 'block';
+      // Force visible - override ALL previous styles
+      const flexPages = ['chatPage'];
+      const disp = flexPages.includes(pageId) ? 'flex' : 'block';
+      pg.style.cssText = 'display:' + disp + '!important;background:#0d1f10!important;min-height:100vh!important;width:100%!important;position:relative!important;z-index:10!important;';
       if (pageId === 'chatPage') {
         pg.style.flexDirection = 'column';
         pg.style.height = '100vh';
+        pg.style.boxSizing = 'border-box';
       }
-      pg.style.background = '#0d1f10';
-      pg.style.minHeight = '100vh';
-      pg.style.position = 'relative';
-      pg.style.zIndex = '10';
       pg.classList.add('active');
+    } else {
+      console.error('❌ Page not found:', pageId);
     }
     window.scrollTo(0, 0);
   }
