@@ -1,23 +1,27 @@
-// Aura ERP - Service Worker v3 (NO CACHE)
-// This SW does NOT cache - always fetch fresh from network
+const CACHE_NAME = 'aura-erp-v1';
+const ASSETS = [
+    './',
+    './index.html',
+    './manifest.json',
+    'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+];
 
-self.addEventListener('install', () => {
-  self.skipWaiting();
+// Install Event
+self.addEventListener('install', (e) => {
+    e.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll(ASSETS);
+        })
+    );
 });
 
-self.addEventListener('activate', (e) => {
-  // Delete ALL caches
-  e.waitUntil(
-    caches.keys().then(keys => 
-      Promise.all(keys.map(key => {
-        console.log('Deleting cache:', key);
-        return caches.delete(key);
-      }))
-    ).then(() => self.clients.claim())
-  );
-});
-
+// Fetch Event
 self.addEventListener('fetch', (e) => {
-  // ALWAYS go to network - no caching
-  e.respondWith(fetch(e.request));
+    e.respondWith(
+        caches.match(e.request).then((response) => {
+            return response || fetch(e.request);
+        })
+    );
 });
